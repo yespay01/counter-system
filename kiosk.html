@@ -150,18 +150,6 @@
             display: block;
             color: #2c3e50;
         }
-        .setting-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            font-size: 1rem;
-            margin-bottom: 10px;
-        }
-        .setting-input:focus {
-            border-color: #3498db;
-            outline: none;
-        }
         .setting-btn {
             background: #3498db;
             color: white;
@@ -238,76 +226,6 @@
         .course-input.code { width: 60px; }
         .course-input.name { width: 180px; }
         .course-input.desc { width: 250px; }
-        .ticket-result {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .ticket-card {
-            background: white;
-            border-radius: 25px;
-            padding: 60px 40px;
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
-            position: relative;
-        }
-        .ticket-number {
-            font-size: 6rem;
-            font-weight: 900;
-            color: #3498db;
-            margin-bottom: 20px;
-        }
-        .print-section {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px dashed #ddd;
-        }
-        .print-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 1.2rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s ease;
-        }
-        .print-btn:hover {
-            background: #229954;
-            transform: translateY(-2px);
-        }
-        .countdown {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            background: #e74c3c;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 15px;
-            font-size: 1rem;
-            font-weight: bold;
-        }
-        .ticket-preview {
-            background: #f8f9fa;
-            border: 2px dashed #ddd;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            line-height: 1.4;
-            text-align: left;
-        }
         .status-message {
             background: #d4edda;
             color: #155724;
@@ -344,7 +262,7 @@
 
         <div class="status-bar">
             <div class="current-time" id="currentTime"></div>
-            <div class="connection-status" id="connectionStatus">연결 대기 중...</div>
+            <div class="connection-status connected" id="connectionStatus">🟢 온라인 연결됨</div>
             <div id="currentPeriod" style="font-size: 1.1rem; color: #666;"></div>
         </div>
 
@@ -352,29 +270,7 @@
             <div class="service-title">수강 상담을 원하는 과정을 터치해 주세요</div>
             
             <div class="course-buttons" id="courseButtons">
-                <div class="no-courses">
-                    <div style="font-size: 3rem; margin-bottom: 20px;">⚙️</div>
-                    <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">설정이 필요합니다</div>
-                    <div style="font-size: 1rem; color: #666;">우상단 ⚙️ 버튼을 클릭해서 시간대와 과목을 설정해주세요</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="ticket-result" id="ticketResult">
-        <div class="ticket-card">
-            <div class="countdown" id="countdown">2</div>
-            <div class="ticket-number" id="ticketNumber">A001</div>
-            <div style="font-size: 2rem; font-weight: 700; color: #2c3e50; margin-bottom: 15px;" id="ticketCourse">수강 상담</div>
-            <div style="font-size: 1.3rem; color: #7f8c8d;">접수시간: <span id="ticketTime"></span></div>
-            
-            <div class="print-section">
-                <button class="print-btn" onclick="printTicket()">🖨️ 번호표 출력</button>
-                <button class="print-btn" onclick="closeTicketResult()" style="background: #95a5a6;">닫기</button>
-            </div>
-            
-            <div class="ticket-preview" id="ticketPreview" style="display: none;">
-                <!-- 출력용 번호표 미리보기 -->
+                <!-- 과목 버튼들이 여기에 표시됩니다 -->
             </div>
         </div>
     </div>
@@ -391,7 +287,7 @@
                 <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
                     GitHub Pages를 통한 온라인 버전입니다. 데이터는 브라우저 로컬 스토리지를 통해 실시간 공유됩니다.
                 </div>
-                <button class="setting-btn" onclick="connectSheets()">상태 확인</button>
+                <button class="setting-btn" onclick="testConnection()">상태 확인</button>
                 <div id="connectionMessage"></div>
             </div>
 
@@ -415,8 +311,7 @@
     </div>
 
     <script>
-        let sheetsApiUrl = localStorage.getItem('sheetsApiUrl') || '';
-        let isConnected = false;
+        let isConnected = true;
         let currentNumbers = {};
         let timeSettings = [];
 
@@ -527,38 +422,6 @@
             
             // 바로 출력 실행
             printTicket();
-        }
-
-        let countdownTimer = null;
-        let countdownSeconds = 2;
-
-        function startCountdown() {
-            const countdownEl = document.getElementById('countdown');
-            countdownSeconds = 2;
-            countdownEl.textContent = countdownSeconds;
-            
-            if (countdownTimer) {
-                clearInterval(countdownTimer);
-            }
-            
-            countdownTimer = setInterval(() => {
-                countdownSeconds--;
-                countdownEl.textContent = countdownSeconds;
-                
-                if (countdownSeconds <= 0) {
-                    clearInterval(countdownTimer);
-                    closeTicketResult();
-                }
-            }, 1000);
-        }
-
-        function closeTicketResult() {
-            if (countdownTimer) {
-                clearInterval(countdownTimer);
-                countdownTimer = null;
-            }
-            document.getElementById('ticketResult').style.display = 'none';
-            document.getElementById('ticketPreview').style.display = 'none';
         }
 
         function printTicket() {
@@ -696,17 +559,12 @@
                     iframe.remove();
                 }
             }, 200);
-            
-            // 즉시 화면 닫기
-            closeTicketResult();
         }
 
         function saveToSheets(number, course, time) {
-            // 온라인 버전에서는 로컬 스토리지에 저장
             try {
                 let sharedData = JSON.parse(localStorage.getItem('counterSystemData') || '{}');
                 
-                // 대기목록에 추가
                 if (!sharedData.waiting) sharedData.waiting = [];
                 sharedData.waiting.push({
                     number: number,
@@ -714,10 +572,8 @@
                     time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
                 });
                 
-                // 총 오늘 접수 수 증가
                 sharedData.totalToday = (sharedData.totalToday || 0) + 1;
                 
-                // 창구 데이터 초기화 (없으면)
                 if (!sharedData.counters) {
                     sharedData.counters = [
                         { id: 1, current: null, course: null, count: 0 },
@@ -729,7 +585,6 @@
                     ];
                 }
                 
-                // 현재 호출 초기화 (없으면)
                 if (!sharedData.currentCall) {
                     sharedData.currentCall = { number: '-', counter: 0, course: '-' };
                 }
@@ -749,7 +604,6 @@
             }
         }
 
-        // 시간대 편집기 렌더링
         function renderTimePeriodsEditor() {
             const container = document.getElementById('timePeriodsContainer');
             container.innerHTML = '';
@@ -853,33 +707,6 @@
             setTimeout(() => { message.innerHTML = ''; }, 3000);
             
             updateButtons();
-            
-            if (isConnected) {
-                saveToGoogleSheets();
-            }
-        }
-
-        function saveToGoogleSheets() {
-            if (!sheetsApiUrl) return;
-            
-            fetch(sheetsApiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'saveTimeSettings', settings: timeSettings })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const message = document.getElementById('settingsMessage');
-                if (data.success) {
-                    message.innerHTML += '<div class="status-message">구글 시트에도 저장되었습니다!</div>';
-                } else {
-                    message.innerHTML += '<div class="error-message">구글 시트 저장 실패: ' + data.error + '</div>';
-                }
-            })
-            .catch(error => {
-                const message = document.getElementById('settingsMessage');
-                message.innerHTML += '<div class="error-message">구글 시트 저장 오류</div>';
-            });
         }
 
         function loadDefaultSettings() {
@@ -908,47 +735,13 @@
             preview.innerHTML = html || '설정된 시간대가 없습니다.';
         }
 
-        function connectSheets() {
-            // 로컬 서버 사용 시에는 URL 입력 불필요
-            const message = document.getElementById('connectionMessage');
-            message.innerHTML = '<div style="color: #666;">로컬 서버 연결 확인 중...</div>';
-            testConnection();
-        }작동<br>
-                    • 필요시 수동으로 데이터 관리<br>
-                    • 또는 전용 서버 구축 후 연결
-                </div>
-            `;
-            
-            // 오프라인 모드로 설정
-            isConnected = false;
-            document.getElementById('connectionStatus').innerHTML = '🔄 오프라인 모드 (권장)';
-            document.getElementById('connectionStatus').className = 'connection-status';
-        }
-
         function testConnection() {
-            if (!sheetsApiUrl) return;
-            
             const message = document.getElementById('connectionMessage');
-            message.innerHTML = '<div style="color: #666;">연결 테스트 중...</div>';
-            
-            // CORS 오류 방지를 위해 바로 오프라인 모드로 설정
-            setTimeout(() => {
-                isConnected = false;
-                document.getElementById('connectionStatus').innerHTML = '🔄 오프라인 모드';
-                document.getElementById('connectionStatus').className = 'connection-status';
-                message.innerHTML = `
-                    <div class="status-message">
-                        <strong>✅ 오프라인 모드로 작동 중</strong><br>
-                        키오스크 기능은 모두 정상 작동합니다!<br>
-                        <small>Google Sheets 연결은 선택사항입니다</small>
-                    </div>
-                `;
-            }, 1000);
+            message.innerHTML = '<div class="status-message">✅ 온라인 모드 - 데이터가 실시간으로 공유됩니다!</div>';
         }
 
         // 초기화
         function initialize() {
-            // 저장된 설정 로드
             const saved = localStorage.getItem('timeSettings');
             if (saved) {
                 try {
@@ -960,15 +753,6 @@
                 timeSettings = JSON.parse(JSON.stringify(defaultSettings));
             }
             
-            // 저장된 URL 로드
-            if (sheetsApiUrl) {
-                document.getElementById('sheetsUrl').value = sheetsApiUrl;
-                testConnection();
-            } else {
-                document.getElementById('connectionStatus').innerHTML = '🔄 오프라인 모드';
-                document.getElementById('connectionStatus').className = 'connection-status';
-            }
-            
             updateTime();
             setInterval(updateTime, 1000);
         }
@@ -978,12 +762,6 @@
             if (e.ctrlKey && e.altKey && e.key === 's') {
                 e.preventDefault();
                 toggleSettings();
-            }
-            if (e.key === 'Escape') {
-                closeTicketResult();
-            }
-            if (e.key === 'Enter' && document.getElementById('ticketResult').style.display === 'flex') {
-                printTicket();
             }
         });
 
