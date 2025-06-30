@@ -78,15 +78,42 @@
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 15px;
             margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
         }
         .waiting-number {
             background: rgba(255,255,255,0.2);
             border-radius: 15px;
             padding: 20px;
             text-align: center;
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: 700;
             border: 2px solid rgba(255,255,255,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .waiting-number.next {
+            border-color: #FFD700;
+            background: rgba(255,215,0,0.2);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .number-text {
+            font-size: 1.8rem;
+            font-weight: 900;
+        }
+        .course-text {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .time-text {
+            font-size: 0.8rem;
+            opacity: 0.7;
         }
         .counter-status {
             display: grid;
@@ -101,6 +128,10 @@
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
         }
+        .counter-item.active {
+            border-color: #00FF88;
+            background: rgba(0,255,136,0.1);
+        }
         .counter-name {
             font-size: 1.2rem;
             font-weight: 600;
@@ -110,6 +141,11 @@
             font-size: 2.5rem;
             font-weight: 900;
             color: #FFD700;
+        }
+        .counter-course {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 5px;
         }
         .status-bar {
             position: fixed;
@@ -138,9 +174,28 @@
             padding: 10px 20px;
             border-radius: 25px;
             font-size: 1rem;
+            backdrop-filter: blur(10px);
         }
         .online { color: #00FF88; }
         .offline { color: #FF6B6B; }
+        .no-waiting {
+            text-align: center;
+            font-size: 1.5rem;
+            opacity: 0.7;
+            padding: 40px;
+        }
+        .debug-info {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            max-width: 300px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -154,8 +209,8 @@
     <div class="main-content">
         <div class="current-section">
             <div class="section-title">🔔 현재 호출</div>
-            <div class="current-number" id="currentNumber">A001</div>
-            <div class="counter-info" id="counterInfo">1번 창구 - OA 과정</div>
+            <div class="current-number" id="currentNumber">-</div>
+            <div class="counter-info" id="counterInfo">대기 중</div>
             
             <div class="counter-status" id="counterStatus">
                 <!-- 창구별 현황 -->
@@ -172,46 +227,117 @@
 
     <div class="status-bar">
         <div class="total-waiting">
-            총 대기: <span id="totalWaiting">5</span>명
+            총 대기: <span id="totalWaiting">0</span>명
         </div>
         <div class="last-update">
-            마지막 업데이트: <span id="lastUpdate"></span>
+            마지막 업데이트: <span id="lastUpdate">-</span>
         </div>
     </div>
 
+    <div class="debug-info" id="debugInfo">
+        <!-- 디버그 정보 -->
+    </div>
+
     <script>
-        // 시뮬레이션 데이터 (실제로는 Google Sheets에서 가져옴)
-        let currentData = {
-            currentCall: { number: 'A001', counter: 1, course: 'OA 과정' },
-            waiting: ['A002', 'A003', 'B001', 'B002', 'C001'],
+        let displayData = {
+            currentCall: { number: '-', counter: 0, course: '-' },
+            waiting: [],
             counters: [
-                { id: 1, name: '1번 창구', current: 'A001', course: 'OA 과정' },
-                { id: 2, name: '2번 창구', current: 'B003', course: '디자인' },
-                { id: 3, name: '3번 창구', current: '-', course: '-' },
-                { id: 4, name: '4번 창구', current: 'C002', course: '영상편집' },
-                { id: 5, name: '5번 창구', current: '-', course: '-' },
-                { id: 6, name: '6번 창구', current: '-', course: '-' }
-            ]
+                { id: 1, current: null, course: null },
+                { id: 2, current: null, course: null },
+                { id: 3, current: null, course: null },
+                { id: 4, current: null, course: null },
+                { id: 5, current: null, course: null },
+                { id: 6, current: null, course: null }
+            ],
+            lastUpdateTime: null,
+            isConnected: false
         };
+
+        let isDebugMode = false;
 
         // 로컬 스토리지에서 공유 데이터 읽기
         function loadSharedData() {
-            const sharedData = localStorage.getItem('counterSystemData');
-            if (sharedData) {
-                try {
-                    const data = JSON.parse(sharedData);
-                    if (data.currentCall) currentData.currentCall = data.currentCall;
-                    if (data.waiting) currentData.waiting = data.waiting;
-                    if (data.counters) currentData.counters = data.counters;
+            try {
+                const sharedDataStr = localStorage.getItem('counterSystemData');
+                
+                if (sharedDataStr) {
+                    const sharedData = JSON.parse(sharedDataStr);
                     
-                    document.getElementById('statusIndicator').innerHTML = '🟢 실시간 연동';
-                    document.getElementById('statusIndicator').className = 'status-indicator online';
-                } catch (e) {
-                    console.log('데이터 로드 오류:', e);
+                    // 데이터 구조 검증 및 변환
+                    if (sharedData) {
+                        // 현재 호출 정보 업데이트
+                        if (sharedData.currentCall) {
+                            displayData.currentCall = {
+                                number: sharedData.currentCall.number || '-',
+                                counter: sharedData.currentCall.counter || 0,
+                                course: sharedData.currentCall.course || '-'
+                            };
+                        }
+                        
+                        // 대기 목록 업데이트
+                        if (Array.isArray(sharedData.waiting)) {
+                            displayData.waiting = sharedData.waiting.map(item => {
+                                if (typeof item === 'string') {
+                                    // 문자열인 경우 객체로 변환
+                                    return {
+                                        number: item,
+                                        course: '일반 상담',
+                                        time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                                    };
+                                } else if (typeof item === 'object' && item !== null) {
+                                    // 객체인 경우 필요한 필드 확인
+                                    return {
+                                        number: item.number || '-',
+                                        course: item.course || '일반 상담',
+                                        time: item.time || new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                                    };
+                                }
+                                return null;
+                            }).filter(item => item !== null);
+                        }
+                        
+                        // 창구 정보 업데이트
+                        if (Array.isArray(sharedData.counters)) {
+                            displayData.counters = sharedData.counters.map((counter, index) => ({
+                                id: counter.id || (index + 1),
+                                current: counter.current || null,
+                                course: counter.course || null
+                            }));
+                        }
+                        
+                        displayData.isConnected = true;
+                        displayData.lastUpdateTime = new Date();
+                        
+                        // 상태 표시 업데이트
+                        document.getElementById('statusIndicator').innerHTML = '🟢 실시간 연동';
+                        document.getElementById('statusIndicator').className = 'status-indicator online';
+                        
+                        if (isDebugMode) {
+                            updateDebugInfo('데이터 로드 성공', sharedData);
+                        }
+                    }
+                } else {
+                    // 로컬 스토리지에 데이터가 없는 경우
+                    displayData.isConnected = false;
+                    document.getElementById('statusIndicator').innerHTML = '🔄 시뮬레이션 모드';
+                    document.getElementById('statusIndicator').className = 'status-indicator offline';
+                    
+                    // 시뮬레이션 데이터 사용
+                    if (!displayData.waiting.length) {
+                        simulateData();
+                    }
                 }
-            } else {
-                // 시뮬레이션 모드
-                simulateData();
+                
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+                displayData.isConnected = false;
+                document.getElementById('statusIndicator').innerHTML = '❌ 연결 오류';
+                document.getElementById('statusIndicator').className = 'status-indicator offline';
+                
+                if (isDebugMode) {
+                    updateDebugInfo('데이터 로드 오류', error.message);
+                }
             }
         }
 
@@ -227,69 +353,207 @@
         }
 
         function updateDisplay() {
-            // 현재 호출번호
-            document.getElementById('currentNumber').textContent = currentData.currentCall.number;
-            document.getElementById('counterInfo').textContent = 
-                `${currentData.currentCall.counter}번 창구 - ${currentData.currentCall.course}`;
-
-            // 대기번호
-            const waitingContainer = document.getElementById('waitingNumbers');
-            waitingContainer.innerHTML = '';
-            currentData.waiting.forEach(number => {
-                const div = document.createElement('div');
-                div.className = 'waiting-number';
-                div.textContent = number;
-                waitingContainer.appendChild(div);
-            });
-
-            // 창구 현황
-            const counterContainer = document.getElementById('counterStatus');
-            counterContainer.innerHTML = '';
-            currentData.counters.slice(0, 6).forEach(counter => {
-                const div = document.createElement('div');
-                div.className = 'counter-item';
-                div.innerHTML = `
-                    <div class="counter-name">${counter.name}</div>
-                    <div class="counter-number">${counter.current || '-'}</div>
-                `;
-                counterContainer.appendChild(div);
-            });
-
-            // 총 대기인원
-            document.getElementById('totalWaiting').textContent = currentData.waiting.length;
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('ko-KR');
-        }
-
-        function simulateData() {
-            // 시뮬레이션: 가끔 번호 변경
-            if (Math.random() < 0.1) {
-                const letters = ['A', 'B', 'C'];
-                const letter = letters[Math.floor(Math.random() * letters.length)];
-                const number = String(Math.floor(Math.random() * 10) + 1).padStart(3, '0');
-                currentData.currentCall.number = letter + number;
+            try {
+                // 현재 호출번호 업데이트
+                const currentNumber = displayData.currentCall.number || '-';
+                const currentCounter = displayData.currentCall.counter || 0;
+                const currentCourse = displayData.currentCall.course || '대기 중';
                 
-                // 가끔 대기번호도 변경
-                if (Math.random() < 0.3) {
-                    const newWaiting = [];
-                    for (let i = 0; i < 5; i++) {
-                        const randomLetter = letters[Math.floor(Math.random() * letters.length)];
-                        const randomNumber = String(Math.floor(Math.random() * 20) + 1).padStart(3, '0');
-                        newWaiting.push(randomLetter + randomNumber);
+                document.getElementById('currentNumber').textContent = currentNumber;
+                
+                if (currentNumber !== '-' && currentCounter > 0) {
+                    document.getElementById('counterInfo').textContent = 
+                        `${currentCounter}번 창구 - ${currentCourse}`;
+                } else {
+                    document.getElementById('counterInfo').textContent = '대기 중';
+                }
+
+                // 대기번호 목록 업데이트
+                const waitingContainer = document.getElementById('waitingNumbers');
+                waitingContainer.innerHTML = '';
+                
+                if (displayData.waiting && displayData.waiting.length > 0) {
+                    displayData.waiting.forEach((item, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'waiting-number';
+                        if (index === 0) div.classList.add('next');
+                        
+                        div.innerHTML = `
+                            <div class="number-text">${item.number}</div>
+                            <div class="course-text">${item.course}</div>
+                            <div class="time-text">${item.time}</div>
+                        `;
+                        
+                        waitingContainer.appendChild(div);
+                    });
+                } else {
+                    waitingContainer.innerHTML = '<div class="no-waiting">대기 중인 번호가 없습니다</div>';
+                }
+
+                // 창구 현황 업데이트
+                const counterContainer = document.getElementById('counterStatus');
+                counterContainer.innerHTML = '';
+                
+                displayData.counters.slice(0, 6).forEach(counter => {
+                    const div = document.createElement('div');
+                    div.className = 'counter-item';
+                    
+                    // 현재 활성 창구 표시
+                    if (counter.current && counter.current !== '-') {
+                        div.classList.add('active');
                     }
-                    currentData.waiting = newWaiting;
+                    
+                    div.innerHTML = `
+                        <div class="counter-name">${counter.id}번 창구</div>
+                        <div class="counter-number">${counter.current || '-'}</div>
+                        <div class="counter-course">${counter.course || ''}</div>
+                    `;
+                    counterContainer.appendChild(div);
+                });
+
+                // 총 대기인원 및 업데이트 시간
+                document.getElementById('totalWaiting').textContent = displayData.waiting.length;
+                
+                if (displayData.lastUpdateTime) {
+                    document.getElementById('lastUpdate').textContent = 
+                        displayData.lastUpdateTime.toLocaleTimeString('ko-KR');
+                } else {
+                    document.getElementById('lastUpdate').textContent = '-';
                 }
                 
-                updateDisplay();
+            } catch (error) {
+                console.error('화면 업데이트 오류:', error);
+                if (isDebugMode) {
+                    updateDebugInfo('화면 업데이트 오류', error.message);
+                }
             }
         }
 
-        // 초기화
-        updateDateTime();
-        loadSharedData();
-        updateDisplay();
-        setInterval(updateDateTime, 1000);
-        setInterval(loadSharedData, 2000); // 2초마다 공유 데이터 확인
-        setInterval(simulateData, 5000); // 5초마다 시뮬레이션 업데이트
+        function simulateData() {
+            // 시뮬레이션: 랜덤 데이터 생성
+            if (Math.random() < 0.1) {
+                const letters = ['A', 'B', 'C', 'D', 'E'];
+                const courses = ['OA 과정', '디자인', '영상편집', '프로그래밍', '웹개발'];
+                
+                // 현재 호출 시뮬레이션
+                const letter = letters[Math.floor(Math.random() * letters.length)];
+                const number = String(Math.floor(Math.random() * 10) + 1).padStart(3, '0');
+                displayData.currentCall = {
+                    number: letter + number,
+                    counter: Math.floor(Math.random() * 6) + 1,
+                    course: courses[Math.floor(Math.random() * courses.length)]
+                };
+                
+                // 대기번호 시뮬레이션
+                if (Math.random() < 0.3) {
+                    displayData.waiting = [];
+                    const waitingCount = Math.floor(Math.random() * 8) + 2;
+                    
+                    for (let i = 0; i < waitingCount; i++) {
+                        const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+                        const randomNumber = String(Math.floor(Math.random() * 50) + 1).padStart(3, '0');
+                        const randomCourse = courses[Math.floor(Math.random() * courses.length)];
+                        
+                        displayData.waiting.push({
+                            number: randomLetter + randomNumber,
+                            course: randomCourse,
+                            time: new Date(Date.now() - Math.random() * 30 * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                        });
+                    }
+                }
+                
+                displayData.lastUpdateTime = new Date();
+            }
+        }
+
+        function updateDebugInfo(title, data) {
+            const debugEl = document.getElementById('debugInfo');
+            if (debugEl) {
+                debugEl.innerHTML = `
+                    <strong>${title}</strong><br>
+                    <small>${new Date().toLocaleTimeString()}</small><br>
+                    <pre style="font-size: 0.7rem; margin-top: 5px;">${JSON.stringify(data, null, 2).substring(0, 200)}...</pre>
+                `;
+            }
+        }
+
+        // 키보드 단축키 (디버그 모드)
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey && e.key === 'd') {
+                e.preventDefault();
+                isDebugMode = !isDebugMode;
+                const debugEl = document.getElementById('debugInfo');
+                debugEl.style.display = isDebugMode ? 'block' : 'none';
+                
+                if (isDebugMode) {
+                    updateDebugInfo('디버그 모드 활성화', { 
+                        connected: displayData.isConnected,
+                        waitingCount: displayData.waiting.length
+                    });
+                }
+            }
+            
+            // 새로고침 단축키
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                location.reload();
+            }
+        });
+
+        // 초기화 함수
+        function initialize() {
+            console.log('DISPLAY 화면 초기화 시작');
+            
+            // 기본 데이터 설정
+            displayData.waiting = [];
+            displayData.lastUpdateTime = null;
+            
+            // 시간 업데이트 시작
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // 초기 데이터 로드
+            loadSharedData();
+            updateDisplay();
+            
+            // 주기적 업데이트 (2초마다)
+            setInterval(() => {
+                loadSharedData();
+                updateDisplay();
+            }, 2000);
+            
+            // 시뮬레이션 (5초마다, 연결되지 않은 경우에만)
+            setInterval(() => {
+                if (!displayData.isConnected) {
+                    simulateData();
+                    updateDisplay();
+                }
+            }, 5000);
+            
+            console.log('DISPLAY 화면 초기화 완료');
+        }
+
+        // 페이지 로드 완료 시 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+
+        // 윈도우 포커스 시 즉시 업데이트
+        window.addEventListener('focus', () => {
+            loadSharedData();
+            updateDisplay();
+        });
+
+        // 로컬 스토리지 변경 감지
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'counterSystemData') {
+                console.log('로컬 스토리지 변경 감지');
+                loadSharedData();
+                updateDisplay();
+            }
+        });
     </script>
 </body>
 </html>
