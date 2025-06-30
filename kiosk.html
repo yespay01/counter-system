@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Inquiry Reception System</title>
+    <title>수강문의 접수 - 영어 출력</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -294,46 +294,46 @@
 </head>
 <body>
     <div class="container">
-        <button class="printer-connect" onclick="connectPrinter()" title="Connect Printer">🖨️</button>
+        <button class="printer-connect" onclick="connectPrinter()" title="프린터 연결">🖨️</button>
         <button class="settings-toggle" onclick="toggleSettings()">⚙️</button>
         
         <div class="header">
-            <h1>📚 Course Inquiry Reception</h1>
-            <p style="color: white; font-size: 1.3rem;">Please select the course you want to inquire about</p>
+            <h1>📚 수강문의 접수</h1>
+            <p style="color: white; font-size: 1.3rem;">원하는 과정을 선택해 주세요</p>
         </div>
 
         <div class="status-bar">
             <div class="current-time" id="currentTime"></div>
-            <div class="connection-status connected" id="connectionStatus">🟢 Online</div>
-            <div class="printer-status disconnected" id="printerStatus">🖨️ Printer Disconnected</div>
+            <div class="connection-status connected" id="connectionStatus">🟢 온라인 연결됨</div>
+            <div class="printer-status disconnected" id="printerStatus">🖨️ 프린터 연결 안됨</div>
             <div id="currentPeriod" style="font-size: 1.1rem; color: #666;"></div>
         </div>
 
         <div class="main-content">
-            <div class="service-title">Touch the course you want to consult</div>
+            <div class="service-title">수강 상담을 원하는 과정을 터치해 주세요</div>
             
             <div class="course-buttons" id="courseButtons">
-                <!-- Course buttons will be displayed here -->
+                <!-- 과목 버튼들이 여기에 표시됩니다 -->
             </div>
         </div>
     </div>
 
     <div class="print-success" id="printSuccess">
         <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
-        <div id="printSuccessMessage">Ticket printed successfully!</div>
+        <div id="printSuccessMessage">번호표 출력 완료!</div>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
         <div class="settings-header">
-            System Settings
+            시스템 설정
             <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
         </div>
         <div class="settings-content">
-            <!-- Printer Connection -->
+            <!-- 프린터 연결 -->
             <div class="setting-group">
-                <label class="setting-label">🖨️ Printer Connection</label>
+                <label class="setting-label">🖨️ 프린터 연결</label>
                 <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
-                    Uses Web Serial API in Chrome-based browsers.
+                    Chrome 기반 브라우저에서 Web Serial API를 사용합니다.
                 </div>
                 <select class="setting-input" id="baudRate">
                     <option value="9600">9600 baud</option>
@@ -342,48 +342,54 @@
                     <option value="57600">57600 baud</option>
                     <option value="115200" selected>115200 baud</option>
                 </select>
-                <button class="setting-btn" onclick="connectPrinter()">Connect Printer</button>
-                <button class="setting-btn" onclick="disconnectPrinter()">Disconnect</button>
-                <button class="setting-btn" onclick="testPrint()">Test Print</button>
+                <button class="setting-btn" onclick="connectPrinter()">프린터 연결</button>
+                <button class="setting-btn" onclick="disconnectPrinter()">연결 해제</button>
+                <button class="setting-btn" onclick="testPrint()">테스트 출력</button>
                 <div id="printerMessage"></div>
             </div>
 
-            <!-- Print Format Settings -->
+            <!-- 출력 형식 설정 -->
             <div class="setting-group">
-                <label class="setting-label">📝 Print Format Settings</label>
+                <label class="setting-label">📝 출력 형식 설정</label>
                 
-                <label>Paper Width:</label>
+                <label>용지 폭:</label>
                 <select class="setting-input" id="paperWidth">
                     <option value="32">32 characters (58mm)</option>
                     <option value="42" selected>42 characters (80mm)</option>
                     <option value="48">48 characters (112mm)</option>
                 </select>
                 
-                <label>Font Size:</label>
+                <label>폰트 크기:</label>
                 <select class="setting-input" id="fontSize">
-                    <option value="normal" selected>Normal</option>
-                    <option value="large">Large</option>
-                    <option value="xlarge">Extra Large</option>
+                    <option value="normal" selected>일반</option>
+                    <option value="large">큰 글씨</option>
+                    <option value="xlarge">매우 큰 글씨</option>
                 </select>
                 
-                <label>Paper Cut:</label>
+                <label>용지 자르기:</label>
                 <select class="setting-input" id="paperCut">
-                    <option value="full" selected>Full Cut</option>
-                    <option value="partial">Partial Cut</option>
-                    <option value="none">No Cut</option>
+                    <option value="full" selected>전체 자르기</option>
+                    <option value="partial">부분 자르기</option>
+                    <option value="none">자르지 않음</option>
                 </select>
                 
-                <button class="setting-btn" onclick="previewTicket()">Preview Ticket</button>
+                <div class="warning-message">
+                    <strong>💡 출력 언어:</strong><br>
+                    UI는 한국어로 표시되지만, 프린터 출력은 영어로 됩니다.<br>
+                    이렇게 하면 한글 폰트 문제 없이 안정적으로 출력할 수 있습니다.
+                </div>
+                
+                <button class="setting-btn" onclick="previewTicket()">번호표 미리보기</button>
                 <div class="preview-area" id="ticketPreview"></div>
             </div>
 
-            <!-- Course Schedule Settings -->
+            <!-- 시간대별 과목 설정 -->
             <div class="setting-group">
-                <label class="setting-label">⏰ Course Schedule Settings</label>
+                <label class="setting-label">⏰ 시간대별 과목 설정</label>
                 <div id="timePeriodsContainer"></div>
-                <button class="setting-btn success" onclick="addTimePeriod()">+ Add Time Period</button>
-                <button class="setting-btn" onclick="saveSettings()">Save Settings</button>
-                <button class="setting-btn" onclick="loadDefaultSettings()">Restore Defaults</button>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
+                <button class="setting-btn" onclick="saveSettings()">설정 저장</button>
+                <button class="setting-btn" onclick="loadDefaultSettings()">기본값 복원</button>
                 <div id="settingsMessage"></div>
             </div>
         </div>
@@ -398,32 +404,59 @@
         let currentNumbers = {};
         let timeSettings = [];
 
-        // Default settings with English content
+        // 기본 설정 (한국어)
         const defaultSettings = [
             {
                 startTime: '09:00',
                 endTime: '12:00',
                 courses: [
-                    { code: 'A', name: 'Office Application Course', description: 'Word, Excel, PowerPoint from basics to advanced' }
+                    { code: 'A', name: 'OA 과정 상담', description: '워드, 엑셀, 파워포인트 기초부터 실무까지', english: 'Office Application Course' }
                 ]
             },
             {
                 startTime: '12:00',
                 endTime: '15:00',
                 courses: [
-                    { code: 'B', name: 'Design Course Consultation', description: 'Photoshop, Illustrator, Web Design Professional Course' }
+                    { code: 'B', name: '디자인 과정 상담', description: '포토샵, 일러스트, 웹디자인 전문과정', english: 'Design Course Consultation' }
                 ]
             },
             {
                 startTime: '15:00',
                 endTime: '18:00',
                 courses: [
-                    { code: 'C', name: 'Video Editing Course', description: 'Premiere Pro, After Effects Video Production' }
+                    { code: 'C', name: '영상편집 과정 상담', description: '프리미어 프로, 애프터 이펙트 영상제작', english: 'Video Editing Course' }
                 ]
             }
         ];
 
-        // ESC/POS Commands
+        // 한국어-영어 변환 매핑
+        const koreanToEnglish = {
+            // 과정명
+            'OA 과정 상담': 'Office Application Course',
+            '디자인 과정 상담': 'Design Course Consultation',
+            '영상편집 과정 상담': 'Video Editing Course',
+            '웹개발 과정 상담': 'Web Development Course',
+            '프로그래밍 과정 상담': 'Programming Course',
+            
+            // 설명
+            '워드, 엑셀, 파워포인트 기초부터 실무까지': 'Word, Excel, PowerPoint from basics to advanced',
+            '포토샵, 일러스트, 웹디자인 전문과정': 'Photoshop, Illustrator, Web Design Professional Course',
+            '프리미어 프로, 애프터 이펙트 영상제작': 'Premiere Pro, After Effects Video Production',
+            'HTML, CSS, JavaScript 웹개발': 'HTML, CSS, JavaScript Web Development',
+            'Python, Java 프로그래밍': 'Python, Java Programming',
+            
+            // 일반 단어
+            '수강문의': 'Course Inquiry',
+            '접수': 'Reception',
+            '상담': 'Consultation',
+            '번호표': 'Ticket',
+            '순번': 'Number',
+            '대기': 'Waiting',
+            '학원': 'Academy',
+            '상담실': 'Consultation Office'
+        };
+
+        // ESC/POS 명령어
         const ESC = '\x1B';
         const GS = '\x1D';
         
@@ -445,15 +478,32 @@
             NORMAL_SIZE: GS + '!0'
         };
 
-        // Check Web Serial API support
+        // 한국어를 영어로 변환
+        function translateToEnglish(text) {
+            // 정확한 매칭 먼저 시도
+            if (koreanToEnglish[text]) {
+                return koreanToEnglish[text];
+            }
+            
+            // 부분 매칭 시도
+            for (const [korean, english] of Object.entries(koreanToEnglish)) {
+                if (text.includes(korean)) {
+                    text = text.replace(korean, english);
+                }
+            }
+            
+            return text;
+        }
+
+        // Web Serial API 지원 확인
         function isSerialSupported() {
             return 'serial' in navigator;
         }
 
-        // Connect to printer
+        // 프린터 연결
         async function connectPrinter() {
             if (!isSerialSupported()) {
-                showMessage('printerMessage', 'This browser does not support Web Serial API. Please use Chrome 89+ version.', 'error');
+                showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
                 return;
             }
 
@@ -480,17 +530,17 @@
 
                 isPrinterConnected = true;
                 updatePrinterStatus();
-                showMessage('printerMessage', 'Printer connected successfully!', 'success');
+                showMessage('printerMessage', '프린터가 성공적으로 연결되었습니다!', 'success');
                 
                 await sendToPrinter(ESCPOS.INIT);
 
             } catch (error) {
-                console.error('Printer connection error:', error);
-                showMessage('printerMessage', 'Printer connection failed: ' + error.message, 'error');
+                console.error('프린터 연결 오류:', error);
+                showMessage('printerMessage', '프린터 연결 실패: ' + error.message, 'error');
             }
         }
 
-        // Disconnect printer
+        // 프린터 연결 해제
         async function disconnectPrinter() {
             try {
                 if (reader) {
@@ -508,18 +558,18 @@
                 
                 isPrinterConnected = false;
                 updatePrinterStatus();
-                showMessage('printerMessage', 'Printer disconnected.', 'success');
+                showMessage('printerMessage', '프린터 연결이 해제되었습니다.', 'success');
                 
             } catch (error) {
-                console.error('Printer disconnection error:', error);
-                showMessage('printerMessage', 'Printer disconnection failed: ' + error.message, 'error');
+                console.error('프린터 해제 오류:', error);
+                showMessage('printerMessage', '프린터 해제 실패: ' + error.message, 'error');
             }
         }
 
-        // Send data to printer
+        // 프린터로 데이터 전송
         async function sendToPrinter(data) {
             if (!isPrinterConnected || !writer) {
-                throw new Error('Printer is not connected.');
+                throw new Error('프린터가 연결되지 않았습니다.');
             }
             
             try {
@@ -531,31 +581,31 @@
                     await writer.write(data.toString());
                 }
             } catch (error) {
-                console.error('Printer transmission error:', error);
+                console.error('프린터 전송 오류:', error);
                 throw error;
             }
         }
 
-        // Center text
+        // 텍스트 중앙 정렬
         function centerText(text, width) {
             const padding = Math.max(0, Math.floor((width - text.length) / 2));
             return ' '.repeat(padding) + text;
         }
 
-        // Create line
+        // 라인 생성
         function createLine(char, width) {
             return char.repeat(width);
         }
 
-        // Print ticket
+        // 번호표 출력 (영어로)
         async function printTicket() {
             if (!window.currentTicketInfo) {
-                alert('No ticket information to print.');
+                alert('출력할 순번 정보가 없습니다.');
                 return;
             }
 
             if (!isPrinterConnected) {
-                alert('Printer is not connected. Please connect the printer first.');
+                alert('프린터가 연결되지 않았습니다. 프린터를 먼저 연결해주세요.');
                 return;
             }
 
@@ -565,17 +615,17 @@
                 const fontSize = document.getElementById('fontSize').value;
                 const paperCut = document.getElementById('paperCut').value;
 
-                // Font size setting
+                // 폰트 크기 설정
                 let fontCommand = ESCPOS.FONT_NORMAL;
                 if (fontSize === 'large') fontCommand = ESCPOS.FONT_LARGE;
                 else if (fontSize === 'xlarge') fontCommand = ESCPOS.FONT_XLARGE;
 
-                // Initialize printer
+                // 프린터 초기화
                 await sendToPrinter(ESCPOS.INIT);
                 
                 let printData = '';
                 
-                // Header
+                // 헤더 (영어로)
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += fontCommand;
                 printData += ESCPOS.BOLD_ON;
@@ -586,7 +636,7 @@
                 printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // Ticket number (large font)
+                // 순번 (큰 글씨)
                 printData += ESCPOS.DOUBLE_BOTH;
                 printData += ESCPOS.BOLD_ON;
                 printData += centerText(info.number, Math.floor(paperWidth/3)) + ESCPOS.LINE_FEED;
@@ -595,25 +645,27 @@
                 printData += fontCommand;
                 printData += ESCPOS.LINE_FEED;
                 
-                // Course name
+                // 과정명 (영어로 변환)
                 printData += ESCPOS.BOLD_ON;
-                printData += centerText(info.course, paperWidth) + ESCPOS.LINE_FEED;
+                const englishCourseName = translateToEnglish(info.course);
+                printData += centerText(englishCourseName, paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.BOLD_OFF;
                 
-                printData += centerText(info.description, paperWidth) + ESCPOS.LINE_FEED;
+                const englishCourseDesc = translateToEnglish(info.description);
+                printData += centerText(englishCourseDesc, paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // Barcode style
+                // 바코드 형태
                 printData += centerText('* ' + info.number + ' *', paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // Information
+                // 정보 (영어로)
                 printData += ESCPOS.ALIGN_LEFT;
                 printData += 'Reception Time: ' + info.time + ESCPOS.LINE_FEED;
                 printData += 'Ticket Number: ' + info.number + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // Footer message
+                // 하단 메시지 (영어로)
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 
@@ -624,7 +676,7 @@
                 printData += centerText('Academy Consultation Office', paperWidth) + ESCPOS.LINE_FEED;
                 printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 
-                // Spacing and paper cut
+                // 여백 및 용지 자르기
                 printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
                 if (paperCut === 'full') {
@@ -633,21 +685,21 @@
                     printData += ESCPOS.CUT_PARTIAL;
                 }
 
-                // Send to printer
+                // 프린터로 전송
                 await sendToPrinter(printData);
                 
                 showPrintSuccess(info.number);
                 
             } catch (error) {
-                console.error('Print error:', error);
-                alert('An error occurred during printing: ' + error.message);
+                console.error('출력 오류:', error);
+                alert('출력 중 오류가 발생했습니다: ' + error.message);
             }
         }
 
-        // Test print
+        // 테스트 출력
         async function testPrint() {
             if (!isPrinterConnected) {
-                alert('Printer is not connected.');
+                alert('프린터가 연결되지 않았습니다.');
                 return;
             }
 
@@ -667,374 +719,3 @@
                 testData += centerText('Connection successful!', paperWidth) + ESCPOS.LINE_FEED;
                 testData += centerText('Ready to print tickets', paperWidth) + ESCPOS.LINE_FEED;
                 testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                
-                testData += centerText(new Date().toLocaleString('en-US'), paperWidth) + ESCPOS.LINE_FEED;
-                testData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
-                testData += ESCPOS.CUT_FULL;
-
-                await sendToPrinter(testData);
-                showMessage('printerMessage', 'Test print completed!', 'success');
-                
-            } catch (error) {
-                console.error('Test print error:', error);
-                showMessage('printerMessage', 'Test print failed: ' + error.message, 'error');
-            }
-        }
-
-        // Preview ticket
-        function previewTicket() {
-            const paperWidth = parseInt(document.getElementById('paperWidth').value);
-            const previewEl = document.getElementById('ticketPreview');
-            
-            const sampleTicket = `
-${'='.repeat(paperWidth)}
-${centerText('COURSE INQUIRY TICKET', paperWidth)}
-${'='.repeat(paperWidth)}
-
-${centerText('A001', paperWidth)}
-
-${centerText('Office Application Course', paperWidth)}
-${centerText('Word, Excel, PowerPoint basics to advanced', paperWidth)}
-
-${centerText('* A001 *', paperWidth)}
-
-Reception Time: ${new Date().toLocaleString('en-US')}
-Ticket Number: A001
-
-${'-'.repeat(paperWidth)}
-${centerText('Please wait for your turn', paperWidth)}
-${centerText('We will guide you', paperWidth)}
-${centerText('Keep this ticket safe', paperWidth)}
-${'-'.repeat(paperWidth)}
-${centerText('Academy Consultation Office', paperWidth)}
-${'='.repeat(paperWidth)}
-            `;
-            
-            previewEl.textContent = sampleTicket;
-        }
-
-        // Update printer status
-        function updatePrinterStatus() {
-            const statusEl = document.getElementById('printerStatus');
-            if (isPrinterConnected) {
-                statusEl.textContent = '🖨️ Printer Connected';
-                statusEl.className = 'printer-status connected';
-            } else {
-                statusEl.textContent = '🖨️ Printer Disconnected';
-                statusEl.className = 'printer-status disconnected';
-            }
-        }
-
-        // Show print success message
-        function showPrintSuccess(number) {
-            const successEl = document.getElementById('printSuccess');
-            const messageEl = document.getElementById('printSuccessMessage');
-            messageEl.textContent = `Ticket ${number} printed successfully!`;
-            
-            successEl.classList.add('show');
-            setTimeout(() => {
-                successEl.classList.remove('show');
-            }, 3000);
-        }
-
-        // Show message
-        function showMessage(elementId, message, type) {
-            const element = document.getElementById(elementId);
-            let className = 'status-message';
-            if (type === 'error') className = 'error-message';
-            else if (type === 'warning') className = 'warning-message';
-            
-            element.innerHTML = `<div class="${className}">${message}</div>`;
-            setTimeout(() => {
-                element.innerHTML = '';
-            }, 5000);
-        }
-
-        // Update time
-        function updateTime() {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US');
-            
-            const currentPeriod = getCurrentPeriod(now);
-            const periodText = currentPeriod ? 
-                `Current: ${currentPeriod.courses[0].name} (${currentPeriod.startTime}-${currentPeriod.endTime})` : 
-                'Current: Outside consultation hours';
-            
-            document.getElementById('currentPeriod').textContent = periodText;
-            updateButtons();
-        }
-
-        function getCurrentPeriod(now) {
-            const currentTime = now.getHours() * 60 + now.getMinutes();
-            return timeSettings.find(setting => {
-                const start = timeToMinutes(setting.startTime);
-                const end = timeToMinutes(setting.endTime);
-                return currentTime >= start && currentTime < end;
-            });
-        }
-
-        function timeToMinutes(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-
-        function updateButtons() {
-            const container = document.getElementById('courseButtons');
-            const currentPeriod = getCurrentPeriod(new Date());
-            
-            container.innerHTML = '';
-            
-            if (currentPeriod && currentPeriod.courses && currentPeriod.courses.length > 0) {
-                currentPeriod.courses.forEach(course => {
-                    const button = document.createElement('button');
-                    button.className = 'course-btn';
-                    button.onclick = () => issueTicket(course);
-                    button.innerHTML = `
-                        <div class="course-name">${course.name}</div>
-                        <div class="course-description">${course.description}</div>
-                    `;
-                    container.appendChild(button);
-                });
-            } else {
-                container.innerHTML = `
-                    <div class="no-courses">
-                        <div style="font-size: 3rem; margin-bottom: 20px;">🕐</div>
-                        <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">Currently outside consultation hours</div>
-                        <div style="font-size: 1rem; color: #666;">Please visit during scheduled consultation hours</div>
-                    </div>
-                `;
-            }
-        }
-
-        function issueTicket(course) {
-            if (!currentNumbers[course.code]) {
-                currentNumbers[course.code] = 0;
-            }
-            currentNumbers[course.code]++;
-            
-            const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
-            const now = new Date();
-            
-            window.currentTicketInfo = {
-                number: number,
-                course: course.name,
-                description: course.description,
-                time: now.toLocaleString('en-US'),
-                date: now.toLocaleDateString('en-US'),
-                timeOnly: now.toLocaleTimeString('en-US')
-            };
-            
-            saveToLocalStorage(number, course.name, now.toLocaleString('en-US'));
-            printTicket();
-        }
-
-        function saveToLocalStorage(number, course, time) {
-            try {
-                let sharedData = JSON.parse(localStorage.getItem('counterSystemData') || '{}');
-                
-                if (!sharedData.waiting) sharedData.waiting = [];
-                sharedData.waiting.push({
-                    number: number,
-                    course: course,
-                    time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                });
-                
-                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
-                
-                if (!sharedData.counters) {
-                    sharedData.counters = [
-                        { id: 1, current: null, course: null, count: 0 },
-                        { id: 2, current: null, course: null, count: 0 },
-                        { id: 3, current: null, course: null, count: 0 },
-                        { id: 4, current: null, course: null, count: 0 },
-                        { id: 5, current: null, course: null, count: 0 },
-                        { id: 6, current: null, course: null, count: 0 }
-                    ];
-                }
-                
-                if (!sharedData.currentCall) {
-                    sharedData.currentCall = { number: '-', counter: 0, course: '-' };
-                }
-                
-                localStorage.setItem('counterSystemData', JSON.stringify(sharedData));
-                console.log('Data saved successfully:', number);
-            } catch (error) {
-                console.error('Data saving error:', error);
-            }
-        }
-
-        function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
-            panel.classList.toggle('open');
-            if (panel.classList.contains('open')) {
-                renderTimePeriodsEditor();
-            }
-        }
-
-        function renderTimePeriodsEditor() {
-            const container = document.getElementById('timePeriodsContainer');
-            container.innerHTML = '';
-            
-            timeSettings.forEach((period, index) => {
-                const periodDiv = document.createElement('div');
-                periodDiv.className = 'time-period';
-                periodDiv.innerHTML = `
-                    <div class="time-period-header">
-                        <strong>Time Period ${index + 1}</strong>
-                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">Delete</button>
-                    </div>
-                    
-                    <div class="time-inputs">
-                        <input type="time" class="time-input" value="${period.startTime}" 
-                               onchange="updateTimeField(${index}, 'startTime', this.value)">
-                        <span>~</span>
-                        <input type="time" class="time-input" value="${period.endTime}" 
-                               onchange="updateTimeField(${index}, 'endTime', this.value)">
-                    </div>
-                    
-                    <div class="courses-container" id="courses-${index}"></div>
-                    
-                    <button class="setting-btn" onclick="addCourse(${index})">+ Add Course</button>
-                `;
-                container.appendChild(periodDiv);
-                
-                renderCourses(index);
-            });
-        }
-
-        function renderCourses(periodIndex) {
-            const container = document.getElementById(`courses-${periodIndex}`);
-            container.innerHTML = '';
-            
-            timeSettings[periodIndex].courses.forEach((course, courseIndex) => {
-                const courseDiv = document.createElement('div');
-                courseDiv.className = 'course-item';
-                courseDiv.innerHTML = `
-                    <div class="course-inputs">
-                        <input type="text" class="course-input code" placeholder="Code" value="${course.code}"
-                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
-                        <input type="text" class="course-input name" placeholder="Course Name" value="${course.name}"
-                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
-                        <input type="text" class="course-input desc" placeholder="Description" value="${course.description}"
-                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
-                    </div>
-                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">Delete</button>
-                `;
-                container.appendChild(courseDiv);
-            });
-        }
-
-        function addTimePeriod() {
-            timeSettings.push({
-                startTime: '09:00',
-                endTime: '18:00',
-                courses: [
-                    { code: 'A', name: 'New Course', description: 'Please enter course description' }
-                ]
-            });
-            renderTimePeriodsEditor();
-        }
-
-        function removeTimePeriod(index) {
-            if (confirm('Are you sure you want to delete this time period?')) {
-                timeSettings.splice(index, 1);
-                renderTimePeriodsEditor();
-            }
-        }
-
-        function addCourse(periodIndex) {
-            timeSettings[periodIndex].courses.push({
-                code: 'A',
-                name: 'New Course',
-                description: 'Please enter course description'
-            });
-            renderCourses(periodIndex);
-        }
-
-        function removeCourse(periodIndex, courseIndex) {
-            if (confirm('Are you sure you want to delete this course?')) {
-                timeSettings[periodIndex].courses.splice(courseIndex, 1);
-                renderCourses(periodIndex);
-            }
-        }
-
-        function updateTimeField(periodIndex, field, value) {
-            timeSettings[periodIndex][field] = value;
-        }
-
-        function updateCourseField(periodIndex, courseIndex, field, value) {
-            timeSettings[periodIndex].courses[courseIndex][field] = value;
-        }
-
-        function saveSettings() {
-            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
-            
-            const message = document.getElementById('settingsMessage');
-            message.innerHTML = '<div class="status-message">Settings saved successfully!</div>';
-            setTimeout(() => { message.innerHTML = ''; }, 3000);
-            
-            updateButtons();
-        }
-
-        function loadDefaultSettings() {
-            if (confirm('Are you sure you want to restore default settings? All current settings will be lost.')) {
-                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
-                renderTimePeriodsEditor();
-                saveSettings();
-            }
-        }
-
-        // Initialize
-        function initialize() {
-            if (!isSerialSupported()) {
-                console.warn('Web Serial API is not supported.');
-                document.getElementById('printerStatus').textContent = '🖨️ Web Serial API Not Supported';
-                document.getElementById('printerStatus').className = 'printer-status disconnected';
-            }
-
-            const saved = localStorage.getItem('timeSettings');
-            if (saved) {
-                try {
-                    timeSettings = JSON.parse(saved);
-                } catch (e) {
-                    timeSettings = JSON.parse(JSON.stringify(defaultSettings));
-                }
-            } else {
-                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
-            }
-            
-            updateTime();
-            setInterval(updateTime, 1000);
-            updatePrinterStatus();
-        }
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.altKey && e.key === 's') {
-                e.preventDefault();
-                toggleSettings();
-            }
-            if (e.ctrlKey && e.altKey && e.key === 'p') {
-                e.preventDefault();
-                connectPrinter();
-            }
-            if (e.ctrlKey && e.altKey && e.key === 't') {
-                e.preventDefault();
-                testPrint();
-            }
-        });
-
-        // Page load initialization
-        document.addEventListener('DOMContentLoaded', initialize);
-        
-        // Page unload cleanup
-        window.addEventListener('beforeunload', () => {
-            if (isPrinterConnected) {
-                disconnectPrinter();
-            }
-        });
-
-        initialize();
-    </script>
-</body>
-</html>
