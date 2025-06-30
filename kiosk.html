@@ -938,6 +938,58 @@ app.post('/print', (req, res) => {
             checkSerialSupport();
         }
 
+            <!-- 대안 방법들 -->
+            <div class="setting-group">
+                <label class="setting-label">🔧 대안 방법들</label>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>1. Electron 앱으로 변환</strong>
+                    <div class="code-example">npm install electron
+npm install serialport
+// Node.js SerialPort 모듈 사용 가능</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>2. Node.js 로컬 서버</strong>
+                    <div class="code-example">// server.js
+const express = require('express');
+const SerialPort = require('serialport');
+const app = express();
+
+app.post('/print', (req, res) => {
+  const port = new SerialPort('COM1', { baudRate: 9600 });
+  port.write(req.body.data);
+});</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>3. Chrome 확장 프로그램</strong>
+                    <div class="code-example">// manifest.json
+{
+  "permissions": ["serial"],
+  "background": {
+    "scripts": ["background.js"]
+  }
+}</div>
+                </div>
+            </div>
+
+            <!-- 프린터 호환성 -->
+            <div class="setting-group">
+                <label class="setting-label">🖨️ 지원 프린터</label>
+                <div style="font-size: 0.9rem; line-height: 1.6; color: #666;">
+                    <strong>테스트된 프린터:</strong><br>
+                    • Epson TM-T20II, TM-T82II<br>
+                    • Star TSP650II, TSP143III<br>
+                    • Bixolon SRP-275III<br>
+                    • Citizen CT-S310II<br><br>
+                    
+                    <strong>필요 케이블:</strong><br>
+                    • USB to Serial (RS232) 어댑터<br>
+                    • 또는 Ethernet 프린터 서버
+                </div>
+            </div>
+
             <!-- 프린터별 한글 설정 가이드 -->
             <div class="setting-group">
                 <label class="setting-label">📖 프린터별 한글 설정 가이드</label>
@@ -999,22 +1051,7 @@ app.post('/print', (req, res) => {
                     • 번호와 시간만 한글, 나머지는 영문<br>
                     • 프린터 펌웨어 업데이트
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let serialPort = null;
-        let writer = null;
-        let reader = null;
-        let currentNumbers = { A: 0, B: 0, C: 0 };
-        let escPosSettings = {
-            cut: '1D564200',
-            font: '1D2100',
-            align: '1B6101',
-            korean: '1C2600',
-            charset: '1B7400'
-        };saved) {
+            </div>saved) {
                 try {
                     escPosSettings = { ...escPosSettings, ...JSON.parse(saved) };
                     document.getElementById('cutCommand').value = escPosSettings.cut;
@@ -1033,10 +1070,33 @@ app.post('/print', (req, res) => {
 
         // 키보드 단축키
         document.addEventListener('keydown', function(e) {
+        // 설정 패널 토글
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Alt+S: 설정 열기
+            if (e.ctrlKey && e.altKey && e.key === 's') {
+                e.preventDefault();
+                toggleSettings();
+            }
+            
+            // Ctrl+Alt+P: 테스트 출력
+            if (e.ctrlKey && e.altKey && e.key === 'p') {
+                e.preventDefault();
+                testPrint();
+            }
+            
+            // Ctrl+Alt+C: 프린터 연결
             if (e.ctrlKey && e.altKey && e.key === 'c') {
                 e.preventDefault();
                 connectSerial();
             }
+            
+            // ESC: 설정 닫기
             if (e.key === 'Escape') {
                 const panel = document.getElementById('settingsPanel');
                 if (panel.classList.contains('open')) {
