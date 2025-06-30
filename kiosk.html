@@ -385,14 +385,13 @@
             <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
         </div>
         <div class="settings-content">
-            <!-- 서버 연결 -->
+            <!-- 온라인 연결 상태 -->
             <div class="setting-group">
-                <label class="setting-label">🔗 로컬 서버 연결</label>
+                <label class="setting-label">🌐 온라인 연결 상태</label>
                 <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
-                    로컬 서버가 실행 중이어야 Google Sheets와 연동됩니다.
+                    GitHub Pages를 통한 온라인 버전입니다. 데이터는 브라우저 로컬 스토리지를 통해 실시간 공유됩니다.
                 </div>
-                <button class="setting-btn" onclick="connectSheets()">연결 확인</button>
-                <button class="setting-btn" onclick="testConnection()">테스트</button>
+                <button class="setting-btn" onclick="connectSheets()">상태 확인</button>
                 <div id="connectionMessage"></div>
             </div>
 
@@ -703,25 +702,43 @@
         }
 
         function saveToSheets(number, course, time) {
-            // 로컬 서버를 통해 Google Sheets에 저장
-            fetch('/api/addTicket', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    number: number, 
-                    course: course, 
-                    time: time 
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('Google Sheets 저장 성공');
-                } else {
-                    console.error('저장 실패:', data.error);
+            // 온라인 버전에서는 로컬 스토리지에 저장
+            try {
+                let sharedData = JSON.parse(localStorage.getItem('counterSystemData') || '{}');
+                
+                // 대기목록에 추가
+                if (!sharedData.waiting) sharedData.waiting = [];
+                sharedData.waiting.push({
+                    number: number,
+                    course: course,
+                    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                });
+                
+                // 총 오늘 접수 수 증가
+                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                
+                // 창구 데이터 초기화 (없으면)
+                if (!sharedData.counters) {
+                    sharedData.counters = [
+                        { id: 1, current: null, course: null, count: 0 },
+                        { id: 2, current: null, course: null, count: 0 },
+                        { id: 3, current: null, course: null, count: 0 },
+                        { id: 4, current: null, course: null, count: 0 },
+                        { id: 5, current: null, course: null, count: 0 },
+                        { id: 6, current: null, course: null, count: 0 }
+                    ];
                 }
-            })
-            .catch(error => console.error('저장 오류:', error));
+                
+                // 현재 호출 초기화 (없으면)
+                if (!sharedData.currentCall) {
+                    sharedData.currentCall = { number: '-', counter: 0, course: '-' };
+                }
+                
+                localStorage.setItem('counterSystemData', JSON.stringify(sharedData));
+                console.log('데이터 저장 성공:', number);
+            } catch (error) {
+                console.error('데이터 저장 오류:', error);
+            }
         }
 
         function toggleSettings() {
