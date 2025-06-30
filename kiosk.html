@@ -495,7 +495,7 @@
                         }
                     </style>
                 </head>
-                <body>
+                <body onload="window.print(); setTimeout(() => window.close(), 1000);">
                     <div class="header">
                         <h2>📚 수강문의 순번표</h2>
                     </div>
@@ -520,45 +520,46 @@
                 </html>
             `;
             
-            // 기존 iframe이 있다면 제거
-            const existingFrame = document.getElementById('printFrame');
-            if (existingFrame) {
-                existingFrame.remove();
-            }
+            // 완전 숨김 창에서 자동 출력
+            const printWindow = window.open('', '_blank', 'width=1,height=1,left=-3000,top=-3000');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
             
-            // 숨김 iframe 생성
-            const iframe = document.createElement('iframe');
-            iframe.id = 'printFrame';
-            iframe.style.position = 'absolute';
-            iframe.style.left = '-9999px';
-            iframe.style.top = '-9999px';
-            iframe.style.width = '1px';
-            iframe.style.height = '1px';
-            iframe.style.border = 'none';
-            document.body.appendChild(iframe);
+            // 성공 메시지 표시 (옵션)
+            showPrintMessage(info.number);
+        }
+
+        function showPrintMessage(number) {
+            // 출력 완료 메시지 표시
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(39, 174, 96, 0.95);
+                color: white;
+                padding: 30px 50px;
+                border-radius: 20px;
+                font-size: 2rem;
+                font-weight: 700;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                z-index: 10000;
+                text-align: center;
+                backdrop-filter: blur(10px);
+            `;
+            messageDiv.innerHTML = `
+                <div style="font-size: 3rem; margin-bottom: 10px;">🎫</div>
+                <div>${number}</div>
+                <div style="font-size: 1.2rem; margin-top: 10px; opacity: 0.9;">번호표 출력 완료!</div>
+            `;
             
-            // iframe에 내용 쓰기
-            const doc = iframe.contentDocument || iframe.contentWindow.document;
-            doc.open();
-            doc.write(printContent);
-            doc.close();
+            document.body.appendChild(messageDiv);
             
-            // 인쇄 실행
+            // 2초 후 메시지 제거
             setTimeout(() => {
-                try {
-                    iframe.contentWindow.print();
-                    
-                    // 1초 후 iframe 제거
-                    setTimeout(() => {
-                        if (iframe.parentNode) {
-                            iframe.remove();
-                        }
-                    }, 1000);
-                } catch (error) {
-                    console.log('인쇄 실행 실패:', error);
-                    iframe.remove();
-                }
-            }, 200);
+                messageDiv.remove();
+            }, 2000);
         }
 
         function saveToSheets(number, course, time) {
