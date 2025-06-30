@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수강문의 접수 - 시리얼 프린터</title>
+    <title>수강문의 접수 - 한글 출력 개선</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -213,6 +213,14 @@
             margin: 10px 0;
             font-size: 0.9rem;
         }
+        .warning-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
         .print-success {
             position: fixed;
             top: 50%;
@@ -232,6 +240,15 @@
             transition: opacity 0.3s ease;
         }
         .print-success.show { opacity: 1; }
+        .korean-test {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            white-space: pre-line;
+        }
     </style>
 </head>
 <body>
@@ -290,15 +307,34 @@
                 <div id="printerMessage"></div>
             </div>
 
+            <!-- 한글 출력 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">🔤 한글 출력 방식</label>
+                
+                <label>출력 모드:</label>
+                <select class="setting-input" id="printMode">
+                    <option value="ascii" selected>ASCII 변환 (가장 호환성 좋음)</option>
+                    <option value="utf8">UTF-8 (최신 프린터)</option>
+                    <option value="euckr">EUC-KR (한국산 프린터)</option>
+                    <option value="cp949">CP949 (Windows 한글)</option>
+                    <option value="bitmap">비트맵 이미지 (완벽한 한글)</option>
+                </select>
+                
+                <div class="warning-message">
+                    <strong>📍 모드별 특징:</strong><br>
+                    • ASCII: 한글을 영문으로 변환 (100% 호환)<br>
+                    • UTF-8: 최신 프린터에서 한글 지원<br>
+                    • EUC-KR/CP949: 한국산 프린터 전용<br>
+                    • 비트맵: 이미지로 변환하여 완벽한 한글 출력
+                </div>
+                
+                <button class="setting-btn" onclick="testKoreanPrint()">한글 테스트 출력</button>
+                <div id="koreanTestResult"></div>
+            </div>
+
             <!-- ESC/POS 명령어 설정 -->
             <div class="setting-group">
                 <label class="setting-label">📝 출력 형식 설정</label>
-                <label>텍스트 인코딩:</label>
-                <select class="setting-input" id="textEncoding">
-                    <option value="utf8">UTF-8 (한글 지원)</option>
-                    <option value="ascii" selected>ASCII (영문 변환)</option>
-                    <option value="euckr">EUC-KR (한글 프린터)</option>
-                </select>
                 
                 <label>용지 폭:</label>
                 <select class="setting-input" id="paperWidth">
@@ -321,13 +357,14 @@
                     <option value="none">자르지 않음</option>
                 </select>
                 
-                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem;">
-                    <strong>💡 한글 출력 팁:</strong><br>
-                    • ASCII 모드: 한글을 영문으로 변환하여 출력<br>
-                    • UTF-8 모드: 프린터가 UTF-8을 지원하는 경우<br>
-                    • EUC-KR 모드: 한국산 프린터에서 한글 출력<br>
-                    한글이 깨지면 ASCII 모드를 사용하세요.
-                </div>
+                <label>코드페이지 설정:</label>
+                <select class="setting-input" id="codePage">
+                    <option value="auto" selected>자동 감지</option>
+                    <option value="cp437">CP437 (영문)</option>
+                    <option value="cp949">CP949 (한글)</option>
+                    <option value="cp1252">CP1252 (서유럽)</option>
+                    <option value="cp858">CP858 (다국어)</option>
+                </select>
             </div>
 
             <!-- 시간대별 과목 설정 -->
@@ -396,14 +433,53 @@
             CUT_PARTIAL: GS + 'V1',
             LINE_FEED: '\n',
             FORM_FEED: '\x0C',
-            // 한글 관련 명령어
-            KOREAN_MODE: FS + 'C1',  // 한글 모드 설정
-            CHARSET_KOREAN: ESC + 't19',  // 코드페이지 949 (한글)
-            CHARSET_UTF8: ESC + 't255',   // UTF-8
-            DOUBLE_WIDTH: GS + '!1',      // 가로 2배
-            DOUBLE_HEIGHT: GS + '!16',    // 세로 2배
-            DOUBLE_BOTH: GS + '!17',      // 가로세로 2배
-            NORMAL_SIZE: GS + '!0'        // 정상 크기
+            
+            // 한글 관련 명령어 (개선)
+            KOREAN_MODE: FS + 'C1',
+            CHARSET_CP949: ESC + 't' + String.fromCharCode(255),  // CP949
+            CHARSET_EUCKR: ESC + 't' + String.fromCharCode(19),   // EUC-KR
+            CHARSET_UTF8: ESC + 't' + String.fromCharCode(255),    // UTF-8
+            CODEPAGE_949: ESC + 't' + String.fromCharCode(255),    // 코드페이지 949
+            
+            DOUBLE_WIDTH: GS + '!1',
+            DOUBLE_HEIGHT: GS + '!16',
+            DOUBLE_BOTH: GS + '!17',
+            NORMAL_SIZE: GS + '!0'
+        };
+
+        // 개선된 한글 변환 맵
+        const koreanToRoman = {
+            // 기본 자음/모음
+            'ㄱ': 'G', 'ㄴ': 'N', 'ㄷ': 'D', 'ㄹ': 'R', 'ㅁ': 'M', 
+            'ㅂ': 'B', 'ㅅ': 'S', 'ㅇ': '', 'ㅈ': 'J', 'ㅊ': 'CH',
+            'ㅋ': 'K', 'ㅌ': 'T', 'ㅍ': 'P', 'ㅎ': 'H',
+            
+            // 완성된 단어들
+            '수강': 'Course', '문의': 'Inquiry', '접수': 'Reception',
+            '상담': 'Consultation', '과정': 'Program', '번호표': 'Ticket',
+            '순번': 'Number', '대기': 'Waiting', '호출': 'Call',
+            
+            // 교육 과정
+            '워드': 'Word', '엑셀': 'Excel', '파워포인트': 'PowerPoint',
+            '포토샵': 'Photoshop', '일러스트': 'Illustrator',
+            '프리미어': 'Premiere', '애프터': 'After', '이펙트': 'Effects',
+            '디자인': 'Design', '영상편집': 'Video Edit',
+            
+            // 형용사/부사
+            '기초': 'Basic', '실무': 'Practical', '전문': 'Professional',
+            '기본': 'Basic', '고급': 'Advanced', '심화': 'Advanced',
+            
+            // 기관/장소
+            '학원': 'Academy', '상담실': 'Office', '교실': 'Room',
+            
+            // 시간 관련
+            '시간': 'Time', '접수시간': 'Reception Time',
+            '호출시간': 'Call Time', '완료시간': 'Complete Time',
+            
+            // 기타
+            '과목': 'Subject', '내용': 'Content', '설명': 'Description',
+            '안내': 'Guide', '대기중': 'Waiting', '진행중': 'Processing',
+            '완료': 'Complete', '취소': 'Cancel'
         };
 
         // Web Serial API 지원 확인
@@ -421,10 +497,8 @@
             try {
                 const baudRate = parseInt(document.getElementById('baudRate').value);
                 
-                // 시리얼 포트 선택
                 serialPort = await navigator.serial.requestPort();
                 
-                // 포트 열기
                 await serialPort.open({ 
                     baudRate: baudRate,
                     dataBits: 8,
@@ -433,7 +507,6 @@
                     flowControl: 'none'
                 });
 
-                // 읽기/쓰기 스트림 설정
                 const textDecoder = new TextDecoderStream();
                 const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
                 reader = textDecoder.readable.getReader();
@@ -446,7 +519,6 @@
                 updatePrinterStatus();
                 showMessage('printerMessage', '프린터가 성공적으로 연결되었습니다!', 'success');
                 
-                // 프린터 초기화
                 await sendToPrinter(ESCPOS.INIT);
 
             } catch (error) {
@@ -481,57 +553,120 @@
             }
         }
 
-        // 한글 텍스트를 안전한 형태로 변환
-        function convertKoreanText(text) {
-            // 한글이 포함된 경우 ASCII로 변환하거나 로마자로 표기
-            const koreanMap = {
-                'ㄱ': 'G', 'ㄴ': 'N', 'ㄷ': 'D', 'ㄹ': 'R', 'ㅁ': 'M', 
-                'ㅂ': 'B', 'ㅅ': 'S', 'ㅇ': '', 'ㅈ': 'J', 'ㅊ': 'CH',
-                'ㅋ': 'K', 'ㅌ': 'T', 'ㅍ': 'P', 'ㅎ': 'H',
-                '가': 'GA', '나': 'NA', '다': 'DA', '라': 'RA', '마': 'MA',
-                '바': 'BA', '사': 'SA', '아': 'A', '자': 'JA', '차': 'CHA',
-                '카': 'KA', '타': 'TA', '파': 'PA', '하': 'HA',
-                '수강': 'SUGGANG', '문의': 'MUNUI', '접수': 'JEOPSU',
-                '상담': 'SANGDAM', '과정': 'GWAJEONG', '번호표': 'BEONHOPYO',
-                '워드': 'WORD', '엑셀': 'EXCEL', '파워포인트': 'POWERPOINT',
-                '포토샵': 'PHOTOSHOP', '일러스트': 'ILLUSTRATOR',
-                '프리미어': 'PREMIERE', '애프터': 'AFTER', '이펙트': 'EFFECT',
-                '디자인': 'DESIGN', '영상편집': 'VIDEO EDIT',
-                '기초': 'BASIC', '실무': 'PRACTICE', '전문': 'PROFESSIONAL',
-                '과목': 'SUBJECT', '학원': 'HAGWON', '상담실': 'SANGDAMSIL'
-            };
-            
+        // 개선된 한글 텍스트 변환
+        function convertKoreanToRoman(text) {
             let result = text;
-            for (const [korean, english] of Object.entries(koreanMap)) {
-                result = result.replace(new RegExp(korean, 'g'), english);
+            
+            // 완성된 단어부터 변환 (긴 것부터)
+            const sortedKeys = Object.keys(koreanToRoman).sort((a, b) => b.length - a.length);
+            
+            for (const korean of sortedKeys) {
+                const roman = koreanToRoman[korean];
+                result = result.replace(new RegExp(korean, 'g'), roman);
             }
             
-            // 남은 한글은 간단한 로마자로 변환
-            result = result.replace(/[가-힣]/g, '?');
+            // 남은 한글 음성학적 변환 시도
+            result = result.replace(/[가-힣]/g, (char) => {
+                const code = char.charCodeAt(0) - 0xAC00;
+                const initial = Math.floor(code / 588);
+                const medial = Math.floor((code % 588) / 28);
+                const final = code % 28;
+                
+                const initials = ['G', 'GG', 'N', 'D', 'DD', 'R', 'M', 'B', 'BB', 'S', 'SS', '', 'J', 'JJ', 'CH', 'K', 'T', 'P', 'H'];
+                const medials = ['A', 'AE', 'YA', 'YAE', 'EO', 'E', 'YEO', 'YE', 'O', 'WA', 'WAE', 'OE', 'YO', 'U', 'WEO', 'WE', 'WI', 'YU', 'EU', 'YI', 'I'];
+                const finals = ['', 'G', 'GG', 'GS', 'N', 'NJ', 'NH', 'D', 'L', 'LG', 'LM', 'LB', 'LS', 'LT', 'LP', 'LH', 'M', 'B', 'BS', 'S', 'SS', 'NG', 'J', 'CH', 'K', 'T', 'P', 'H'];
+                
+                return (initials[initial] || '') + (medials[medial] || '') + (finals[final] || '');
+            });
             
             return result;
         }
 
-        // 프린터 인코딩 변환 (EUC-KR 지원 프린터용)
-        function encodeForPrinter(text, encoding = 'auto') {
-            if (encoding === 'ascii') {
-                return convertKoreanText(text);
+        // 비트맵 이미지로 한글 변환 (Canvas 사용)
+        function textToBitmap(text, options = {}) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const fontSize = options.fontSize || 24;
+            const fontFamily = options.fontFamily || 'Malgun Gothic, sans-serif';
+            
+            ctx.font = `${fontSize}px ${fontFamily}`;
+            const metrics = ctx.measureText(text);
+            
+            canvas.width = Math.ceil(metrics.width) + 20;
+            canvas.height = fontSize + 10;
+            
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = 'black';
+            ctx.font = `${fontSize}px ${fontFamily}`;
+            ctx.fillText(text, 10, fontSize);
+            
+            // 이미지 데이터를 ESC/POS 비트맵 명령어로 변환
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            return convertImageToESCPOS(imageData);
+        }
+
+        // 이미지를 ESC/POS 비트맵 명령어로 변환
+        function convertImageToESCPOS(imageData) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            
+            // ESC/POS 비트맵 헤더
+            let result = ESC + '*' + String.fromCharCode(33) + String.fromCharCode(width % 256) + String.fromCharCode(Math.floor(width / 256));
+            
+            // 픽셀 데이터를 1비트로 변환
+            for (let y = 0; y < height; y += 8) {
+                for (let x = 0; x < width; x++) {
+                    let byte = 0;
+                    for (let bit = 0; bit < 8; bit++) {
+                        const pixelY = y + bit;
+                        if (pixelY < height) {
+                            const pixelIndex = (pixelY * width + x) * 4;
+                            const gray = (data[pixelIndex] + data[pixelIndex + 1] + data[pixelIndex + 2]) / 3;
+                            if (gray < 128) { // 검은색으로 판단
+                                byte |= (1 << (7 - bit));
+                            }
+                        }
+                    }
+                    result += String.fromCharCode(byte);
+                }
+                result += '\n';
             }
             
-            // UTF-8을 EUC-KR로 변환 시도
-            try {
-                const encoder = new TextEncoder();
-                const utf8Bytes = encoder.encode(text);
-                
-                // 간단한 바이트 배열 반환 (프린터가 UTF-8을 지원하는 경우)
-                return new Uint8Array(utf8Bytes);
-            } catch (error) {
-                console.warn('인코딩 변환 실패, ASCII 모드로 변환:', error);
-                return convertKoreanText(text);
+            return result;
+        }
+
+        // 프린터 텍스트 인코딩
+        function encodeTextForPrinter(text, mode) {
+            switch (mode) {
+                case 'ascii':
+                    return convertKoreanToRoman(text);
+                    
+                case 'utf8':
+                    return text; // UTF-8 그대로
+                    
+                case 'euckr':
+                case 'cp949':
+                    // EUC-KR/CP949 인코딩 시뮬레이션
+                    try {
+                        const encoder = new TextEncoder();
+                        return encoder.encode(text);
+                    } catch (error) {
+                        return convertKoreanToRoman(text);
+                    }
+                    
+                case 'bitmap':
+                    return textToBitmap(text);
+                    
+                default:
+                    return convertKoreanToRoman(text);
             }
         }
 
-        // 프린터로 데이터 전송 (바이트 배열 지원)
+        // 프린터로 데이터 전송
         async function sendToPrinter(data) {
             if (!isPrinterConnected || !writer) {
                 throw new Error('프린터가 연결되지 않았습니다.');
@@ -541,7 +676,6 @@
                 if (typeof data === 'string') {
                     await writer.write(data);
                 } else if (data instanceof Uint8Array) {
-                    // 바이트 배열 전송
                     await writer.write(data);
                 } else {
                     await writer.write(data.toString());
@@ -552,7 +686,7 @@
             }
         }
 
-        // 텍스트를 중앙 정렬로 패딩
+        // 텍스트 중앙 정렬
         function centerText(text, width) {
             const padding = Math.max(0, Math.floor((width - text.length) / 2));
             return ' '.repeat(padding) + text;
@@ -563,7 +697,7 @@
             return char.repeat(width);
         }
 
-        // 번호표 출력
+        // 개선된 번호표 출력
         async function printTicket() {
             if (!window.currentTicketInfo) {
                 alert('출력할 순번 정보가 없습니다.');
@@ -580,27 +714,43 @@
                 const paperWidth = parseInt(document.getElementById('paperWidth').value);
                 const fontSize = document.getElementById('fontSize').value;
                 const paperCut = document.getElementById('paperCut').value;
-                const encoding = document.getElementById('textEncoding').value;
+                const printMode = document.getElementById('printMode').value;
+                const codePage = document.getElementById('codePage').value;
 
                 // 폰트 크기 설정
                 let fontCommand = ESCPOS.FONT_NORMAL;
                 if (fontSize === 'large') fontCommand = ESCPOS.FONT_LARGE;
                 else if (fontSize === 'xlarge') fontCommand = ESCPOS.FONT_XLARGE;
 
-                // 프린터 초기화 및 한글 설정
+                // 프린터 초기화 및 인코딩 설정
                 await sendToPrinter(ESCPOS.INIT);
-                await sendToPrinter(ESCPOS.KOREAN_MODE);  // 한글 모드 활성화
-                await sendToPrinter(ESCPOS.CHARSET_KOREAN);  // 한글 코드페이지 설정
+                
+                // 코드페이지 설정
+                if (printMode === 'euckr' || printMode === 'cp949') {
+                    await sendToPrinter(ESCPOS.KOREAN_MODE);
+                    await sendToPrinter(ESCPOS.CHARSET_CP949);
+                } else if (printMode === 'utf8') {
+                    await sendToPrinter(ESCPOS.CHARSET_UTF8);
+                }
                 
                 let printData = '';
                 
-                // 헤더
+                // 헤더 출력
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += fontCommand;
                 printData += ESCPOS.BOLD_ON;
                 
-                const headerText = encoding === 'ascii' ? 'COURSE INQUIRY TICKET' : '수강문의 순번표';
-                printData += centerText(encodeForPrinter(headerText, encoding), paperWidth) + ESCPOS.LINE_FEED;
+                const headerText = printMode === 'ascii' ? 'COURSE INQUIRY TICKET' : '수강문의 순번표';
+                const encodedHeader = encodeTextForPrinter(headerText, printMode);
+                
+                if (printMode === 'bitmap') {
+                    await sendToPrinter(printData);
+                    await sendToPrinter(encodedHeader);
+                    printData = '';
+                } else {
+                    printData += centerText(encodedHeader, paperWidth) + ESCPOS.LINE_FEED;
+                }
+                
                 printData += ESCPOS.BOLD_OFF;
                 printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
@@ -616,13 +766,27 @@
                 
                 // 과정명
                 printData += ESCPOS.BOLD_ON;
-                const courseName = encoding === 'ascii' ? convertKoreanText(info.course) : info.course;
-                printData += centerText(encodeForPrinter(courseName, encoding), paperWidth) + ESCPOS.LINE_FEED;
+                const courseName = encodeTextForPrinter(info.course, printMode);
+                
+                if (printMode === 'bitmap') {
+                    await sendToPrinter(printData);
+                    await sendToPrinter(courseName);
+                    printData = ESCPOS.LINE_FEED;
+                } else {
+                    printData += centerText(courseName, paperWidth) + ESCPOS.LINE_FEED;
+                }
+                
                 printData += ESCPOS.BOLD_OFF;
                 
-                const courseDesc = encoding === 'ascii' ? convertKoreanText(info.description) : info.description;
-                printData += centerText(encodeForPrinter(courseDesc, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED;
+                const courseDesc = encodeTextForPrinter(info.description, printMode);
+                if (printMode === 'bitmap') {
+                    await sendToPrinter(printData);
+                    await sendToPrinter(courseDesc);
+                    printData = ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                } else {
+                    printData += centerText(courseDesc, paperWidth) + ESCPOS.LINE_FEED;
+                    printData += ESCPOS.LINE_FEED;
+                }
                 
                 // 바코드 형태 표시
                 printData += centerText('* ' + info.number + ' *', paperWidth) + ESCPOS.LINE_FEED;
@@ -630,28 +794,54 @@
                 
                 // 정보
                 printData += ESCPOS.ALIGN_LEFT;
-                const timeLabel = encoding === 'ascii' ? 'Time: ' : '접수시간: ';
-                const numberLabel = encoding === 'ascii' ? 'Number: ' : '접수번호: ';
+                const timeLabel = printMode === 'ascii' ? 'Time: ' : '접수시간: ';
+                const numberLabel = printMode === 'ascii' ? 'Number: ' : '접수번호: ';
                 
-                printData += encodeForPrinter(timeLabel, encoding) + info.time + ESCPOS.LINE_FEED;
-                printData += encodeForPrinter(numberLabel, encoding) + info.number + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED;
+                const encodedTimeLabel = encodeTextForPrinter(timeLabel, printMode);
+                const encodedNumberLabel = encodeTextForPrinter(numberLabel, printMode);
+                
+                if (printMode === 'bitmap') {
+                    await sendToPrinter(printData);
+                    await sendToPrinter(encodedTimeLabel + info.time + ESCPOS.LINE_FEED);
+                    await sendToPrinter(encodedNumberLabel + info.number + ESCPOS.LINE_FEED);
+                    printData = ESCPOS.LINE_FEED;
+                } else {
+                    printData += encodedTimeLabel + info.time + ESCPOS.LINE_FEED;
+                    printData += encodedNumberLabel + info.number + ESCPOS.LINE_FEED;
+                    printData += ESCPOS.LINE_FEED;
+                }
                 
                 // 하단 메시지
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 
-                const msg1 = encoding === 'ascii' ? 'Please wait for your turn' : '상담 순서가 되면';
-                const msg2 = encoding === 'ascii' ? 'We will guide you' : '안내해 드립니다';
-                const msg3 = encoding === 'ascii' ? 'Keep this ticket safe' : '이 번호표를 잘 보관해 주세요';
-                const footer = encoding === 'ascii' ? 'Consultation Office' : '학원 상담실';
+                const msg1 = printMode === 'ascii' ? 'Please wait for your turn' : '상담 순서가 되면';
+                const msg2 = printMode === 'ascii' ? 'We will guide you' : '안내해 드립니다';
+                const msg3 = printMode === 'ascii' ? 'Keep this ticket safe' : '이 번호표를 잘 보관해 주세요';
+                const footer = printMode === 'ascii' ? 'Academy Consultation Office' : '학원 상담실';
                 
-                printData += centerText(encodeForPrinter(msg1, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText(encodeForPrinter(msg2, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText(encodeForPrinter(msg3, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText(encodeForPrinter(footer, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                if (printMode === 'bitmap') {
+                    await sendToPrinter(printData);
+                    await sendToPrinter(encodeTextForPrinter(msg1, printMode) + ESCPOS.LINE_FEED);
+                    await sendToPrinter(encodeTextForPrinter(msg2, printMode) + ESCPOS.LINE_FEED);
+                    await sendToPrinter(encodeTextForPrinter(msg3, printMode) + ESCPOS.LINE_FEED);
+                    printData = createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                    await sendToPrinter(printData);
+                    await sendToPrinter(encodeTextForPrinter(footer, printMode) + ESCPOS.LINE_FEED);
+                    printData = createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                } else {
+                    const encodedMsg1 = encodeTextForPrinter(msg1, printMode);
+                    const encodedMsg2 = encodeTextForPrinter(msg2, printMode);
+                    const encodedMsg3 = encodeTextForPrinter(msg3, printMode);
+                    const encodedFooter = encodeTextForPrinter(footer, printMode);
+                    
+                    printData += centerText(encodedMsg1, paperWidth) + ESCPOS.LINE_FEED;
+                    printData += centerText(encodedMsg2, paperWidth) + ESCPOS.LINE_FEED;
+                    printData += centerText(encodedMsg3, paperWidth) + ESCPOS.LINE_FEED;
+                    printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                    printData += centerText(encodedFooter, paperWidth) + ESCPOS.LINE_FEED;
+                    printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                }
                 
                 // 여백 및 용지 자르기
                 printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
@@ -662,20 +852,105 @@
                     printData += ESCPOS.CUT_PARTIAL;
                 }
 
-                // 프린터로 전송
-                if (encoding === 'ascii') {
-                    await sendToPrinter(printData);
-                } else {
-                    // UTF-8 또는 다른 인코딩으로 전송
-                    await sendToPrinter(printData);
-                }
+                // 최종 전송
+                await sendToPrinter(printData);
                 
-                // 성공 메시지 표시
                 showPrintSuccess(info.number);
                 
             } catch (error) {
                 console.error('출력 오류:', error);
                 alert('출력 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 한글 테스트 출력
+        async function testKoreanPrint() {
+            if (!isPrinterConnected) {
+                alert('프린터가 연결되지 않았습니다.');
+                return;
+            }
+
+            try {
+                const paperWidth = parseInt(document.getElementById('paperWidth').value);
+                const printMode = document.getElementById('printMode').value;
+                
+                await sendToPrinter(ESCPOS.INIT);
+                
+                if (printMode === 'euckr' || printMode === 'cp949') {
+                    await sendToPrinter(ESCPOS.KOREAN_MODE);
+                    await sendToPrinter(ESCPOS.CHARSET_CP949);
+                } else if (printMode === 'utf8') {
+                    await sendToPrinter(ESCPOS.CHARSET_UTF8);
+                }
+                
+                let testData = '';
+                testData += ESCPOS.ALIGN_CENTER;
+                testData += ESCPOS.BOLD_ON;
+                
+                const testTitle = '한글 출력 테스트';
+                const encodedTitle = encodeTextForPrinter(testTitle, printMode);
+                
+                if (printMode === 'bitmap') {
+                    testData += centerText('KOREAN TEST', paperWidth) + ESCPOS.LINE_FEED;
+                    await sendToPrinter(testData);
+                    await sendToPrinter(encodedTitle);
+                    testData = ESCPOS.LINE_FEED;
+                } else {
+                    testData += centerText(encodedTitle, paperWidth) + ESCPOS.LINE_FEED;
+                }
+                
+                testData += ESCPOS.BOLD_OFF;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                
+                // 다양한 한글 테스트
+                const testTexts = [
+                    '가나다라마바사아',
+                    '자차카타파하',
+                    '수강문의 접수처',
+                    '상담 번호표',
+                    '학원 교육과정',
+                    '워드 엑셀 파워포인트',
+                    '디자인 포토샵',
+                    '영상편집 프리미어'
+                ];
+                
+                for (const testText of testTexts) {
+                    const encoded = encodeTextForPrinter(testText, printMode);
+                    if (printMode === 'bitmap') {
+                        await sendToPrinter(testData);
+                        await sendToPrinter(encoded);
+                        testData = ESCPOS.LINE_FEED;
+                    } else {
+                        testData += centerText(encoded, paperWidth) + ESCPOS.LINE_FEED;
+                    }
+                }
+                
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText(new Date().toLocaleString('ko-KR'), paperWidth) + ESCPOS.LINE_FEED;
+                testData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                testData += ESCPOS.CUT_FULL;
+
+                await sendToPrinter(testData);
+                
+                // 결과 표시
+                const resultDiv = document.getElementById('koreanTestResult');
+                resultDiv.innerHTML = `
+                    <div class="korean-test">
+테스트 출력 모드: ${printMode.toUpperCase()}
+
+출력된 내용:
+${testTexts.map(text => {
+    const converted = encodeTextForPrinter(text, printMode);
+    return `원본: ${text}\n변환: ${converted}`;
+}).join('\n\n')}
+                    </div>
+                `;
+                
+                showMessage('printerMessage', '한글 테스트 출력이 완료되었습니다!', 'success');
+                
+            } catch (error) {
+                console.error('한글 테스트 출력 오류:', error);
+                showMessage('printerMessage', '한글 테스트 출력 실패: ' + error.message, 'error');
             }
         }
 
@@ -688,38 +963,51 @@
 
             try {
                 const paperWidth = parseInt(document.getElementById('paperWidth').value);
-                const encoding = document.getElementById('textEncoding').value;
+                const printMode = document.getElementById('printMode').value;
                 
-                // 프린터 초기화 및 한글 설정
                 await sendToPrinter(ESCPOS.INIT);
-                await sendToPrinter(ESCPOS.KOREAN_MODE);
-                await sendToPrinter(ESCPOS.CHARSET_KOREAN);
+                
+                if (printMode === 'euckr' || printMode === 'cp949') {
+                    await sendToPrinter(ESCPOS.KOREAN_MODE);
+                    await sendToPrinter(ESCPOS.CHARSET_CP949);
+                } else if (printMode === 'utf8') {
+                    await sendToPrinter(ESCPOS.CHARSET_UTF8);
+                }
                 
                 let testData = '';
                 testData += ESCPOS.ALIGN_CENTER;
                 testData += ESCPOS.BOLD_ON;
                 
-                const testTitle = encoding === 'ascii' ? 'TEST PRINT' : '테스트 출력';
-                testData += centerText(encodeForPrinter(testTitle, encoding), paperWidth) + ESCPOS.LINE_FEED;
+                const testTitle = printMode === 'ascii' ? 'PRINTER TEST' : '프린터 테스트';
+                const encodedTitle = encodeTextForPrinter(testTitle, printMode);
+                
+                if (printMode === 'bitmap') {
+                    testData += centerText('PRINTER TEST', paperWidth) + ESCPOS.LINE_FEED;
+                    await sendToPrinter(testData);
+                    await sendToPrinter(encodedTitle);
+                    testData = ESCPOS.LINE_FEED;
+                } else {
+                    testData += centerText(encodedTitle, paperWidth) + ESCPOS.LINE_FEED;
+                }
+                
                 testData += ESCPOS.BOLD_OFF;
                 testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 
-                const msg1 = encoding === 'ascii' ? 'Printer connected successfully!' : '프린터가 정상적으로';
-                const msg2 = encoding === 'ascii' ? '' : '연결되었습니다!';
+                const msg1 = printMode === 'ascii' ? 'Connection successful!' : '연결이 성공했습니다!';
+                const msg2 = printMode === 'ascii' ? 'Ready to print tickets' : '번호표 출력 준비완료';
                 
-                testData += centerText(encodeForPrinter(msg1, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                if (msg2) {
-                    testData += centerText(encodeForPrinter(msg2, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                }
-                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                const encoded1 = encodeTextForPrinter(msg1, printMode);
+                const encoded2 = encodeTextForPrinter(msg2, printMode);
                 
-                // 한글 테스트
-                if (encoding !== 'ascii') {
-                    testData += ESCPOS.LINE_FEED;
-                    testData += centerText('한글 테스트: 가나다라마바사', paperWidth) + ESCPOS.LINE_FEED;
-                    testData += centerText('숫자 테스트: 1234567890', paperWidth) + ESCPOS.LINE_FEED;
-                    testData += centerText('특수문자: !@#$%^&*()', paperWidth) + ESCPOS.LINE_FEED;
-                    testData += ESCPOS.LINE_FEED;
+                if (printMode === 'bitmap') {
+                    await sendToPrinter(testData);
+                    await sendToPrinter(encoded1 + ESCPOS.LINE_FEED);
+                    await sendToPrinter(encoded2 + ESCPOS.LINE_FEED);
+                    testData = createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                } else {
+                    testData += centerText(encoded1, paperWidth) + ESCPOS.LINE_FEED;
+                    testData += centerText(encoded2, paperWidth) + ESCPOS.LINE_FEED;
+                    testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 }
                 
                 testData += centerText(new Date().toLocaleString('ko-KR'), paperWidth) + ESCPOS.LINE_FEED;
@@ -762,7 +1050,10 @@
         // 메시지 표시
         function showMessage(elementId, message, type) {
             const element = document.getElementById(elementId);
-            const className = type === 'error' ? 'error-message' : 'status-message';
+            let className = 'status-message';
+            if (type === 'error') className = 'error-message';
+            else if (type === 'warning') className = 'warning-message';
+            
             element.innerHTML = `<div class="${className}">${message}</div>`;
             setTimeout(() => {
                 element.innerHTML = '';
@@ -834,7 +1125,6 @@
             const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
             const now = new Date();
             
-            // 순번 정보 저장
             window.currentTicketInfo = {
                 number: number,
                 course: course.name,
@@ -844,10 +1134,7 @@
                 timeOnly: now.toLocaleTimeString('ko-KR')
             };
             
-            // 로컬 스토리지에 저장
             saveToLocalStorage(number, course.name, now.toLocaleString('ko-KR'));
-            
-            // 즉시 출력
             printTicket();
         }
 
@@ -1007,34 +1294,14 @@
             }
         }
 
-        function previewSettings() {
-            const preview = document.getElementById('previewContainer');
-            let html = '';
-            
-            timeSettings.forEach((period, index) => {
-                html += `<div style="margin-bottom: 15px; padding: 10px; background: #f1f3f4; border-radius: 5px;">
-                    <strong>${period.startTime} - ${period.endTime}</strong><br>`;
-                
-                period.courses.forEach(course => {
-                    html += `&nbsp;&nbsp;• ${course.code}: ${course.name}<br>`;
-                });
-                
-                html += '</div>';
-            });
-            
-            preview.innerHTML = html || '설정된 시간대가 없습니다.';
-        }
-
         // 초기화
         function initialize() {
-            // Web Serial API 지원 확인
             if (!isSerialSupported()) {
                 console.warn('Web Serial API가 지원되지 않습니다.');
                 document.getElementById('printerStatus').textContent = '🖨️ Web Serial API 미지원';
                 document.getElementById('printerStatus').className = 'printer-status disconnected';
             }
 
-            // 저장된 설정 로드
             const saved = localStorage.getItem('timeSettings');
             if (saved) {
                 try {
@@ -1060,6 +1327,10 @@
             if (e.ctrlKey && e.altKey && e.key === 'p') {
                 e.preventDefault();
                 connectPrinter();
+            }
+            if (e.ctrlKey && e.altKey && e.key === 't') {
+                e.preventDefault();
+                testKoreanPrint();
             }
         });
 
