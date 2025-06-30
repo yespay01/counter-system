@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사용자 정의 한글 문자 프린터</title>
+    <title>Course Inquiry Reception System</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Malgun Gothic', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -24,7 +24,7 @@
         }
         .header h1 {
             color: white;
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 800;
             margin-bottom: 15px;
             text-shadow: 0 4px 12px rgba(0,0,0,0.3);
@@ -37,18 +37,17 @@
             text-align: center;
         }
         .current-time {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: #2c3e50;
             margin-bottom: 10px;
         }
-        .connection-status, .printer-status, .font-status {
-            font-size: 1rem;
+        .connection-status, .printer-status {
+            font-size: 1.2rem;
             margin: 5px 0;
         }
         .connected { color: #27ae60; }
         .disconnected { color: #e74c3c; }
-        .warning { color: #f39c12; }
         .main-content {
             flex: 1;
             display: flex;
@@ -58,7 +57,7 @@
         .service-title {
             text-align: center;
             color: white;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 700;
             margin-bottom: 40px;
             text-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -102,7 +101,7 @@
             max-width: 600px;
             margin: 0 auto;
         }
-        .settings-toggle, .printer-connect, .font-install {
+        .settings-toggle, .printer-connect {
             position: fixed;
             top: 20px;
             background: rgba(255, 255, 255, 0.9);
@@ -116,12 +115,11 @@
         }
         .settings-toggle { right: 20px; }
         .printer-connect { right: 90px; }
-        .font-install { right: 160px; }
         .settings-panel {
             position: fixed;
             top: 0;
-            right: -600px;
-            width: 600px;
+            right: -500px;
+            width: 500px;
             height: 100%;
             background: white;
             transition: right 0.3s ease;
@@ -205,49 +203,6 @@
             margin: 10px 0;
             font-size: 0.9rem;
         }
-        .font-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .font-char {
-            background: white;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            font-size: 1.2rem;
-            position: relative;
-        }
-        .font-char.installed {
-            border-color: #28a745;
-            background: #d4edda;
-        }
-        .font-char .ascii-code {
-            font-size: 0.7rem;
-            color: #666;
-            position: absolute;
-            top: 2px;
-            right: 4px;
-        }
-        .bitmap-editor {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 2px;
-            max-width: 240px;
-            margin: 15px auto;
-        }
-        .pixel {
-            width: 18px;
-            height: 18px;
-            border: 1px solid #ddd;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-        .pixel.on { background: #2c3e50; }
-        .pixel.off { background: #ecf0f1; }
-        .pixel:hover { opacity: 0.7; }
         .print-success {
             position: fixed;
             top: 50%;
@@ -267,61 +222,119 @@
             transition: opacity 0.3s ease;
         }
         .print-success.show { opacity: 1; }
-        .code-display {
+        .time-period {
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        .time-period-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .time-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 80px;
+        }
+        .course-item {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .course-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .course-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .course-input.code { width: 60px; }
+        .course-input.name { width: 180px; }
+        .course-input.desc { width: 250px; }
+        .preview-area {
             background: #2c3e50;
             color: #00ff00;
             font-family: 'Courier New', monospace;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
             font-size: 0.85rem;
-            line-height: 1.4;
-            overflow-x: auto;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+        @media (max-width: 768px) {
+            .course-buttons { grid-template-columns: 1fr; }
+            .settings-panel { width: 100%; right: -100%; }
+            .header h1 { font-size: 2.8rem; }
+            .course-inputs { flex-direction: column; }
+            .course-input { width: 100% !important; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="font-install" onclick="showFontManager()" title="한글 폰트 설치">📝</button>
-        <button class="printer-connect" onclick="connectPrinter()" title="프린터 연결">🖨️</button>
+        <button class="printer-connect" onclick="connectPrinter()" title="Connect Printer">🖨️</button>
         <button class="settings-toggle" onclick="toggleSettings()">⚙️</button>
         
         <div class="header">
-            <h1>📝 사용자 정의 한글 프린터</h1>
-            <p style="color: white; font-size: 1.3rem;">커스텀 한글 폰트가 적용된 번호표 시스템</p>
+            <h1>📚 Course Inquiry Reception</h1>
+            <p style="color: white; font-size: 1.3rem;">Please select the course you want to inquire about</p>
         </div>
 
         <div class="status-bar">
             <div class="current-time" id="currentTime"></div>
-            <div class="connection-status connected" id="connectionStatus">🟢 온라인 연결됨</div>
-            <div class="printer-status disconnected" id="printerStatus">🖨️ 프린터 연결 안됨</div>
-            <div class="font-status warning" id="fontStatus">📝 한글 폰트 미설치</div>
+            <div class="connection-status connected" id="connectionStatus">🟢 Online</div>
+            <div class="printer-status disconnected" id="printerStatus">🖨️ Printer Disconnected</div>
             <div id="currentPeriod" style="font-size: 1.1rem; color: #666;"></div>
         </div>
 
         <div class="main-content">
-            <div class="service-title">수강 상담을 원하는 과정을 터치해 주세요</div>
+            <div class="service-title">Touch the course you want to consult</div>
             
             <div class="course-buttons" id="courseButtons">
-                <!-- 과목 버튼들이 여기에 표시됩니다 -->
+                <!-- Course buttons will be displayed here -->
             </div>
         </div>
     </div>
 
     <div class="print-success" id="printSuccess">
         <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
-        <div id="printSuccessMessage">한글 번호표 출력 완료!</div>
+        <div id="printSuccessMessage">Ticket printed successfully!</div>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
         <div class="settings-header">
-            사용자 정의 한글 폰트 시스템
+            System Settings
             <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
         </div>
         <div class="settings-content">
-            <!-- 프린터 연결 -->
+            <!-- Printer Connection -->
             <div class="setting-group">
-                <label class="setting-label">🖨️ 프린터 연결</label>
+                <label class="setting-label">🖨️ Printer Connection</label>
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                    Uses Web Serial API in Chrome-based browsers.
+                </div>
                 <select class="setting-input" id="baudRate">
                     <option value="9600">9600 baud</option>
                     <option value="19200">19200 baud</option>
@@ -329,57 +342,48 @@
                     <option value="57600">57600 baud</option>
                     <option value="115200" selected>115200 baud</option>
                 </select>
-                <button class="setting-btn" onclick="connectPrinter()">프린터 연결</button>
-                <button class="setting-btn" onclick="disconnectPrinter()">연결 해제</button>
+                <button class="setting-btn" onclick="connectPrinter()">Connect Printer</button>
+                <button class="setting-btn" onclick="disconnectPrinter()">Disconnect</button>
+                <button class="setting-btn" onclick="testPrint()">Test Print</button>
                 <div id="printerMessage"></div>
             </div>
 
-            <!-- 한글 폰트 관리 -->
+            <!-- Print Format Settings -->
             <div class="setting-group">
-                <label class="setting-label">📝 한글 폰트 설치 상태</label>
-                <div class="warning-message">
-                    <strong>💡 사용자 정의 문자:</strong><br>
-                    ESC/POS 프린터는 최대 32개의 사용자 정의 문자를 지원합니다.<br>
-                    자주 사용하는 한글 문자를 선별하여 설치합니다.
-                </div>
+                <label class="setting-label">📝 Print Format Settings</label>
                 
-                <div class="font-grid" id="fontGrid">
-                    <!-- 한글 폰트 상태가 여기에 표시됩니다 -->
-                </div>
+                <label>Paper Width:</label>
+                <select class="setting-input" id="paperWidth">
+                    <option value="32">32 characters (58mm)</option>
+                    <option value="42" selected>42 characters (80mm)</option>
+                    <option value="48">48 characters (112mm)</option>
+                </select>
                 
-                <button class="setting-btn success" onclick="installKoreanFonts()">📥 기본 한글 폰트 설치</button>
-                <button class="setting-btn" onclick="testUserDefinedChars()">🧪 설치된 폰트 테스트</button>
-                <button class="setting-btn danger" onclick="clearUserDefinedChars()">🗑️ 설치된 폰트 제거</button>
-                <div id="fontMessage"></div>
+                <label>Font Size:</label>
+                <select class="setting-input" id="fontSize">
+                    <option value="normal" selected>Normal</option>
+                    <option value="large">Large</option>
+                    <option value="xlarge">Extra Large</option>
+                </select>
+                
+                <label>Paper Cut:</label>
+                <select class="setting-input" id="paperCut">
+                    <option value="full" selected>Full Cut</option>
+                    <option value="partial">Partial Cut</option>
+                    <option value="none">No Cut</option>
+                </select>
+                
+                <button class="setting-btn" onclick="previewTicket()">Preview Ticket</button>
+                <div class="preview-area" id="ticketPreview"></div>
             </div>
 
-            <!-- 비트맵 편집기 -->
+            <!-- Course Schedule Settings -->
             <div class="setting-group">
-                <label class="setting-label">🎨 비트맵 폰트 편집기</label>
-                <div style="text-align: center;">
-                    <div>편집할 문자: <input type="text" id="editChar" maxlength="1" placeholder="한" style="width: 50px; text-align: center;"></div>
-                    <div>ASCII 코드: <input type="number" id="asciiCode" min="33" max="126" value="65" style="width: 80px; text-align: center;"></div>
-                    <div class="bitmap-editor" id="bitmapEditor"></div>
-                    <button class="setting-btn" onclick="clearBitmap()">지우기</button>
-                    <button class="setting-btn" onclick="generateCharBitmap()">자동 생성</button>
-                    <button class="setting-btn success" onclick="installCustomChar()">설치</button>
-                </div>
-                <div class="code-display" id="bitmapCode"></div>
-            </div>
-
-            <!-- 폰트 매핑 -->
-            <div class="setting-group">
-                <label class="setting-label">🔤 한글-ASCII 매핑표</label>
-                <div class="code-display" id="fontMapping"></div>
-                <button class="setting-btn" onclick="updateFontMapping()">매핑표 업데이트</button>
-            </div>
-
-            <!-- 시간대별 과목 설정 -->
-            <div class="setting-group">
-                <label class="setting-label">⏰ 시간대별 과목 설정</label>
+                <label class="setting-label">⏰ Course Schedule Settings</label>
                 <div id="timePeriodsContainer"></div>
-                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
-                <button class="setting-btn" onclick="saveSettings()">설정 저장</button>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ Add Time Period</button>
+                <button class="setting-btn" onclick="saveSettings()">Save Settings</button>
+                <button class="setting-btn" onclick="loadDefaultSettings()">Restore Defaults</button>
                 <div id="settingsMessage"></div>
             </div>
         </div>
@@ -393,42 +397,33 @@
         let isPrinterConnected = false;
         let currentNumbers = {};
         let timeSettings = [];
-        let installedFonts = new Map(); // 설치된 사용자 정의 문자
 
-        // 자주 사용하는 한글 문자들 (32개 제한)
-        const commonKoreanChars = [
-            '수', '강', '문', '의', '접', '상', '담', '번',
-            '호', '표', '과', '정', '학', '원', '시', '간',
-            '완', '료', '대', '기', '중', '진', '행', '취',
-            '소', '워', '드', '엑', '셀', '포', '토', '샵'
-        ];
-
-        // 기본 설정
+        // Default settings with English content
         const defaultSettings = [
             {
                 startTime: '09:00',
                 endTime: '12:00',
                 courses: [
-                    { code: 'A', name: 'OA 과정 상담', description: '워드, 엑셀, 파워포인트 기초부터 실무까지' }
+                    { code: 'A', name: 'Office Application Course', description: 'Word, Excel, PowerPoint from basics to advanced' }
                 ]
             },
             {
                 startTime: '12:00',
                 endTime: '15:00',
                 courses: [
-                    { code: 'B', name: '디자인 과정 상담', description: '포토샵, 일러스트, 웹디자인 전문과정' }
+                    { code: 'B', name: 'Design Course Consultation', description: 'Photoshop, Illustrator, Web Design Professional Course' }
                 ]
             },
             {
                 startTime: '15:00',
                 endTime: '18:00',
                 courses: [
-                    { code: 'C', name: '영상편집 과정 상담', description: '프리미어 프로, 애프터 이펙트 영상제작' }
+                    { code: 'C', name: 'Video Editing Course', description: 'Premiere Pro, After Effects Video Production' }
                 ]
             }
         ];
 
-        // ESC/POS 명령어
+        // ESC/POS Commands
         const ESC = '\x1B';
         const GS = '\x1D';
         
@@ -438,233 +433,27 @@
             ALIGN_LEFT: ESC + 'a0',
             FONT_NORMAL: ESC + '!' + '\x00',
             FONT_LARGE: ESC + '!' + '\x10',
+            FONT_XLARGE: ESC + '!' + '\x30',
             BOLD_ON: ESC + 'E1',
             BOLD_OFF: ESC + 'E0',
             CUT_FULL: GS + 'V0',
+            CUT_PARTIAL: GS + 'V1',
             LINE_FEED: '\n',
-            
-            // 사용자 정의 문자 명령어
-            DEFINE_CHAR: ESC + '&',  // ESC & s n [data]
-            SELECT_CHAR_SET: ESC + '%'  // ESC % n
+            DOUBLE_WIDTH: GS + '!1',
+            DOUBLE_HEIGHT: GS + '!16',
+            DOUBLE_BOTH: GS + '!17',
+            NORMAL_SIZE: GS + '!0'
         };
 
-        // 한글 문자의 12x24 비트맵 패턴 생성
-        function generateKoreanBitmap(char) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = 12;
-            canvas.height = 24;
-            
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = 'black';
-            ctx.font = '18px Malgun Gothic';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(char, 6, 12);
-            
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const bitmap = [];
-            
-            // 3바이트씩 묶어서 비트맵 생성 (12픽셀 = 1.5바이트, 반올림해서 2바이트)
-            for (let y = 0; y < 24; y++) {
-                let byte1 = 0, byte2 = 0;
-                
-                for (let x = 0; x < 8; x++) {
-                    const pixelIndex = (y * 12 + x) * 4;
-                    const gray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
-                    if (gray < 128) {
-                        byte1 |= (1 << (7 - x));
-                    }
-                }
-                
-                for (let x = 8; x < 12; x++) {
-                    const pixelIndex = (y * 12 + x) * 4;
-                    const gray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
-                    if (gray < 128) {
-                        byte2 |= (1 << (7 - (x - 8)));
-                    }
-                }
-                
-                bitmap.push(byte1, byte2);
-            }
-            
-            return bitmap;
+        // Check Web Serial API support
+        function isSerialSupported() {
+            return 'serial' in navigator;
         }
 
-        // 사용자 정의 문자 설치
-        async function installUserDefinedChar(char, asciiCode) {
-            if (!isPrinterConnected) {
-                throw new Error('프린터가 연결되지 않았습니다.');
-            }
-
-            const bitmap = generateKoreanBitmap(char);
-            
-            // ESC & s n [data] 명령어 구성
-            const command = new Uint8Array([
-                0x1B, 0x26,                    // ESC &
-                0x03,                          // s (3)
-                asciiCode,                     // n (ASCII 코드)
-                asciiCode,                     // 시작 코드
-                asciiCode,                     // 끝 코드
-                ...bitmap                      // 비트맵 데이터 (48바이트)
-            ]);
-
-            await sendToPrinter(command);
-            installedFonts.set(char, asciiCode);
-            
-            return true;
-        }
-
-        // 기본 한글 폰트 설치
-        async function installKoreanFonts() {
-            if (!isPrinterConnected) {
-                showMessage('fontMessage', '프린터를 먼저 연결해주세요.', 'error');
-                return;
-            }
-
-            try {
-                showMessage('fontMessage', '한글 폰트 설치 중... (약 30초 소요)', 'status');
-                
-                // 프린터 초기화
-                await sendToPrinter(ESCPOS.INIT);
-                
-                // 32개 한글 문자 설치
-                for (let i = 0; i < Math.min(commonKoreanChars.length, 32); i++) {
-                    const char = commonKoreanChars[i];
-                    const asciiCode = 65 + i; // A부터 시작 (65-96)
-                    
-                    try {
-                        await installUserDefinedChar(char, asciiCode);
-                        updateFontGrid();
-                        
-                        // 약간의 지연 (프린터 처리 시간)
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        
-                    } catch (error) {
-                        console.error(`${char} 설치 실패:`, error);
-                    }
-                }
-                
-                updateFontStatus();
-                updateFontMapping();
-                showMessage('fontMessage', `${installedFonts.size}개 한글 문자 설치 완료!`, 'success');
-                
-            } catch (error) {
-                console.error('한글 폰트 설치 오류:', error);
-                showMessage('fontMessage', '한글 폰트 설치 실패: ' + error.message, 'error');
-            }
-        }
-
-        // 설치된 폰트 테스트
-        async function testUserDefinedChars() {
-            if (!isPrinterConnected) {
-                showMessage('fontMessage', '프린터를 먼저 연결해주세요.', 'error');
-                return;
-            }
-
-            if (installedFonts.size === 0) {
-                showMessage('fontMessage', '설치된 한글 폰트가 없습니다.', 'error');
-                return;
-            }
-
-            try {
-                await sendToPrinter(ESCPOS.INIT);
-                await sendToPrinter(ESCPOS.ALIGN_CENTER);
-                await sendToPrinter(ESCPOS.BOLD_ON);
-                await sendToPrinter('=== 한글 폰트 테스트 ===' + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.BOLD_OFF);
-                await sendToPrinter(ESCPOS.LINE_FEED);
-                
-                // 설치된 문자들 출력
-                let testLine = '';
-                for (const [korean, ascii] of installedFonts) {
-                    testLine += String.fromCharCode(ascii) + ' ';
-                    if (testLine.length >= 32) {
-                        await sendToPrinter(testLine + ESCPOS.LINE_FEED);
-                        testLine = '';
-                    }
-                }
-                
-                if (testLine) {
-                    await sendToPrinter(testLine + ESCPOS.LINE_FEED);
-                }
-                
-                await sendToPrinter(ESCPOS.LINE_FEED);
-                await sendToPrinter('원본: 수강문의 접수처' + ESCPOS.LINE_FEED);
-                
-                // 변환된 텍스트 출력
-                const converted = convertKoreanToUserDefined('수강문의 접수처');
-                await sendToPrinter('변환: ' + converted + ESCPOS.LINE_FEED);
-                
-                await sendToPrinter(ESCPOS.LINE_FEED + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.CUT_FULL);
-                
-                showMessage('fontMessage', '한글 폰트 테스트 출력 완료!', 'success');
-                
-            } catch (error) {
-                console.error('테스트 출력 오류:', error);
-                showMessage('fontMessage', '테스트 출력 실패: ' + error.message, 'error');
-            }
-        }
-
-        // 사용자 정의 문자 제거
-        async function clearUserDefinedChars() {
-            if (confirm('설치된 모든 한글 폰트를 제거하시겠습니까?')) {
-                try {
-                    if (isPrinterConnected) {
-                        await sendToPrinter(ESCPOS.INIT); // 프린터 초기화로 사용자 정의 문자 제거
-                    }
-                    
-                    installedFonts.clear();
-                    updateFontGrid();
-                    updateFontStatus();
-                    updateFontMapping();
-                    showMessage('fontMessage', '한글 폰트가 제거되었습니다.', 'success');
-                    
-                } catch (error) {
-                    showMessage('fontMessage', '폰트 제거 실패: ' + error.message, 'error');
-                }
-            }
-        }
-
-        // 한글을 사용자 정의 문자로 변환
-        function convertKoreanToUserDefined(text) {
-            let result = '';
-            for (let char of text) {
-                if (installedFonts.has(char)) {
-                    result += String.fromCharCode(installedFonts.get(char));
-                } else if (char.match(/[가-힣]/)) {
-                    // 설치되지 않은 한글은 영문으로 변환
-                    result += convertKoreanToRoman(char);
-                } else {
-                    result += char;
-                }
-            }
-            return result;
-        }
-
-        // 한글을 영문으로 변환 (백업용)
-        function convertKoreanToRoman(char) {
-            const romanMap = {
-                '수': 'Su', '강': 'Gang', '문': 'Mun', '의': 'Ui',
-                '접': 'Jeop', '상': 'Sang', '담': 'Dam', '번': 'Beon',
-                '호': 'Ho', '표': 'Pyo', '과': 'Gwa', '정': 'Jeong',
-                '학': 'Hak', '원': 'Won', '시': 'Si', '간': 'Gan',
-                '완': 'Wan', '료': 'Ryo', '대': 'Dae', '기': 'Gi',
-                '중': 'Jung', '진': 'Jin', '행': 'Haeng', '취': 'Chwi',
-                '소': 'So', '워': 'Wo', '드': 'Deu', '엑': 'Ek',
-                '셀': 'Sel', '포': 'Po', '토': 'To', '샵': 'Shop'
-            };
-            return romanMap[char] || char;
-        }
-
-        // 프린터 연결
+        // Connect to printer
         async function connectPrinter() {
-            if (!('serial' in navigator)) {
-                showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
+            if (!isSerialSupported()) {
+                showMessage('printerMessage', 'This browser does not support Web Serial API. Please use Chrome 89+ version.', 'error');
                 return;
             }
 
@@ -691,17 +480,17 @@
 
                 isPrinterConnected = true;
                 updatePrinterStatus();
-                showMessage('printerMessage', '프린터가 성공적으로 연결되었습니다!', 'success');
+                showMessage('printerMessage', 'Printer connected successfully!', 'success');
                 
                 await sendToPrinter(ESCPOS.INIT);
 
             } catch (error) {
-                console.error('프린터 연결 오류:', error);
-                showMessage('printerMessage', '프린터 연결 실패: ' + error.message, 'error');
+                console.error('Printer connection error:', error);
+                showMessage('printerMessage', 'Printer connection failed: ' + error.message, 'error');
             }
         }
 
-        // 프린터 연결 해제
+        // Disconnect printer
         async function disconnectPrinter() {
             try {
                 if (reader) {
@@ -719,18 +508,18 @@
                 
                 isPrinterConnected = false;
                 updatePrinterStatus();
-                showMessage('printerMessage', '프린터 연결이 해제되었습니다.', 'success');
+                showMessage('printerMessage', 'Printer disconnected.', 'success');
                 
             } catch (error) {
-                console.error('프린터 해제 오류:', error);
-                showMessage('printerMessage', '프린터 해제 실패: ' + error.message, 'error');
+                console.error('Printer disconnection error:', error);
+                showMessage('printerMessage', 'Printer disconnection failed: ' + error.message, 'error');
             }
         }
 
-        // 프린터로 데이터 전송
+        // Send data to printer
         async function sendToPrinter(data) {
             if (!isPrinterConnected || !writer) {
-                throw new Error('프린터가 연결되지 않았습니다.');
+                throw new Error('Printer is not connected.');
             }
             
             try {
@@ -742,294 +531,205 @@
                     await writer.write(data.toString());
                 }
             } catch (error) {
-                console.error('프린터 전송 오류:', error);
+                console.error('Printer transmission error:', error);
                 throw error;
             }
         }
 
-        // 한글 번호표 출력
+        // Center text
+        function centerText(text, width) {
+            const padding = Math.max(0, Math.floor((width - text.length) / 2));
+            return ' '.repeat(padding) + text;
+        }
+
+        // Create line
+        function createLine(char, width) {
+            return char.repeat(width);
+        }
+
+        // Print ticket
         async function printTicket() {
             if (!window.currentTicketInfo) {
-                alert('출력할 순번 정보가 없습니다.');
+                alert('No ticket information to print.');
                 return;
             }
 
             if (!isPrinterConnected) {
-                alert('프린터가 연결되지 않았습니다. 프린터를 먼저 연결해주세요.');
+                alert('Printer is not connected. Please connect the printer first.');
                 return;
             }
 
             try {
                 const info = window.currentTicketInfo;
-                
+                const paperWidth = parseInt(document.getElementById('paperWidth').value);
+                const fontSize = document.getElementById('fontSize').value;
+                const paperCut = document.getElementById('paperCut').value;
+
+                // Font size setting
+                let fontCommand = ESCPOS.FONT_NORMAL;
+                if (fontSize === 'large') fontCommand = ESCPOS.FONT_LARGE;
+                else if (fontSize === 'xlarge') fontCommand = ESCPOS.FONT_XLARGE;
+
+                // Initialize printer
                 await sendToPrinter(ESCPOS.INIT);
-                await sendToPrinter(ESCPOS.ALIGN_CENTER);
-                await sendToPrinter(ESCPOS.BOLD_ON);
                 
-                // 헤더 (한글 사용자 정의 문자 사용)
-                const headerText = convertKoreanToUserDefined('수강문의 순번표');
-                await sendToPrinter(headerText + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.BOLD_OFF);
-                await sendToPrinter('================================' + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.LINE_FEED);
+                let printData = '';
                 
-                // 순번 (큰 글씨)
-                await sendToPrinter(ESCPOS.FONT_LARGE);
-                await sendToPrinter(ESCPOS.BOLD_ON);
-                await sendToPrinter('        ' + info.number + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.BOLD_OFF);
-                await sendToPrinter(ESCPOS.FONT_NORMAL);
-                await sendToPrinter(ESCPOS.LINE_FEED);
+                // Header
+                printData += ESCPOS.ALIGN_CENTER;
+                printData += fontCommand;
+                printData += ESCPOS.BOLD_ON;
                 
-                // 과정명 (한글 사용자 정의 문자 사용)
-                await sendToPrinter(ESCPOS.BOLD_ON);
-                const courseName = convertKoreanToUserDefined(info.course);
-                await sendToPrinter(courseName + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.BOLD_OFF);
+                const headerText = 'COURSE INQUIRY TICKET';
+                printData += centerText(headerText, paperWidth) + ESCPOS.LINE_FEED;
+                printData += ESCPOS.BOLD_OFF;
+                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                printData += ESCPOS.LINE_FEED;
                 
-                const courseDesc = convertKoreanToUserDefined(info.description);
-                await sendToPrinter(courseDesc + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.LINE_FEED);
+                // Ticket number (large font)
+                printData += ESCPOS.DOUBLE_BOTH;
+                printData += ESCPOS.BOLD_ON;
+                printData += centerText(info.number, Math.floor(paperWidth/3)) + ESCPOS.LINE_FEED;
+                printData += ESCPOS.BOLD_OFF;
+                printData += ESCPOS.NORMAL_SIZE;
+                printData += fontCommand;
+                printData += ESCPOS.LINE_FEED;
                 
-                // 바코드 형태
-                await sendToPrinter('* ' + info.number + ' *' + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.LINE_FEED);
+                // Course name
+                printData += ESCPOS.BOLD_ON;
+                printData += centerText(info.course, paperWidth) + ESCPOS.LINE_FEED;
+                printData += ESCPOS.BOLD_OFF;
                 
-                // 정보
-                await sendToPrinter(ESCPOS.ALIGN_LEFT);
-                const timeLabel = convertKoreanToUserDefined('접수시간: ');
-                const numberLabel = convertKoreanToUserDefined('접수번호: ');
+                printData += centerText(info.description, paperWidth) + ESCPOS.LINE_FEED;
+                printData += ESCPOS.LINE_FEED;
                 
-                await sendToPrinter(timeLabel + info.time + ESCPOS.LINE_FEED);
-                await sendToPrinter(numberLabel + info.number + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.LINE_FEED);
+                // Barcode style
+                printData += centerText('* ' + info.number + ' *', paperWidth) + ESCPOS.LINE_FEED;
+                printData += ESCPOS.LINE_FEED;
                 
-                // 하단 메시지
-                await sendToPrinter(ESCPOS.ALIGN_CENTER);
-                await sendToPrinter('--------------------------------' + ESCPOS.LINE_FEED);
+                // Information
+                printData += ESCPOS.ALIGN_LEFT;
+                printData += 'Reception Time: ' + info.time + ESCPOS.LINE_FEED;
+                printData += 'Ticket Number: ' + info.number + ESCPOS.LINE_FEED;
+                printData += ESCPOS.LINE_FEED;
                 
-                const msg1 = convertKoreanToUserDefined('상담 순서가 되면');
-                const msg2 = convertKoreanToUserDefined('안내해 드립니다');
-                const msg3 = convertKoreanToUserDefined('이 번호표를 잘 보관해 주세요');
-                const footer = convertKoreanToUserDefined('학원 상담실');
+                // Footer message
+                printData += ESCPOS.ALIGN_CENTER;
+                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 
-                await sendToPrinter(msg1 + ESCPOS.LINE_FEED);
-                await sendToPrinter(msg2 + ESCPOS.LINE_FEED);
-                await sendToPrinter(msg3 + ESCPOS.LINE_FEED);
-                await sendToPrinter('--------------------------------' + ESCPOS.LINE_FEED);
-                await sendToPrinter(footer + ESCPOS.LINE_FEED);
-                await sendToPrinter('================================' + ESCPOS.LINE_FEED);
+                printData += centerText('Please wait for your turn', paperWidth) + ESCPOS.LINE_FEED;
+                printData += centerText('We will guide you', paperWidth) + ESCPOS.LINE_FEED;
+                printData += centerText('Keep this ticket safe', paperWidth) + ESCPOS.LINE_FEED;
+                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                printData += centerText('Academy Consultation Office', paperWidth) + ESCPOS.LINE_FEED;
+                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 
-                // 여백 및 용지 자르기
-                await sendToPrinter(ESCPOS.LINE_FEED + ESCPOS.LINE_FEED);
-                await sendToPrinter(ESCPOS.CUT_FULL);
+                // Spacing and paper cut
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                if (paperCut === 'full') {
+                    printData += ESCPOS.CUT_FULL;
+                } else if (paperCut === 'partial') {
+                    printData += ESCPOS.CUT_PARTIAL;
+                }
+
+                // Send to printer
+                await sendToPrinter(printData);
                 
                 showPrintSuccess(info.number);
                 
             } catch (error) {
-                console.error('출력 오류:', error);
-                alert('출력 중 오류가 발생했습니다: ' + error.message);
+                console.error('Print error:', error);
+                alert('An error occurred during printing: ' + error.message);
             }
         }
 
-        // 비트맵 편집기 초기화
-        function initBitmapEditor() {
-            const editor = document.getElementById('bitmapEditor');
-            editor.innerHTML = '';
-            
-            for (let i = 0; i < 144; i++) { // 12x12 그리드
-                const pixel = document.createElement('div');
-                pixel.className = 'pixel off';
-                pixel.onclick = () => togglePixel(pixel);
-                editor.appendChild(pixel);
-            }
-        }
-
-        // 픽셀 토글
-        function togglePixel(pixel) {
-            pixel.classList.toggle('on');
-            pixel.classList.toggle('off');
-            updateBitmapCode();
-        }
-
-        // 비트맵 클리어
-        function clearBitmap() {
-            const pixels = document.querySelectorAll('#bitmapEditor .pixel');
-            pixels.forEach(pixel => {
-                pixel.className = 'pixel off';
-            });
-            updateBitmapCode();
-        }
-
-        // 자동 문자 생성
-        function generateCharBitmap() {
-            const char = document.getElementById('editChar').value;
-            if (!char) {
-                alert('편집할 문자를 입력해주세요.');
-                return;
-            }
-
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            canvas.width = 12;
-            canvas.height = 12;
-            
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.fillStyle = 'black';
-            ctx.font = '10px Malgun Gothic';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(char, 6, 6);
-            
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const pixels = document.querySelectorAll('#bitmapEditor .pixel');
-            
-            pixels.forEach((pixel, index) => {
-                const x = index % 12;
-                const y = Math.floor(index / 12);
-                const pixelIndex = (y * 12 + x) * 4;
-                const gray = (imageData.data[pixelIndex] + imageData.data[pixelIndex + 1] + imageData.data[pixelIndex + 2]) / 3;
-                
-                if (gray < 128) {
-                    pixel.className = 'pixel on';
-                } else {
-                    pixel.className = 'pixel off';
-                }
-            });
-            
-            updateBitmapCode();
-        }
-
-        // 비트맵 코드 업데이트
-        function updateBitmapCode() {
-            const pixels = document.querySelectorAll('#bitmapEditor .pixel');
-            const bitmap = [];
-            
-            for (let y = 0; y < 12; y++) {
-                let byte = 0;
-                for (let x = 0; x < 8; x++) {
-                    const index = y * 12 + x;
-                    if (index < pixels.length && pixels[index].classList.contains('on')) {
-                        byte |= (1 << (7 - x));
-                    }
-                }
-                bitmap.push(byte);
-            }
-            
-            const codeDisplay = document.getElementById('bitmapCode');
-            codeDisplay.textContent = `비트맵 데이터: [${bitmap.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]`;
-        }
-
-        // 커스텀 문자 설치
-        async function installCustomChar() {
-            const char = document.getElementById('editChar').value;
-            const asciiCode = parseInt(document.getElementById('asciiCode').value);
-            
-            if (!char) {
-                alert('편집할 문자를 입력해주세요.');
-                return;
-            }
-            
+        // Test print
+        async function testPrint() {
             if (!isPrinterConnected) {
-                alert('프린터를 먼저 연결해주세요.');
+                alert('Printer is not connected.');
                 return;
             }
 
             try {
-                await installUserDefinedChar(char, asciiCode);
-                updateFontGrid();
-                updateFontStatus();
-                updateFontMapping();
-                alert(`'${char}' 문자가 ASCII ${asciiCode}에 설치되었습니다!`);
+                const paperWidth = parseInt(document.getElementById('paperWidth').value);
+                
+                await sendToPrinter(ESCPOS.INIT);
+                
+                let testData = '';
+                testData += ESCPOS.ALIGN_CENTER;
+                testData += ESCPOS.BOLD_ON;
+                
+                testData += centerText('PRINTER TEST', paperWidth) + ESCPOS.LINE_FEED;
+                testData += ESCPOS.BOLD_OFF;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                
+                testData += centerText('Connection successful!', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Ready to print tickets', paperWidth) + ESCPOS.LINE_FEED;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                
+                testData += centerText(new Date().toLocaleString('en-US'), paperWidth) + ESCPOS.LINE_FEED;
+                testData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                testData += ESCPOS.CUT_FULL;
+
+                await sendToPrinter(testData);
+                showMessage('printerMessage', 'Test print completed!', 'success');
+                
             } catch (error) {
-                alert('문자 설치 실패: ' + error.message);
+                console.error('Test print error:', error);
+                showMessage('printerMessage', 'Test print failed: ' + error.message, 'error');
             }
         }
 
-        // 폰트 그리드 업데이트
-        function updateFontGrid() {
-            const grid = document.getElementById('fontGrid');
-            grid.innerHTML = '';
+        // Preview ticket
+        function previewTicket() {
+            const paperWidth = parseInt(document.getElementById('paperWidth').value);
+            const previewEl = document.getElementById('ticketPreview');
             
-            commonKoreanChars.forEach((char, index) => {
-                const div = document.createElement('div');
-                div.className = 'font-char';
-                
-                if (installedFonts.has(char)) {
-                    div.classList.add('installed');
-                    div.innerHTML = `
-                        ${char}
-                        <div class="ascii-code">${String.fromCharCode(installedFonts.get(char))}</div>
-                    `;
-                } else {
-                    div.innerHTML = `
-                        ${char}
-                        <div class="ascii-code">-</div>
-                    `;
-                }
-                
-                grid.appendChild(div);
-            });
+            const sampleTicket = `
+${'='.repeat(paperWidth)}
+${centerText('COURSE INQUIRY TICKET', paperWidth)}
+${'='.repeat(paperWidth)}
+
+${centerText('A001', paperWidth)}
+
+${centerText('Office Application Course', paperWidth)}
+${centerText('Word, Excel, PowerPoint basics to advanced', paperWidth)}
+
+${centerText('* A001 *', paperWidth)}
+
+Reception Time: ${new Date().toLocaleString('en-US')}
+Ticket Number: A001
+
+${'-'.repeat(paperWidth)}
+${centerText('Please wait for your turn', paperWidth)}
+${centerText('We will guide you', paperWidth)}
+${centerText('Keep this ticket safe', paperWidth)}
+${'-'.repeat(paperWidth)}
+${centerText('Academy Consultation Office', paperWidth)}
+${'='.repeat(paperWidth)}
+            `;
+            
+            previewEl.textContent = sampleTicket;
         }
 
-        // 폰트 상태 업데이트
-        function updateFontStatus() {
-            const statusEl = document.getElementById('fontStatus');
-            if (installedFonts.size > 0) {
-                statusEl.textContent = `📝 한글 폰트 ${installedFonts.size}/32 설치됨`;
-                statusEl.className = 'font-status connected';
-            } else {
-                statusEl.textContent = '📝 한글 폰트 미설치';
-                statusEl.className = 'font-status warning';
-            }
-        }
-
-        // 프린터 상태 업데이트
+        // Update printer status
         function updatePrinterStatus() {
             const statusEl = document.getElementById('printerStatus');
             if (isPrinterConnected) {
-                statusEl.textContent = '🖨️ 프린터 연결됨';
+                statusEl.textContent = '🖨️ Printer Connected';
                 statusEl.className = 'printer-status connected';
             } else {
-                statusEl.textContent = '🖨️ 프린터 연결 안됨';
+                statusEl.textContent = '🖨️ Printer Disconnected';
                 statusEl.className = 'printer-status disconnected';
             }
         }
 
-        // 폰트 매핑 업데이트
-        function updateFontMapping() {
-            const mappingEl = document.getElementById('fontMapping');
-            let mapping = '// 설치된 한글-ASCII 매핑\nconst koreanFontMap = {\n';
-            
-            for (const [korean, ascii] of installedFonts) {
-                mapping += `    '${korean}': '${String.fromCharCode(ascii)}',  // ASCII ${ascii}\n`;
-            }
-            
-            mapping += '};\n\n';
-            mapping += '// 사용 예시\n';
-            mapping += 'function convertText(text) {\n';
-            mapping += '    return text.split("").map(char => \n';
-            mapping += '        koreanFontMap[char] || char\n';
-            mapping += '    ).join("");\n';
-            mapping += '}\n\n';
-            mapping += '// "수강문의" → "' + convertKoreanToUserDefined('수강문의') + '"';
-            
-            mappingEl.textContent = mapping;
-        }
-
-        // 폰트 매니저 표시
-        function showFontManager() {
-            toggleSettings();
-        }
-
-        // 출력 성공 메시지
+        // Show print success message
         function showPrintSuccess(number) {
             const successEl = document.getElementById('printSuccess');
             const messageEl = document.getElementById('printSuccessMessage');
-            messageEl.textContent = `${number} 한글 번호표 출력 완료!`;
+            messageEl.textContent = `Ticket ${number} printed successfully!`;
             
             successEl.classList.add('show');
             setTimeout(() => {
@@ -1037,7 +737,7 @@
             }, 3000);
         }
 
-        // 메시지 표시
+        // Show message
         function showMessage(elementId, message, type) {
             const element = document.getElementById(elementId);
             let className = 'status-message';
@@ -1050,15 +750,15 @@
             }, 5000);
         }
 
-        // 시간 업데이트
+        // Update time
         function updateTime() {
             const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleTimeString('ko-KR');
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US');
             
             const currentPeriod = getCurrentPeriod(now);
             const periodText = currentPeriod ? 
-                `현재: ${currentPeriod.courses[0].name} (${currentPeriod.startTime}-${currentPeriod.endTime})` : 
-                '현재: 상담 시간 외';
+                `Current: ${currentPeriod.courses[0].name} (${currentPeriod.startTime}-${currentPeriod.endTime})` : 
+                'Current: Outside consultation hours';
             
             document.getElementById('currentPeriod').textContent = periodText;
             updateButtons();
@@ -1099,8 +799,8 @@
                 container.innerHTML = `
                     <div class="no-courses">
                         <div style="font-size: 3rem; margin-bottom: 20px;">🕐</div>
-                        <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">현재는 상담 시간이 아닙니다</div>
-                        <div style="font-size: 1rem; color: #666;">설정된 상담 시간에 다시 방문해 주세요</div>
+                        <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">Currently outside consultation hours</div>
+                        <div style="font-size: 1rem; color: #666;">Please visit during scheduled consultation hours</div>
                     </div>
                 `;
             }
@@ -1119,12 +819,12 @@
                 number: number,
                 course: course.name,
                 description: course.description,
-                time: now.toLocaleString('ko-KR'),
-                date: now.toLocaleDateString('ko-KR'),
-                timeOnly: now.toLocaleTimeString('ko-KR')
+                time: now.toLocaleString('en-US'),
+                date: now.toLocaleDateString('en-US'),
+                timeOnly: now.toLocaleTimeString('en-US')
             };
             
-            saveToLocalStorage(number, course.name, now.toLocaleString('ko-KR'));
+            saveToLocalStorage(number, course.name, now.toLocaleString('en-US'));
             printTicket();
         }
 
@@ -1136,7 +836,7 @@
                 sharedData.waiting.push({
                     number: number,
                     course: course,
-                    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                    time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                 });
                 
                 sharedData.totalToday = (sharedData.totalToday || 0) + 1;
@@ -1157,9 +857,9 @@
                 }
                 
                 localStorage.setItem('counterSystemData', JSON.stringify(sharedData));
-                console.log('데이터 저장 성공:', number);
+                console.log('Data saved successfully:', number);
             } catch (error) {
-                console.error('데이터 저장 오류:', error);
+                console.error('Data saving error:', error);
             }
         }
 
@@ -1167,8 +867,6 @@
             const panel = document.getElementById('settingsPanel');
             panel.classList.toggle('open');
             if (panel.classList.contains('open')) {
-                updateFontGrid();
-                updateFontMapping();
                 renderTimePeriodsEditor();
             }
         }
@@ -1182,8 +880,8 @@
                 periodDiv.className = 'time-period';
                 periodDiv.innerHTML = `
                     <div class="time-period-header">
-                        <strong>시간대 ${index + 1}</strong>
-                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
+                        <strong>Time Period ${index + 1}</strong>
+                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">Delete</button>
                     </div>
                     
                     <div class="time-inputs">
@@ -1196,7 +894,7 @@
                     
                     <div class="courses-container" id="courses-${index}"></div>
                     
-                    <button class="setting-btn" onclick="addCourse(${index})">+ 과목 추가</button>
+                    <button class="setting-btn" onclick="addCourse(${index})">+ Add Course</button>
                 `;
                 container.appendChild(periodDiv);
                 
@@ -1213,14 +911,14 @@
                 courseDiv.className = 'course-item';
                 courseDiv.innerHTML = `
                     <div class="course-inputs">
-                        <input type="text" class="course-input code" placeholder="코드" value="${course.code}"
+                        <input type="text" class="course-input code" placeholder="Code" value="${course.code}"
                                onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
-                        <input type="text" class="course-input name" placeholder="과목명" value="${course.name}"
+                        <input type="text" class="course-input name" placeholder="Course Name" value="${course.name}"
                                onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
-                        <input type="text" class="course-input desc" placeholder="설명" value="${course.description}"
+                        <input type="text" class="course-input desc" placeholder="Description" value="${course.description}"
                                onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
                     </div>
-                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">삭제</button>
+                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">Delete</button>
                 `;
                 container.appendChild(courseDiv);
             });
@@ -1231,14 +929,14 @@
                 startTime: '09:00',
                 endTime: '18:00',
                 courses: [
-                    { code: 'A', name: '새 과목', description: '과목 설명을 입력하세요' }
+                    { code: 'A', name: 'New Course', description: 'Please enter course description' }
                 ]
             });
             renderTimePeriodsEditor();
         }
 
         function removeTimePeriod(index) {
-            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+            if (confirm('Are you sure you want to delete this time period?')) {
                 timeSettings.splice(index, 1);
                 renderTimePeriodsEditor();
             }
@@ -1247,14 +945,14 @@
         function addCourse(periodIndex) {
             timeSettings[periodIndex].courses.push({
                 code: 'A',
-                name: '새 과목',
-                description: '과목 설명을 입력하세요'
+                name: 'New Course',
+                description: 'Please enter course description'
             });
             renderCourses(periodIndex);
         }
 
         function removeCourse(periodIndex, courseIndex) {
-            if (confirm('이 과목을 삭제하시겠습니까?')) {
+            if (confirm('Are you sure you want to delete this course?')) {
                 timeSettings[periodIndex].courses.splice(courseIndex, 1);
                 renderCourses(periodIndex);
             }
@@ -1272,14 +970,28 @@
             localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
             
             const message = document.getElementById('settingsMessage');
-            message.innerHTML = '<div class="status-message">설정이 저장되었습니다!</div>';
+            message.innerHTML = '<div class="status-message">Settings saved successfully!</div>';
             setTimeout(() => { message.innerHTML = ''; }, 3000);
             
             updateButtons();
         }
 
-        // 초기화
+        function loadDefaultSettings() {
+            if (confirm('Are you sure you want to restore default settings? All current settings will be lost.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                renderTimePeriodsEditor();
+                saveSettings();
+            }
+        }
+
+        // Initialize
         function initialize() {
+            if (!isSerialSupported()) {
+                console.warn('Web Serial API is not supported.');
+                document.getElementById('printerStatus').textContent = '🖨️ Web Serial API Not Supported';
+                document.getElementById('printerStatus').className = 'printer-status disconnected';
+            }
+
             const saved = localStorage.getItem('timeSettings');
             if (saved) {
                 try {
@@ -1291,15 +1003,12 @@
                 timeSettings = JSON.parse(JSON.stringify(defaultSettings));
             }
             
-            initBitmapEditor();
-            updateFontGrid();
-            updateFontStatus();
-            updatePrinterStatus();
             updateTime();
             setInterval(updateTime, 1000);
+            updatePrinterStatus();
         }
 
-        // 키보드 단축키
+        // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.altKey && e.key === 's') {
                 e.preventDefault();
@@ -1309,16 +1018,16 @@
                 e.preventDefault();
                 connectPrinter();
             }
-            if (e.ctrlKey && e.altKey && e.key === 'f') {
+            if (e.ctrlKey && e.altKey && e.key === 't') {
                 e.preventDefault();
-                showFontManager();
+                testPrint();
             }
         });
 
-        // 페이지 로드 시 초기화
+        // Page load initialization
         document.addEventListener('DOMContentLoaded', initialize);
         
-        // 페이지 언로드 시 연결 정리
+        // Page unload cleanup
         window.addEventListener('beforeunload', () => {
             if (isPrinterConnected) {
                 disconnectPrinter();
