@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수강문의 접수 - 시리얼 프린터</title>
+    <title>수강문의 접수 - 범용 프린터</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -42,18 +42,33 @@
             color: #2c3e50;
             margin-bottom: 10px;
         }
-        .connection-status {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-        }
-        .connection-status.connected { color: #27ae60; }
-        .connection-status.disconnected { color: #e74c3c; }
-        .printer-status {
+        .browser-status {
             font-size: 1rem;
-            color: #666;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-block;
         }
-        .printer-status.connected { color: #27ae60; }
-        .printer-status.disconnected { color: #e74c3c; }
+        .browser-status.supported { background: #d4edda; color: #155724; }
+        .browser-status.unsupported { background: #f8d7da; color: #721c24; }
+        .print-methods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .print-method {
+            background: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .print-method:hover { background: #2980b9; transform: translateY(-2px); }
+        .print-method.disabled { background: #95a5a6; cursor: not-allowed; }
         .main-content {
             flex: 1;
             display: flex;
@@ -120,18 +135,101 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .printer-connect {
+        .ticket-result {
             position: fixed;
-            top: 20px;
-            right: 90px;
-            background: rgba(255, 255, 255, 0.9);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .ticket-card {
+            background: white;
+            border-radius: 25px;
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+        .ticket-number {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+        .print-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #ddd;
+        }
+        .print-btn {
+            background: #27ae60;
+            color: white;
             border: none;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            font-size: 1.5rem;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .print-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        .print-btn.secondary {
+            background: #3498db;
+        }
+        .print-btn.secondary:hover {
+            background: #2980b9;
+        }
+        .print-btn.disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .countdown {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: #e74c3c;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .ticket-preview {
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            text-align: left;
+            display: none;
+        }
+        .browser-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 0.9rem;
         }
         .settings-panel {
             position: fixed;
@@ -194,49 +292,11 @@
         }
         .setting-btn:hover { background: #2980b9; }
         .setting-btn.danger { background: #e74c3c; }
-        .setting-btn.danger:hover { background: #c0392b; }
         .setting-btn.success { background: #27ae60; }
-        .setting-btn.success:hover { background: #229954; }
-        .status-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
-        .print-success {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(39, 174, 96, 0.95);
-            color: white;
-            padding: 30px 50px;
-            border-radius: 20px;
-            font-size: 2rem;
-            font-weight: 700;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 10000;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .print-success.show { opacity: 1; }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="printer-connect" onclick="connectPrinter()" title="프린터 연결">🖨️</button>
         <button class="settings-toggle" onclick="toggleSettings()">⚙️</button>
         
         <div class="header">
@@ -246,9 +306,9 @@
 
         <div class="status-bar">
             <div class="current-time" id="currentTime"></div>
-            <div class="connection-status connected" id="connectionStatus">🟢 온라인 연결됨</div>
-            <div class="printer-status disconnected" id="printerStatus">🖨️ 프린터 연결 안됨</div>
-            <div id="currentPeriod" style="font-size: 1.1rem; color: #666;"></div>
+            <div class="browser-status" id="browserStatus">브라우저 확인 중...</div>
+            <div class="print-methods" id="printMethods"></div>
+            <div id="currentPeriod" style="font-size: 1.1rem; color: #666; margin-top: 10px;"></div>
         </div>
 
         <div class="main-content">
@@ -260,9 +320,19 @@
         </div>
     </div>
 
-    <div class="print-success" id="printSuccess">
-        <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
-        <div id="printSuccessMessage">번호표 출력 완료!</div>
+    <div class="ticket-result" id="ticketResult">
+        <div class="ticket-card">
+            <div class="countdown" id="countdown">10</div>
+            <div class="ticket-number" id="ticketNumber">A001</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #2c3e50; margin-bottom: 15px;" id="ticketCourse">수강 상담</div>
+            <div style="font-size: 1.3rem; color: #7f8c8d;">접수시간: <span id="ticketTime"></span></div>
+            
+            <div class="print-options" id="printOptions">
+                <!-- 프린트 옵션들이 여기에 표시됩니다 -->
+            </div>
+            
+            <div class="ticket-preview" id="ticketPreview"></div>
+        </div>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
@@ -271,63 +341,10 @@
             <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
         </div>
         <div class="settings-content">
-            <!-- 프린터 설정 -->
+            <!-- 브라우저 호환성 정보 -->
             <div class="setting-group">
-                <label class="setting-label">🖨️ 시리얼 프린터 설정</label>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
-                    Chrome 기반 브라우저에서 Web Serial API를 사용합니다.
-                </div>
-                <select class="setting-input" id="baudRate">
-                    <option value="9600">9600 baud</option>
-                    <option value="19200">19200 baud</option>
-                    <option value="38400">38400 baud</option>
-                    <option value="57600">57600 baud</option>
-                    <option value="115200" selected>115200 baud</option>
-                </select>
-                <button class="setting-btn" onclick="connectPrinter()">프린터 연결</button>
-                <button class="setting-btn" onclick="disconnectPrinter()">연결 해제</button>
-                <button class="setting-btn" onclick="testPrint()">테스트 출력</button>
-                <div id="printerMessage"></div>
-            </div>
-
-            <!-- ESC/POS 명령어 설정 -->
-            <div class="setting-group">
-                <label class="setting-label">📝 출력 형식 설정</label>
-                <label>텍스트 인코딩:</label>
-                <select class="setting-input" id="textEncoding">
-                    <option value="utf8">UTF-8 (한글 지원)</option>
-                    <option value="ascii" selected>ASCII (영문 변환)</option>
-                    <option value="euckr">EUC-KR (한글 프린터)</option>
-                </select>
-                
-                <label>용지 폭:</label>
-                <select class="setting-input" id="paperWidth">
-                    <option value="32">32 characters (58mm)</option>
-                    <option value="42" selected>42 characters (80mm)</option>
-                    <option value="48">48 characters (112mm)</option>
-                </select>
-                
-                <label>폰트 크기:</label>
-                <select class="setting-input" id="fontSize">
-                    <option value="normal" selected>일반</option>
-                    <option value="large">큰 글씨</option>
-                    <option value="xlarge">매우 큰 글씨</option>
-                </select>
-                
-                <label>용지 자르기:</label>
-                <select class="setting-input" id="paperCut">
-                    <option value="full" selected>전체 자르기</option>
-                    <option value="partial">부분 자르기</option>
-                    <option value="none">자르지 않음</option>
-                </select>
-                
-                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem;">
-                    <strong>💡 한글 출력 팁:</strong><br>
-                    • ASCII 모드: 한글을 영문으로 변환하여 출력<br>
-                    • UTF-8 모드: 프린터가 UTF-8을 지원하는 경우<br>
-                    • EUC-KR 모드: 한국산 프린터에서 한글 출력<br>
-                    한글이 깨지면 ASCII 모드를 사용하세요.
-                </div>
+                <label class="setting-label">🌐 브라우저 호환성</label>
+                <div id="browserCompatibility"></div>
             </div>
 
             <!-- 시간대별 과목 설정 -->
@@ -343,13 +360,10 @@
     </div>
 
     <script>
-        let serialPort = null;
-        let reader = null;
-        let writer = null;
         let isConnected = true;
-        let isPrinterConnected = false;
         let currentNumbers = {};
         let timeSettings = [];
+        let browserInfo = {};
 
         // 기본 설정
         const defaultSettings = [
@@ -376,397 +390,101 @@
             }
         ];
 
-        // ESC/POS 명령어
-        const ESC = '\x1B';
-        const GS = '\x1D';
-        const FS = '\x1C';
-        
-        const ESCPOS = {
-            INIT: ESC + '@',
-            ALIGN_CENTER: ESC + 'a1',
-            ALIGN_LEFT: ESC + 'a0',
-            FONT_NORMAL: ESC + '!' + '\x00',
-            FONT_LARGE: ESC + '!' + '\x10',
-            FONT_XLARGE: ESC + '!' + '\x30',
-            BOLD_ON: ESC + 'E1',
-            BOLD_OFF: ESC + 'E0',
-            UNDERLINE_ON: ESC + '-1',
-            UNDERLINE_OFF: ESC + '-0',
-            CUT_FULL: GS + 'V0',
-            CUT_PARTIAL: GS + 'V1',
-            LINE_FEED: '\n',
-            FORM_FEED: '\x0C',
-            // 한글 관련 명령어
-            KOREAN_MODE: FS + 'C1',  // 한글 모드 설정
-            CHARSET_KOREAN: ESC + 't19',  // 코드페이지 949 (한글)
-            CHARSET_UTF8: ESC + 't255',   // UTF-8
-            DOUBLE_WIDTH: GS + '!1',      // 가로 2배
-            DOUBLE_HEIGHT: GS + '!16',    // 세로 2배
-            DOUBLE_BOTH: GS + '!17',      // 가로세로 2배
-            NORMAL_SIZE: GS + '!0'        // 정상 크기
-        };
-
-        // Web Serial API 지원 확인
-        function isSerialSupported() {
-            return 'serial' in navigator;
-        }
-
-        // 프린터 연결
-        async function connectPrinter() {
-            if (!isSerialSupported()) {
-                showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
-                return;
-            }
-
-            try {
-                const baudRate = parseInt(document.getElementById('baudRate').value);
-                
-                // 시리얼 포트 선택
-                serialPort = await navigator.serial.requestPort();
-                
-                // 포트 열기
-                await serialPort.open({ 
-                    baudRate: baudRate,
-                    dataBits: 8,
-                    stopBits: 1,
-                    parity: 'none',
-                    flowControl: 'none'
-                });
-
-                // 읽기/쓰기 스트림 설정
-                const textDecoder = new TextDecoderStream();
-                const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
-                reader = textDecoder.readable.getReader();
-
-                const textEncoder = new TextEncoderStream();
-                const writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
-                writer = textEncoder.writable.getWriter();
-
-                isPrinterConnected = true;
-                updatePrinterStatus();
-                showMessage('printerMessage', '프린터가 성공적으로 연결되었습니다!', 'success');
-                
-                // 프린터 초기화
-                await sendToPrinter(ESCPOS.INIT);
-
-            } catch (error) {
-                console.error('프린터 연결 오류:', error);
-                showMessage('printerMessage', '프린터 연결 실패: ' + error.message, 'error');
-            }
-        }
-
-        // 프린터 연결 해제
-        async function disconnectPrinter() {
-            try {
-                if (reader) {
-                    await reader.cancel();
-                    reader = null;
-                }
-                if (writer) {
-                    await writer.close();
-                    writer = null;
-                }
-                if (serialPort) {
-                    await serialPort.close();
-                    serialPort = null;
-                }
-                
-                isPrinterConnected = false;
-                updatePrinterStatus();
-                showMessage('printerMessage', '프린터 연결이 해제되었습니다.', 'success');
-                
-            } catch (error) {
-                console.error('프린터 해제 오류:', error);
-                showMessage('printerMessage', '프린터 해제 실패: ' + error.message, 'error');
-            }
-        }
-
-        // 한글 텍스트를 안전한 형태로 변환
-        function convertKoreanText(text) {
-            // 한글이 포함된 경우 ASCII로 변환하거나 로마자로 표기
-            const koreanMap = {
-                'ㄱ': 'G', 'ㄴ': 'N', 'ㄷ': 'D', 'ㄹ': 'R', 'ㅁ': 'M', 
-                'ㅂ': 'B', 'ㅅ': 'S', 'ㅇ': '', 'ㅈ': 'J', 'ㅊ': 'CH',
-                'ㅋ': 'K', 'ㅌ': 'T', 'ㅍ': 'P', 'ㅎ': 'H',
-                '가': 'GA', '나': 'NA', '다': 'DA', '라': 'RA', '마': 'MA',
-                '바': 'BA', '사': 'SA', '아': 'A', '자': 'JA', '차': 'CHA',
-                '카': 'KA', '타': 'TA', '파': 'PA', '하': 'HA',
-                '수강': 'SUGGANG', '문의': 'MUNUI', '접수': 'JEOPSU',
-                '상담': 'SANGDAM', '과정': 'GWAJEONG', '번호표': 'BEONHOPYO',
-                '워드': 'WORD', '엑셀': 'EXCEL', '파워포인트': 'POWERPOINT',
-                '포토샵': 'PHOTOSHOP', '일러스트': 'ILLUSTRATOR',
-                '프리미어': 'PREMIERE', '애프터': 'AFTER', '이펙트': 'EFFECT',
-                '디자인': 'DESIGN', '영상편집': 'VIDEO EDIT',
-                '기초': 'BASIC', '실무': 'PRACTICE', '전문': 'PROFESSIONAL',
-                '과목': 'SUBJECT', '학원': 'HAGWON', '상담실': 'SANGDAMSIL'
+        // 브라우저 지원 여부 확인
+        function checkBrowserSupport() {
+            const ua = navigator.userAgent;
+            browserInfo = {
+                isChrome: /Chrome/.test(ua) && /Google Inc/.test(navigator.vendor),
+                isEdge: /Edg/.test(ua),
+                isOpera: /OPR/.test(ua),
+                isFirefox: /Firefox/.test(ua),
+                isSafari: /Safari/.test(ua) && !/Chrome/.test(ua),
+                chromeVersion: getChromeVersion(),
+                hasWebSerial: 'serial' in navigator,
+                hasWebBluetooth: 'bluetooth' in navigator,
+                hasWebUSB: 'usb' in navigator
             };
-            
-            let result = text;
-            for (const [korean, english] of Object.entries(koreanMap)) {
-                result = result.replace(new RegExp(korean, 'g'), english);
-            }
-            
-            // 남은 한글은 간단한 로마자로 변환
-            result = result.replace(/[가-힣]/g, '?');
-            
-            return result;
+
+            return browserInfo;
         }
 
-        // 프린터 인코딩 변환 (EUC-KR 지원 프린터용)
-        function encodeForPrinter(text, encoding = 'auto') {
-            if (encoding === 'ascii') {
-                return convertKoreanText(text);
-            }
-            
-            // UTF-8을 EUC-KR로 변환 시도
-            try {
-                const encoder = new TextEncoder();
-                const utf8Bytes = encoder.encode(text);
-                
-                // 간단한 바이트 배열 반환 (프린터가 UTF-8을 지원하는 경우)
-                return new Uint8Array(utf8Bytes);
-            } catch (error) {
-                console.warn('인코딩 변환 실패, ASCII 모드로 변환:', error);
-                return convertKoreanText(text);
-            }
+        function getChromeVersion() {
+            const match = navigator.userAgent.match(/Chrome\/(\d+)/);
+            return match ? parseInt(match[1]) : 0;
         }
 
-        // 프린터로 데이터 전송 (바이트 배열 지원)
-        async function sendToPrinter(data) {
-            if (!isPrinterConnected || !writer) {
-                throw new Error('프린터가 연결되지 않았습니다.');
-            }
-            
-            try {
-                if (typeof data === 'string') {
-                    await writer.write(data);
-                } else if (data instanceof Uint8Array) {
-                    // 바이트 배열 전송
-                    await writer.write(data);
-                } else {
-                    await writer.write(data.toString());
-                }
-            } catch (error) {
-                console.error('프린터 전송 오류:', error);
-                throw error;
-            }
-        }
+        function updateBrowserStatus() {
+            const statusEl = document.getElementById('browserStatus');
+            const methodsEl = document.getElementById('printMethods');
+            const info = checkBrowserSupport();
 
-        // 텍스트를 중앙 정렬로 패딩
-        function centerText(text, width) {
-            const padding = Math.max(0, Math.floor((width - text.length) / 2));
-            return ' '.repeat(padding) + text;
-        }
+            let statusText = '';
+            let statusClass = '';
+            let methods = [];
 
-        // 라인 생성
-        function createLine(char, width) {
-            return char.repeat(width);
-        }
-
-        // 번호표 출력
-        async function printTicket() {
-            if (!window.currentTicketInfo) {
-                alert('출력할 순번 정보가 없습니다.');
-                return;
-            }
-
-            if (!isPrinterConnected) {
-                alert('프린터가 연결되지 않았습니다. 프린터를 먼저 연결해주세요.');
-                return;
-            }
-
-            try {
-                const info = window.currentTicketInfo;
-                const paperWidth = parseInt(document.getElementById('paperWidth').value);
-                const fontSize = document.getElementById('fontSize').value;
-                const paperCut = document.getElementById('paperCut').value;
-                const encoding = document.getElementById('textEncoding').value;
-
-                // 폰트 크기 설정
-                let fontCommand = ESCPOS.FONT_NORMAL;
-                if (fontSize === 'large') fontCommand = ESCPOS.FONT_LARGE;
-                else if (fontSize === 'xlarge') fontCommand = ESCPOS.FONT_XLARGE;
-
-                // 프린터 초기화 및 한글 설정
-                await sendToPrinter(ESCPOS.INIT);
-                await sendToPrinter(ESCPOS.KOREAN_MODE);  // 한글 모드 활성화
-                await sendToPrinter(ESCPOS.CHARSET_KOREAN);  // 한글 코드페이지 설정
-                
-                let printData = '';
-                
-                // 헤더
-                printData += ESCPOS.ALIGN_CENTER;
-                printData += fontCommand;
-                printData += ESCPOS.BOLD_ON;
-                
-                const headerText = encoding === 'ascii' ? 'COURSE INQUIRY TICKET' : '수강문의 순번표';
-                printData += centerText(encodeForPrinter(headerText, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.BOLD_OFF;
-                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED;
-                
-                // 순번 (큰 글씨)
-                printData += ESCPOS.DOUBLE_BOTH;
-                printData += ESCPOS.BOLD_ON;
-                printData += centerText(info.number, Math.floor(paperWidth/3)) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.BOLD_OFF;
-                printData += ESCPOS.NORMAL_SIZE;
-                printData += fontCommand;
-                printData += ESCPOS.LINE_FEED;
-                
-                // 과정명
-                printData += ESCPOS.BOLD_ON;
-                const courseName = encoding === 'ascii' ? convertKoreanText(info.course) : info.course;
-                printData += centerText(encodeForPrinter(courseName, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.BOLD_OFF;
-                
-                const courseDesc = encoding === 'ascii' ? convertKoreanText(info.description) : info.description;
-                printData += centerText(encodeForPrinter(courseDesc, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED;
-                
-                // 바코드 형태 표시
-                printData += centerText('* ' + info.number + ' *', paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED;
-                
-                // 정보
-                printData += ESCPOS.ALIGN_LEFT;
-                const timeLabel = encoding === 'ascii' ? 'Time: ' : '접수시간: ';
-                const numberLabel = encoding === 'ascii' ? 'Number: ' : '접수번호: ';
-                
-                printData += encodeForPrinter(timeLabel, encoding) + info.time + ESCPOS.LINE_FEED;
-                printData += encodeForPrinter(numberLabel, encoding) + info.number + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED;
-                
-                // 하단 메시지
-                printData += ESCPOS.ALIGN_CENTER;
-                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                
-                const msg1 = encoding === 'ascii' ? 'Please wait for your turn' : '상담 순서가 되면';
-                const msg2 = encoding === 'ascii' ? 'We will guide you' : '안내해 드립니다';
-                const msg3 = encoding === 'ascii' ? 'Keep this ticket safe' : '이 번호표를 잘 보관해 주세요';
-                const footer = encoding === 'ascii' ? 'Consultation Office' : '학원 상담실';
-                
-                printData += centerText(encodeForPrinter(msg1, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText(encodeForPrinter(msg2, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText(encodeForPrinter(msg3, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText(encodeForPrinter(footer, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
-                
-                // 여백 및 용지 자르기
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
-                
-                if (paperCut === 'full') {
-                    printData += ESCPOS.CUT_FULL;
-                } else if (paperCut === 'partial') {
-                    printData += ESCPOS.CUT_PARTIAL;
-                }
-
-                // 프린터로 전송
-                if (encoding === 'ascii') {
-                    await sendToPrinter(printData);
-                } else {
-                    // UTF-8 또는 다른 인코딩으로 전송
-                    await sendToPrinter(printData);
-                }
-                
-                // 성공 메시지 표시
-                showPrintSuccess(info.number);
-                
-            } catch (error) {
-                console.error('출력 오류:', error);
-                alert('출력 중 오류가 발생했습니다: ' + error.message);
-            }
-        }
-
-        // 테스트 출력
-        async function testPrint() {
-            if (!isPrinterConnected) {
-                alert('프린터가 연결되지 않았습니다.');
-                return;
-            }
-
-            try {
-                const paperWidth = parseInt(document.getElementById('paperWidth').value);
-                const encoding = document.getElementById('textEncoding').value;
-                
-                // 프린터 초기화 및 한글 설정
-                await sendToPrinter(ESCPOS.INIT);
-                await sendToPrinter(ESCPOS.KOREAN_MODE);
-                await sendToPrinter(ESCPOS.CHARSET_KOREAN);
-                
-                let testData = '';
-                testData += ESCPOS.ALIGN_CENTER;
-                testData += ESCPOS.BOLD_ON;
-                
-                const testTitle = encoding === 'ascii' ? 'TEST PRINT' : '테스트 출력';
-                testData += centerText(encodeForPrinter(testTitle, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                testData += ESCPOS.BOLD_OFF;
-                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                
-                const msg1 = encoding === 'ascii' ? 'Printer connected successfully!' : '프린터가 정상적으로';
-                const msg2 = encoding === 'ascii' ? '' : '연결되었습니다!';
-                
-                testData += centerText(encodeForPrinter(msg1, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                if (msg2) {
-                    testData += centerText(encodeForPrinter(msg2, encoding), paperWidth) + ESCPOS.LINE_FEED;
-                }
-                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                
-                // 한글 테스트
-                if (encoding !== 'ascii') {
-                    testData += ESCPOS.LINE_FEED;
-                    testData += centerText('한글 테스트: 가나다라마바사', paperWidth) + ESCPOS.LINE_FEED;
-                    testData += centerText('숫자 테스트: 1234567890', paperWidth) + ESCPOS.LINE_FEED;
-                    testData += centerText('특수문자: !@#$%^&*()', paperWidth) + ESCPOS.LINE_FEED;
-                    testData += ESCPOS.LINE_FEED;
-                }
-                
-                testData += centerText(new Date().toLocaleString('ko-KR'), paperWidth) + ESCPOS.LINE_FEED;
-                testData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
-                testData += ESCPOS.CUT_FULL;
-
-                await sendToPrinter(testData);
-                showMessage('printerMessage', '테스트 출력이 완료되었습니다!', 'success');
-                
-            } catch (error) {
-                console.error('테스트 출력 오류:', error);
-                showMessage('printerMessage', '테스트 출력 실패: ' + error.message, 'error');
-            }
-        }
-
-        // 프린터 상태 업데이트
-        function updatePrinterStatus() {
-            const statusEl = document.getElementById('printerStatus');
-            if (isPrinterConnected) {
-                statusEl.textContent = '🖨️ 프린터 연결됨';
-                statusEl.className = 'printer-status connected';
+            if (info.hasWebSerial && (info.isChrome && info.chromeVersion >= 89)) {
+                statusText = '🟢 시리얼 프린터 지원';
+                statusClass = 'supported';
+                methods.push({ text: '🖨️ 시리얼 프린터', enabled: true, onclick: 'showSerialPrintOption()' });
             } else {
-                statusEl.textContent = '🖨️ 프린터 연결 안됨';
-                statusEl.className = 'printer-status disconnected';
+                statusText = '🟡 제한된 프린터 지원';
+                statusClass = 'unsupported';
             }
+
+            // 모든 브라우저에서 지원되는 기능들
+            methods.push(
+                { text: '🖼️ 이미지 저장', enabled: true, onclick: 'saveAsImage()' },
+                { text: '📄 PDF 저장', enabled: true, onclick: 'saveAsPDF()' },
+                { text: '📋 텍스트 복사', enabled: true, onclick: 'copyToClipboard()' },
+                { text: '🖨️ 일반 프린터', enabled: true, onclick: 'openPrintDialog()' }
+            );
+
+            statusEl.textContent = statusText;
+            statusEl.className = `browser-status ${statusClass}`;
+
+            methodsEl.innerHTML = '';
+            methods.forEach(method => {
+                const btn = document.createElement('div');
+                btn.className = `print-method ${method.enabled ? '' : 'disabled'}`;
+                btn.textContent = method.text;
+                if (method.enabled) {
+                    btn.onclick = () => eval(method.onclick);
+                }
+                methodsEl.appendChild(btn);
+            });
         }
 
-        // 출력 성공 메시지
-        function showPrintSuccess(number) {
-            const successEl = document.getElementById('printSuccess');
-            const messageEl = document.getElementById('printSuccessMessage');
-            messageEl.textContent = `${number} 번호표 출력 완료!`;
-            
-            successEl.classList.add('show');
-            setTimeout(() => {
-                successEl.classList.remove('show');
-            }, 3000);
-        }
+        function updateCompatibilityInfo() {
+            const container = document.getElementById('browserCompatibility');
+            const info = browserInfo;
 
-        // 메시지 표시
-        function showMessage(elementId, message, type) {
-            const element = document.getElementById(elementId);
-            const className = type === 'error' ? 'error-message' : 'status-message';
-            element.innerHTML = `<div class="${className}">${message}</div>`;
-            setTimeout(() => {
-                element.innerHTML = '';
-            }, 5000);
+            let html = `
+                <div style="font-size: 0.9rem; line-height: 1.6;">
+                    <div><strong>현재 브라우저:</strong> ${navigator.userAgent.split(' ')[0]}</div>
+                    <div><strong>Web Serial API:</strong> ${info.hasWebSerial ? '✅ 지원됨' : '❌ 미지원'}</div>
+                    <div><strong>Web Bluetooth:</strong> ${info.hasWebBluetooth ? '✅ 지원됨' : '❌ 미지원'}</div>
+                    <div><strong>Web USB:</strong> ${info.hasWebUSB ? '✅ 지원됨' : '❌ 미지원'}</div>
+                </div>
+                
+                <div class="browser-warning" style="margin-top: 15px;">
+                    <strong>💡 프린터 사용 권장사항:</strong><br>
+                    • <strong>최고 호환성:</strong> Chrome 89+ 또는 Edge 89+<br>
+                    • <strong>일반 호환성:</strong> 모든 브라우저에서 PDF/이미지 저장 가능<br>
+                    • <strong>제한 사항:</strong> Firefox, Safari는 시리얼 프린터 미지원
+                </div>
+            `;
+
+            if (!info.hasWebSerial) {
+                html += `
+                    <div class="browser-warning">
+                        <strong>⚠️ 현재 브라우저 제한사항:</strong><br>
+                        시리얼 프린터 직접 연결이 불가능합니다.<br>
+                        PDF 저장 후 프린터로 출력하거나, Chrome 89+ 버전 사용을 권장합니다.
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
         }
 
         // 시간 업데이트
@@ -844,11 +562,320 @@
                 timeOnly: now.toLocaleTimeString('ko-KR')
             };
             
-            // 로컬 스토리지에 저장
-            saveToLocalStorage(number, course.name, now.toLocaleString('ko-KR'));
+            document.getElementById('ticketNumber').textContent = number;
+            document.getElementById('ticketCourse').textContent = course.name;
+            document.getElementById('ticketTime').textContent = now.toLocaleTimeString('ko-KR');
             
-            // 즉시 출력
-            printTicket();
+            updatePrintOptions();
+            document.getElementById('ticketResult').style.display = 'flex';
+            
+            // 10초 카운트다운 시작
+            startCountdown();
+            
+            // 로컬 스토리지 저장
+            saveToLocalStorage(number, course.name, now.toLocaleString('ko-KR'));
+        }
+
+        function updatePrintOptions() {
+            const container = document.getElementById('printOptions');
+            const info = browserInfo;
+            
+            let options = [];
+            
+            // Chrome에서 시리얼 프린터 지원
+            if (info.hasWebSerial) {
+                options.push({
+                    text: '🖨️ 시리얼 프린터 출력',
+                    onclick: 'connectAndPrint()',
+                    class: 'print-btn',
+                    enabled: true
+                });
+            }
+            
+            // 모든 브라우저 공통 옵션
+            options.push(
+                {
+                    text: '📄 PDF로 저장',
+                    onclick: 'saveAsPDF()',
+                    class: 'print-btn secondary',
+                    enabled: true
+                },
+                {
+                    text: '🖼️ 이미지로 저장',
+                    onclick: 'saveAsImage()',
+                    class: 'print-btn secondary',
+                    enabled: true
+                },
+                {
+                    text: '🖨️ 일반 프린터',
+                    onclick: 'openPrintDialog()',
+                    class: 'print-btn secondary',
+                    enabled: true
+                },
+                {
+                    text: '📋 텍스트 복사',
+                    onclick: 'copyToClipboard()',
+                    class: 'print-btn secondary',
+                    enabled: true
+                },
+                {
+                    text: '❌ 닫기',
+                    onclick: 'closeTicketResult()',
+                    class: 'print-btn',
+                    style: 'background: #95a5a6;',
+                    enabled: true
+                }
+            );
+            
+            container.innerHTML = '';
+            options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = option.class + (option.enabled ? '' : ' disabled');
+                btn.textContent = option.text;
+                if (option.style) btn.style.cssText = option.style;
+                if (option.enabled) {
+                    btn.onclick = () => eval(option.onclick);
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        // 프린트 기능들
+        function connectAndPrint() {
+            alert('Chrome 89+ 버전에서 Web Serial API를 사용한 시리얼 프린터 연결 기능입니다.\n\n실제 구현을 위해서는 시리얼 프린터 연결 코드가 필요합니다.');
+        }
+
+        function saveAsPDF() {
+            // 번호표 내용으로 새 창 열기
+            const info = window.currentTicketInfo;
+            const printContent = generatePrintableContent(info);
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+
+        function saveAsImage() {
+            const info = window.currentTicketInfo;
+            
+            // Canvas를 사용해 이미지 생성
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = 400;
+            canvas.height = 600;
+            
+            // 배경
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 텍스트 그리기
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            
+            let y = 50;
+            ctx.fillText('수강문의 순번표', canvas.width/2, y);
+            
+            y += 40;
+            ctx.strokeRect(20, y, canvas.width-40, 2);
+            
+            y += 60;
+            ctx.font = 'bold 72px Arial';
+            ctx.fillText(info.number, canvas.width/2, y);
+            
+            y += 80;
+            ctx.font = 'bold 20px Arial';
+            ctx.fillText(info.course, canvas.width/2, y);
+            
+            y += 40;
+            ctx.font = '16px Arial';
+            ctx.fillText(info.description, canvas.width/2, y);
+            
+            y += 60;
+            ctx.fillText('접수시간: ' + info.time, canvas.width/2, y);
+            
+            y += 40;
+            ctx.fillText('접수번호: ' + info.number, canvas.width/2, y);
+            
+            // 이미지 다운로드
+            const link = document.createElement('a');
+            link.download = `순번표_${info.number}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function copyToClipboard() {
+            const info = window.currentTicketInfo;
+            const text = `
+수강문의 순번표
+================
+
+순번: ${info.number}
+과정: ${info.course}
+설명: ${info.description}
+접수시간: ${info.time}
+
+상담 순서가 되면 안내해 드립니다.
+이 번호표를 잘 보관해 주세요.
+
+학원 상담실
+            `.trim();
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('번호표 정보가 클립보드에 복사되었습니다!');
+            }).catch(() => {
+                // 클립보드 API 실패 시 대안
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('번호표 정보가 클립보드에 복사되었습니다!');
+            });
+        }
+
+        function openPrintDialog() {
+            const info = window.currentTicketInfo;
+            const printContent = generatePrintableContent(info);
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        }
+
+        function generatePrintableContent(info) {
+            return `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>순번표 - ${info.number}</title>
+                    <style>
+                        @page {
+                            size: 80mm auto;
+                            margin: 5mm;
+                        }
+                        body {
+                            font-family: 'Malgun Gothic', sans-serif;
+                            font-size: 12px;
+                            line-height: 1.4;
+                            margin: 0;
+                            padding: 10px;
+                            text-align: center;
+                        }
+                        .header {
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 10px;
+                            margin-bottom: 15px;
+                        }
+                        .ticket-number {
+                            font-size: 48px;
+                            font-weight: bold;
+                            color: #000;
+                            margin: 15px 0;
+                            letter-spacing: 3px;
+                        }
+                        .course-name {
+                            font-size: 18px;
+                            font-weight: bold;
+                            margin: 10px 0;
+                        }
+                        .course-desc {
+                            font-size: 12px;
+                            color: #666;
+                            margin-bottom: 15px;
+                        }
+                        .info-line {
+                            margin: 5px 0;
+                            font-size: 11px;
+                        }
+                        .footer {
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                            margin-top: 15px;
+                            font-size: 10px;
+                            color: #666;
+                        }
+                        .barcode {
+                            font-family: 'Courier New', monospace;
+                            font-size: 14px;
+                            letter-spacing: 1px;
+                            margin: 10px 0;
+                            padding: 5px;
+                            background: #f0f0f0;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 5px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>📚 수강문의 순번표</h2>
+                    </div>
+                    
+                    <div class="ticket-number">${info.number}</div>
+                    
+                    <div class="course-name">${info.course}</div>
+                    <div class="course-desc">${info.description}</div>
+                    
+                    <div class="barcode">* ${info.number} *</div>
+                    
+                    <div class="info-line">접수일시: ${info.time}</div>
+                    <div class="info-line">접수번호: ${info.number}</div>
+                    
+                    <div class="footer">
+                        <div>상담 순서가 되면 안내해 드립니다</div>
+                        <div>이 번호표를 잘 보관해 주세요</div>
+                        <div style="margin-top: 10px;">────────────────</div>
+                        <div style="margin-top: 5px;">학원 상담실</div>
+                    </div>
+                </body>
+                </html>
+            `;
+        }
+
+        let countdownTimer = null;
+        let countdownSeconds = 10;
+
+        function startCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            countdownSeconds = 10;
+            countdownEl.textContent = countdownSeconds;
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                countdownEl.textContent = countdownSeconds;
+                
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    closeTicketResult();
+                }
+            }, 1000);
+        }
+
+        function closeTicketResult() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            document.getElementById('ticketResult').style.display = 'none';
+            document.getElementById('ticketPreview').style.display = 'none';
         }
 
         function saveToLocalStorage(number, course, time) {
@@ -891,6 +918,7 @@
             panel.classList.toggle('open');
             if (panel.classList.contains('open')) {
                 renderTimePeriodsEditor();
+                updateCompatibilityInfo();
             }
         }
 
@@ -901,18 +929,19 @@
             timeSettings.forEach((period, index) => {
                 const periodDiv = document.createElement('div');
                 periodDiv.className = 'time-period';
+                periodDiv.style.cssText = 'border: 2px solid #ecf0f1; border-radius: 10px; padding: 20px; margin-bottom: 15px; background: white;';
                 periodDiv.innerHTML = `
-                    <div class="time-period-header">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
                         <strong>시간대 ${index + 1}</strong>
                         <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
                     </div>
                     
-                    <div class="time-inputs">
-                        <input type="time" class="time-input" value="${period.startTime}" 
-                               onchange="updateTimeField(${index}, 'startTime', this.value)">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="time" class="setting-input" value="${period.startTime}" 
+                               onchange="updateTimeField(${index}, 'startTime', this.value)" style="width: 120px;">
                         <span>~</span>
-                        <input type="time" class="time-input" value="${period.endTime}" 
-                               onchange="updateTimeField(${index}, 'endTime', this.value)">
+                        <input type="time" class="setting-input" value="${period.endTime}" 
+                               onchange="updateTimeField(${index}, 'endTime', this.value)" style="width: 120px;">
                     </div>
                     
                     <div class="courses-container" id="courses-${index}"></div>
@@ -931,14 +960,14 @@
             
             timeSettings[periodIndex].courses.forEach((course, courseIndex) => {
                 const courseDiv = document.createElement('div');
-                courseDiv.className = 'course-item';
+                courseDiv.style.cssText = 'background: #f1f3f4; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;';
                 courseDiv.innerHTML = `
-                    <div class="course-inputs">
-                        <input type="text" class="course-input code" placeholder="코드" value="${course.code}"
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1;">
+                        <input type="text" placeholder="코드" value="${course.code}" style="width: 80px; padding: 8px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.9rem;"
                                onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
-                        <input type="text" class="course-input name" placeholder="과목명" value="${course.name}"
+                        <input type="text" placeholder="과목명" value="${course.name}" style="width: 200px; padding: 8px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.9rem;"
                                onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
-                        <input type="text" class="course-input desc" placeholder="설명" value="${course.description}"
+                        <input type="text" placeholder="설명" value="${course.description}" style="width: 250px; padding: 8px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.9rem;"
                                onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
                     </div>
                     <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">삭제</button>
@@ -993,7 +1022,7 @@
             localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
             
             const message = document.getElementById('settingsMessage');
-            message.innerHTML = '<div class="status-message">설정이 저장되었습니다!</div>';
+            message.innerHTML = '<div style="background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0; font-size: 0.9rem;">설정이 저장되었습니다!</div>';
             setTimeout(() => { message.innerHTML = ''; }, 3000);
             
             updateButtons();
@@ -1007,33 +1036,12 @@
             }
         }
 
-        function previewSettings() {
-            const preview = document.getElementById('previewContainer');
-            let html = '';
-            
-            timeSettings.forEach((period, index) => {
-                html += `<div style="margin-bottom: 15px; padding: 10px; background: #f1f3f4; border-radius: 5px;">
-                    <strong>${period.startTime} - ${period.endTime}</strong><br>`;
-                
-                period.courses.forEach(course => {
-                    html += `&nbsp;&nbsp;• ${course.code}: ${course.name}<br>`;
-                });
-                
-                html += '</div>';
-            });
-            
-            preview.innerHTML = html || '설정된 시간대가 없습니다.';
-        }
-
         // 초기화
         function initialize() {
-            // Web Serial API 지원 확인
-            if (!isSerialSupported()) {
-                console.warn('Web Serial API가 지원되지 않습니다.');
-                document.getElementById('printerStatus').textContent = '🖨️ Web Serial API 미지원';
-                document.getElementById('printerStatus').className = 'printer-status disconnected';
-            }
-
+            // 브라우저 정보 확인
+            checkBrowserSupport();
+            updateBrowserStatus();
+            
             // 저장된 설정 로드
             const saved = localStorage.getItem('timeSettings');
             if (saved) {
@@ -1048,7 +1056,6 @@
             
             updateTime();
             setInterval(updateTime, 1000);
-            updatePrinterStatus();
         }
 
         // 키보드 단축키
@@ -1057,22 +1064,16 @@
                 e.preventDefault();
                 toggleSettings();
             }
-            if (e.ctrlKey && e.altKey && e.key === 'p') {
-                e.preventDefault();
-                connectPrinter();
+            if (e.key === 'Escape') {
+                closeTicketResult();
+            }
+            if (e.key === 'Enter' && document.getElementById('ticketResult').style.display === 'flex') {
+                openPrintDialog();
             }
         });
 
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', initialize);
-        
-        // 페이지 언로드 시 연결 정리
-        window.addEventListener('beforeunload', () => {
-            if (isPrinterConnected) {
-                disconnectPrinter();
-            }
-        });
-
         initialize();
     </script>
 </body>
