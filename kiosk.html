@@ -331,13 +331,52 @@
                 <div id="serialMessage"></div>
             </div>
 
+            <!-- 한글 출력 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">🇰🇷 한글 출력 설정</label>
+                <div class="warning-box">
+                    <strong>⚠️ 한글 폰트 문제 해결:</strong><br>
+                    • 대부분의 영수증 프린터는 한글 지원이 제한적입니다<br>
+                    • 폰트가 깨질 경우 영문 모드를 사용하세요<br>
+                    • 프린터 펌웨어에서 한글 폰트 지원 여부를 확인하세요
+                </div>
+                
+                <div class="checkbox-container">
+                    <input type="checkbox" id="koreanMode" checked onchange="updateKoreanMode()">
+                    <label for="koreanMode">한글 출력 모드 (폰트 깨짐 시 해제)</label>
+                </div>
+                
+                <div class="checkbox-container">
+                    <input type="checkbox" id="eucKrMode" onchange="updateKoreanMode()">
+                    <label for="eucKrMode">EUC-KR 인코딩 사용 (구형 프린터용)</label>
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <label>한글 문자셋 설정:</label>
+                    <select class="com-select" id="charsetMode">
+                        <option value="utf8">UTF-8 (기본)</option>
+                        <option value="euckr">EUC-KR (한글 프린터)</option>
+                        <option value="ascii">ASCII 전용 (영문만)</option>
+                    </select>
+                </div>
+                
+                <button class="setting-btn" onclick="testKoreanPrint()">한글 출력 테스트</button>
+                <div id="koreanMessage"></div>
+            </div>
+
             <!-- ESC/POS 명령어 설정 -->
             <div class="setting-group">
                 <label class="setting-label">📝 ESC/POS 프린터 명령어</label>
                 <div class="info-box">
-                    대부분의 영수증 프린터는 ESC/POS 명령어를 사용합니다.<br>
-                    아래 설정을 프린터 매뉴얼에 맞게 조정하세요.
+                    프린터별 한글 지원 명령어가 다를 수 있습니다.<br>
+                    매뉴얼을 참고하여 설정을 조정하세요.
                 </div>
+                
+                <label>한글 모드 활성화:</label>
+                <input type="text" class="setting-input" id="koreanCommand" value="1C2600" placeholder="HEX 코드">
+                
+                <label>문자셋 설정:</label>
+                <input type="text" class="setting-input" id="charsetCommand" value="1B7400" placeholder="HEX 코드">
                 
                 <label>용지 자르기 명령어:</label>
                 <input type="text" class="setting-input" id="cutCommand" value="1D564200" placeholder="HEX 코드">
@@ -532,9 +571,93 @@ app.post('/print', (req, res) => {
             return new Uint8Array(bytes);
         }
 
-        // 텍스트를 바이트 배열로 변환 (UTF-8 인코딩)
+        // 한글 텍스트를 EUC-KR로 인코딩 (영수증 프린터용)
         function textToBytes(text) {
+            // 한글이 포함된 경우 EUC-KR 인코딩 시도
+            if (/[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/.test(text)) {
+                return encodeToEucKr(text);
+            }
+            // 영문/숫자는 ASCII로 처리
             return new TextEncoder().encode(text);
+        }
+
+        // EUC-KR 인코딩 함수 (한글 프린터용)
+        function encodeToEucKr(text) {
+            const eucKrMap = {
+                // 자주 사용되는 한글 문자들의 EUC-KR 코드
+                '가': [0xB0, 0xA1], '나': [0xB3, 0xAA], '다': [0xB4, 0xD9], '라': [0xB6, 0xF3], '마': [0xB8, 0xB6],
+                '바': [0xB9, 0xD9], '사': [0xBB, 0xE7], '아': [0xBE, 0xC6], '자': [0xC0, 0xDA], '차': [0xC2, 0xF7],
+                '카': [0xC4, 0xAB], '타': [0xC5, 0xB8], '파': [0xC6, 0xC4], '하': [0xC7, 0xCF],
+                
+                // 받침 있는 글자들
+                '강': [0xB0, 0xAD], '남': [0xB3, 0xB2], '당': [0xB4, 0xE7], '말': [0xB8, 0xBB], '방': [0xB9, 0xE6],
+                '상': [0xBB, 0xF3], '안': [0xBE, 0xC8], '장': [0xC0, 0xE5], '천': [0xC3, 0xB5], '학': [0xC7, 0xD0],
+                
+                // 교육 관련 단어들
+                '과': [0xB0, 0xFA], '정': [0xC1, 0xA4], '상': [0xBB, 0xF3], '담': [0xB4, 0xE3], '교': [0xB1, 0xB3],
+                '육': [0xC0, 0xBB], '원': [0xBF, 0xF8], '수': [0xBC, 0xF6], '강': [0xB0, 0xAD], '문': [0xB9, 0xAE],
+                '의': [0xC0, 0xC7], '접': [0xC1, 0xA2], '번': [0xB9, 0xF8], '호': [0xC8, 0xA3], '표': [0xC7, 0xA5],
+                
+                // 컴퓨터 관련
+                '워': [0xBF, 0xF6], '드': [0xB5, 0xE5], '엑': [0xBF, 0xA4], '셀': [0xBC, 0xBF], '파': [0xC6, 0xC4],
+                '워': [0xBF, 0xF6], '포': [0xC6, 0xF7], '인': [0xC0, 0xCE], '트': [0xC6, 0xAE], '샵': [0xBE, 0xF0],
+                '토': [0xC5, 0xE4], '일': [0xC0, 0xCF], '러': [0xB7, 0xAF], '스': [0xBD, 0xBA], '디': [0xB5, 0xF0],
+                '자': [0xC0, 0xDA], '인': [0xC0, 0xCE], '영': [0xBF, 0xB5], '상': [0xBB, 0xF3], '편': [0xC6, 0xED],
+                '집': [0xC1, 0xFD], '프': [0xC7, 0xC1], '리': [0xB8, 0xAE], '미': [0xB9, 0xCC], '어': [0xBE, 0xEE],
+                '프': [0xC7, 0xC1], '로': [0xB7, 0xCE], '애': [0xBE, 0xD6], '프': [0xC7, 0xC1], '터': [0xC5, 0xCD],
+                '이': [0xC0, 0xCC], '펙': [0xC6, 0xF0], '트': [0xC6, 0xAE], '제': [0xC1, 0xA6], '작': [0xC0, 0xDB],
+                
+                // 기타 자주 사용되는 글자들
+                '기': [0xB1, 0xE2], '초': [0xC3, 0xCA], '부': [0xBA, 0xCE], '터': [0xC5, 0xCD], '실': [0xBD, 0xC7],
+                '무': [0xB9, 0xAB], '까': [0xB1, 0xEE], '지': [0xC1, 0xF6], '전': [0xC0, 0xFC], '문': [0xB9, 0xAE],
+                '순': [0xBC, 0xF8], '서': [0xBC, 0xAD], '되': [0xB5, 0xC7], '면': [0xB8, 0xE9], '안': [0xBE, 0xC8],
+                '내': [0xB3, 0xBB], '해': [0xC7, 0xD8], '드': [0xB5, 0xE5], '립': [0xB8, 0xB3], '니': [0xB4, 0xCF],
+                '다': [0xB4, 0xD9], '이': [0xC0, 0xCC], '번': [0xB9, 0xF8], '를': [0xB8, 0xA6], '잘': [0xC0, 0xE2],
+                '보': [0xBA, 0xB8], '관': [0xB0, 0xFC], '주': [0xC1, 0xD6], '세': [0xBC, 0xBC], '요': [0xBF, 0xE4],
+                '실': [0xBD, 0xC7], '접': [0xC1, 0xA2], '수': [0xBC, 0xF6], '시': [0xBD, 0xC3], '간': [0xB0, 0xA3],
+                '완': [0xBF, 0xCF], '료': [0xB7, 0xE1], '받': [0xB9, 0xDE], '아': [0xBE, 0xC6], '가': [0xB0, 0xA1],
+                
+                // 숫자와 특수문자는 ASCII 그대로
+                '0': [0x30], '1': [0x31], '2': [0x32], '3': [0x33], '4': [0x34],
+                '5': [0x35], '6': [0x36], '7': [0x37], '8': [0x38], '9': [0x39],
+                ':': [0x3A], '-': [0x2D], ' ': [0x20], '\n': [0x0A], '(': [0x28],
+                ')': [0x29], '*': [0x2A], '=': [0x3D], '━': [0xA6, 0xA6], '─': [0xA6, 0xA6]
+            };
+            
+            const result = [];
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (eucKrMap[char]) {
+                    result.push(...eucKrMap[char]);
+                } else {
+                    // 매핑되지 않은 문자는 ASCII로 처리하거나 ?로 대체
+                    const code = char.charCodeAt(0);
+                    if (code < 128) {
+                        result.push(code);
+                    } else {
+                        result.push(0x3F); // ? 문자
+                    }
+                }
+            }
+            return new Uint8Array(result);
+        }
+
+        // 영문으로 번호표 출력 (폰트 깨짐 방지용)
+        function generateEnglishTicket(info) {
+            const courseMap = {
+                'OA 과정 상담': 'OA Course Consultation',
+                '디자인 과정 상담': 'Design Course Consultation', 
+                '영상편집 과정 상담': 'Video Editing Course',
+                '워드, 엑셀, 파워포인트': 'Word, Excel, PowerPoint',
+                '포토샵, 일러스트': 'Photoshop, Illustrator',
+                '프리미어 프로, 애프터 이펙트': 'Premiere Pro, After Effects'
+            };
+            
+            return {
+                ...info,
+                course: courseMap[info.course] || info.course,
+                description: courseMap[info.description] || info.description
+            };
         }
 
         // 테스트 데이터 전송
@@ -587,57 +710,68 @@ app.post('/print', (req, res) => {
             }
         }
 
-        // 실제 프린터로 번호표 출력
+        // 실제 프린터로 번호표 출력 (한글 폰트 개선)
         async function printTicket(info) {
             if (!writer) throw new Error('프린터가 연결되지 않음');
 
             try {
-                // ESC/POS 명령어로 영수증 포맷 생성
+                // 출력 모드 확인
+                const koreanMode = document.getElementById('koreanMode')?.checked ?? true;
+                const printInfo = koreanMode ? info : generateEnglishTicket(info);
                 
                 // 1. 프린터 초기화
                 await writer.write(hexToBytes('1B40')); // ESC @
                 
-                // 2. 폰트 크기 설정 (큰 글자)
-                await writer.write(hexToBytes('1D2111')); // 2배 크기
+                // 2. 한글 지원 설정 (KS X 1001 문자셋)
+                if (koreanMode) {
+                    await writer.write(hexToBytes('1C2600')); // FS & (한글 모드)
+                    await writer.write(hexToBytes('1B7400')); // ESC t 0 (한글 문자표)
+                }
                 
                 // 3. 가운데 정렬
                 await writer.write(hexToBytes('1B6101')); // ESC a 1
                 
-                // 4. 헤더
-                await writer.write(textToBytes('📚 수강문의 순번표\n'));
-                await writer.write(textToBytes('═══════════════════\n\n'));
+                // 4. 헤더 (영문으로 안전하게)
+                await writer.write(new TextEncoder().encode('COURSE CONSULTATION TICKET\n'));
+                await writer.write(new TextEncoder().encode('==========================\n\n'));
                 
-                // 5. 폰트 크기 더 크게 (번호용)
+                // 5. 번호 (크게)
                 await writer.write(hexToBytes('1D2122')); // 3배 크기
-                await writer.write(textToBytes(`${info.number}\n\n`));
+                await writer.write(new TextEncoder().encode(`${printInfo.number}\n\n`));
                 
                 // 6. 일반 크기로 복원
                 await writer.write(hexToBytes('1D2100')); // 일반 크기
                 
                 // 7. 과정 정보
-                await writer.write(textToBytes(`${info.course}\n`));
-                await writer.write(textToBytes(`${info.description}\n\n`));
+                if (koreanMode) {
+                    await writer.write(textToBytes(`${printInfo.course}\n`));
+                    await writer.write(textToBytes(`${printInfo.description}\n\n`));
+                } else {
+                    await writer.write(new TextEncoder().encode(`${printInfo.course}\n`));
+                    await writer.write(new TextEncoder().encode(`${printInfo.description}\n\n`));
+                }
                 
                 // 8. 바코드 스타일
-                await writer.write(textToBytes(`* ${info.number} *\n\n`));
+                await writer.write(new TextEncoder().encode(`* ${printInfo.number} *\n\n`));
                 
-                // 9. 시간 정보
-                await writer.write(textToBytes(`접수일시: ${info.time}\n`));
-                await writer.write(textToBytes(`접수번호: ${info.number}\n\n`));
+                // 9. 시간 정보 (영문)
+                await writer.write(new TextEncoder().encode(`Time: ${printInfo.timeOnly}\n`));
+                await writer.write(new TextEncoder().encode(`Date: ${printInfo.date}\n`));
+                await writer.write(new TextEncoder().encode(`No.: ${printInfo.number}\n\n`));
                 
-                // 10. 푸터
-                await writer.write(textToBytes('─────────────────────\n'));
-                await writer.write(textToBytes('상담 순서가 되면 안내해 드립니다\n'));
-                await writer.write(textToBytes('이 번호표를 잘 보관해 주세요\n'));
-                await writer.write(textToBytes('─────────────────────\n'));
-                await writer.write(textToBytes('학원 상담실\n\n\n'));
+                // 10. 푸터 (영문)
+                await writer.write(new TextEncoder().encode('-------------------------\n'));
+                await writer.write(new TextEncoder().encode('Please wait for your turn\n'));
+                await writer.write(new TextEncoder().encode('Keep this ticket safely\n'));
+                await writer.write(new TextEncoder().encode('-------------------------\n'));
+                await writer.write(new TextEncoder().encode('Education Center\n\n\n'));
                 
                 // 11. 용지 자르기
                 if (escPosSettings.cut) {
                     await writer.write(hexToBytes(escPosSettings.cut));
                 }
                 
-                console.log('번호표 출력 완료:', info.number);
+                console.log('번호표 출력 완료:', printInfo.number);
                 
             } catch (error) {
                 console.error('프린터 출력 오류:', error);
@@ -670,11 +804,92 @@ app.post('/print', (req, res) => {
             }, 3000);
         }
 
-        // ESC/POS 설정 저장
+        // 한글 모드 업데이트
+        function updateKoreanMode() {
+            const koreanMode = document.getElementById('koreanMode').checked;
+            const eucKrMode = document.getElementById('eucKrMode').checked;
+            const charsetMode = document.getElementById('charsetMode').value;
+            
+            localStorage.setItem('koreanSettings', JSON.stringify({
+                korean: koreanMode,
+                eucKr: eucKrMode,
+                charset: charsetMode
+            }));
+            
+            const message = document.getElementById('koreanMessage');
+            if (koreanMode) {
+                message.innerHTML = '<div style="color: #27ae60; padding: 10px; background: #d4edda; border-radius: 5px;">✅ 한글 출력 모드가 활성화되었습니다.</div>';
+            } else {
+                message.innerHTML = '<div style="color: #856404; padding: 10px; background: #fff3cd; border-radius: 5px;">⚠️ 영문 출력 모드로 전환되었습니다.</div>';
+            }
+        }
+
+        // 한글 출력 테스트
+        async function testKoreanPrint() {
+            if (!serialPort || !writer) {
+                alert('프린터가 연결되지 않았습니다.');
+                return;
+            }
+
+            const koreanMode = document.getElementById('koreanMode').checked;
+            
+            try {
+                // 프린터 초기화
+                await writer.write(hexToBytes('1B40')); // ESC @
+                
+                if (koreanMode) {
+                    // 한글 모드 설정
+                    const koreanCmd = document.getElementById('koreanCommand').value;
+                    const charsetCmd = document.getElementById('charsetCommand').value;
+                    
+                    if (koreanCmd) await writer.write(hexToBytes(koreanCmd));
+                    if (charsetCmd) await writer.write(hexToBytes(charsetCmd));
+                    
+                    // 가운데 정렬
+                    await writer.write(hexToBytes('1B6101'));
+                    
+                    // 한글 테스트
+                    await writer.write(textToBytes('=== 한글 테스트 ===\n'));
+                    await writer.write(textToBytes('가나다라마바사\n'));
+                    await writer.write(textToBytes('아자차카타파하\n'));
+                    await writer.write(textToBytes('수강문의 접수\n'));
+                    await writer.write(textToBytes('OA 과정 상담\n'));
+                    await writer.write(textToBytes('디자인 과정 상담\n\n'));
+                } else {
+                    // 영문 모드 테스트
+                    await writer.write(hexToBytes('1B6101'));
+                    await writer.write(new TextEncoder().encode('=== English Test ===\n'));
+                    await writer.write(new TextEncoder().encode('ABCDEFGHIJKLMNOP\n'));
+                    await writer.write(new TextEncoder().encode('Course Consultation\n'));
+                    await writer.write(new TextEncoder().encode('OA Course\n'));
+                    await writer.write(new TextEncoder().encode('Design Course\n\n'));
+                }
+                
+                // 용지 자르기
+                const cutCmd = document.getElementById('cutCommand').value;
+                if (cutCmd) {
+                    await writer.write(hexToBytes(cutCmd));
+                }
+                
+                const message = document.getElementById('koreanMessage');
+                message.innerHTML = '<div style="color: #27ae60; padding: 10px; background: #d4edda; border-radius: 5px;">✅ 테스트 출력이 완료되었습니다. 폰트 상태를 확인하세요.</div>';
+                
+            } catch (error) {
+                console.error('한글 테스트 출력 오류:', error);
+                const message = document.getElementById('koreanMessage');
+                message.innerHTML = '<div style="color: #721c24; padding: 10px; background: #f8d7da; border-radius: 5px;">❌ 테스트 출력 실패: ' + error.message + '</div>';
+            }
+        }
+
+        // ESC/POS 설정 저장 (확장)
         function saveEscPosSettings() {
-            escPosSettings.cut = document.getElementById('cutCommand').value;
-            escPosSettings.font = document.getElementById('fontCommand').value;
-            escPosSettings.align = document.getElementById('alignCommand').value;
+            escPosSettings = {
+                cut: document.getElementById('cutCommand').value,
+                font: document.getElementById('fontCommand').value,
+                align: document.getElementById('alignCommand').value,
+                korean: document.getElementById('koreanCommand').value,
+                charset: document.getElementById('charsetCommand').value
+            };
             
             localStorage.setItem('escPosSettings', JSON.stringify(escPosSettings));
             
@@ -689,9 +904,117 @@ app.post('/print', (req, res) => {
 
         // 페이지 로드 시 초기화
         function initialize() {
-            // 저장된 설정 로드
+            // 저장된 ESC/POS 설정 로드
             const saved = localStorage.getItem('escPosSettings');
             if (saved) {
+                try {
+                    escPosSettings = { ...escPosSettings, ...JSON.parse(saved) };
+                    document.getElementById('cutCommand').value = escPosSettings.cut || '1D564200';
+                    document.getElementById('fontCommand').value = escPosSettings.font || '1D2100';
+                    document.getElementById('alignCommand').value = escPosSettings.align || '1B6101';
+                    document.getElementById('koreanCommand').value = escPosSettings.korean || '1C2600';
+                    document.getElementById('charsetCommand').value = escPosSettings.charset || '1B7400';
+                } catch (e) {
+                    console.log('ESC/POS 설정 로드 실패');
+                }
+            }
+
+            // 저장된 한글 설정 로드
+            const savedKorean = localStorage.getItem('koreanSettings');
+            if (savedKorean) {
+                try {
+                    const koreanSettings = JSON.parse(savedKorean);
+                    document.getElementById('koreanMode').checked = koreanSettings.korean ?? true;
+                    document.getElementById('eucKrMode').checked = koreanSettings.eucKr ?? false;
+                    document.getElementById('charsetMode').value = koreanSettings.charset || 'utf8';
+                } catch (e) {
+                    console.log('한글 설정 로드 실패');
+                }
+            }
+            
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            checkSerialSupport();
+        }
+
+            <!-- 프린터별 한글 설정 가이드 -->
+            <div class="setting-group">
+                <label class="setting-label">📖 프린터별 한글 설정 가이드</label>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🖨️ Epson TM 시리즈:</strong>
+                    <div class="code-example">한글 모드: 1C2600
+문자셋: 1B7416  (KS X 1001)
+초기화: 1B40</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🖨️ Star TSP 시리즈:</strong>
+                    <div class="code-example">한글 모드: 1B1D4B53
+문자셋: 1B7410
+코드페이지: 1B742A</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🖨️ Bixolon SRP 시리즈:</strong>
+                    <div class="code-example">한글 모드: 1C2600
+문자셋: 1B7413
+초기화: 1B40</div>
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <strong>🖨️ Citizen CT 시리즈:</strong>
+                    <div class="code-example">한글 모드: 1C2600
+문자셋: 1B7400
+인코딩: EUC-KR</div>
+                </div>
+                
+                <div class="warning-box">
+                    <strong>💡 팁:</strong><br>
+                    • 한글이 깨지면 "영문 모드"로 전환하세요<br>
+                    • 프린터 매뉴얼에서 한글 지원 여부를 확인하세요<br>
+                    • 구형 프린터는 EUC-KR 인코딩을 사용하세요<br>
+                    • 최신 프린터는 UTF-8을 지원할 수 있습니다
+                </div>
+            </div>
+
+            <!-- 문제 해결 가이드 -->
+            <div class="setting-group">
+                <label class="setting-label">🔧 한글 폰트 문제 해결</label>
+                
+                <div style="font-size: 0.9rem; line-height: 1.6; color: #666;">
+                    <strong>❌ 한글이 □□□ 또는 ???로 나올 때:</strong><br>
+                    1. "한글 출력 모드" 체크 해제<br>
+                    2. "ASCII 전용" 모드로 변경<br>
+                    3. 프린터 드라이버에서 한글 폰트 설치<br><br>
+                    
+                    <strong>❌ 한글이 깨져서 나올 때:</strong><br>
+                    1. "EUC-KR 인코딩 사용" 체크<br>
+                    2. 문자셋을 "euckr"로 변경<br>
+                    3. 프린터별 한글 명령어 확인<br><br>
+                    
+                    <strong>✅ 권장 해결책:</strong><br>
+                    • 영문 모드 사용 (가장 안정적)<br>
+                    • 번호와 시간만 한글, 나머지는 영문<br>
+                    • 프린터 펌웨어 업데이트
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let serialPort = null;
+        let writer = null;
+        let reader = null;
+        let currentNumbers = { A: 0, B: 0, C: 0 };
+        let escPosSettings = {
+            cut: '1D564200',
+            font: '1D2100',
+            align: '1B6101',
+            korean: '1C2600',
+            charset: '1B7400'
+        };saved) {
                 try {
                     escPosSettings = { ...escPosSettings, ...JSON.parse(saved) };
                     document.getElementById('cutCommand').value = escPosSettings.cut;
