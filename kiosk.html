@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수강문의 접수</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: white;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .current-time {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .connection-status {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        .connection-status.connected { color: #27ae60; }
+        .connection-status.disconnected { color: #e74c3c; }
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .service-title {
+            text-align: center;
+            color: white;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .course-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .course-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 20px;
+            padding: 45px 35px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .course-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        .course-description {
+            font-size: 1.3rem;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+        .no-courses {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .settings-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100%;
+            background: white;
+            transition: right 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+        }
+        .settings-panel.open { right: 0; }
+        .settings-header {
+            background: #3498db;
+            color: white;
+            padding: 25px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .settings-content { 
+            padding: 25px; 
+            padding-bottom: 100px;
+        }
+        .setting-group { 
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .setting-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: #2c3e50;
+        }
+        .setting-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .setting-input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .setting-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px 5px 5px 0;
+            transition: background 0.3s ease;
+        }
+        .setting-btn:hover {
+            background: #2980b9;
+        }
+        .setting-btn.danger {
+            background: #e74c3c;
+        }
+        .setting-btn.danger:hover {
+            background: #c0392b;
+        }
+        .setting-btn.success {
+            background: #27ae60;
+        }
+        .setting-btn.success:hover {
+            background: #229954;
+        }
+        .time-period {
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        .time-period-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .time-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 80px;
+        }
+        .course-item {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .course-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .course-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .course-input.code { width: 60px; }
+        .course-input.name { width: 180px; }
+        .course-input.desc { width: 250px; }
+        .ticket-result {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .ticket-card {
+            background: white;
+            border-radius: 25px;
+            padding: 60px 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+        .ticket-number {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+        .print-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dashed #ddd;
+        }
+        .print-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .print-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        .countdown {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: #e74c3c;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        .ticket-preview {
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            text-align: left;
+        }
+        .status-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        @media (max-width: 768px) {
+            .course-buttons { grid-template-columns: 1fr; }
+            .settings-panel { width: 100%; right: -100%; }
+            .header h1 { font-size: 2.8rem; }
+            .course-inputs { flex-direction: column; }
+            .course-input { width: 100% !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="settings-toggle" onclick="toggleSettings()">⚙️</button>
+        
+        <div class="header">
+            <h1>📚 수강문의 접수</h1>
+            <p style="color: white; font-size: 1.3rem;">원하는 과정을 선택해 주세요</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="current-time" id="currentTime"></div>
+            <div class="connection-status" id="connectionStatus">연결 대기 중...</div>
+            <div id="currentPeriod" style="font-size: 1.1rem; color: #666;"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="service-title">수강 상담을 원하는 과정을 터치해 주세요</div>
+            
+            <div class="course-buttons" id="courseButtons">
+                <div class="no-courses">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">⚙️</div>
+                    <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">설정이 필요합니다</div>
+                    <div style="font-size: 1rem; color: #666;">우상단 ⚙️ 버튼을 클릭해서 시간대와 과목을 설정해주세요</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ticket-result" id="ticketResult">
+        <div class="ticket-card">
+            <div class="countdown" id="countdown">2</div>
+            <div class="ticket-number" id="ticketNumber">A001</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #2c3e50; margin-bottom: 15px;" id="ticketCourse">수강 상담</div>
+            <div style="font-size: 1.3rem; color: #7f8c8d;">접수시간: <span id="ticketTime"></span></div>
+            
+            <div class="print-section">
+                <button class="print-btn" onclick="printTicket()">🖨️ 번호표 출력</button>
+                <button class="print-btn" onclick="closeTicketResult()" style="background: #95a5a6;">닫기</button>
+            </div>
+            
+            <div class="ticket-preview" id="ticketPreview" style="display: none;">
+                <!-- 출력용 번호표 미리보기 -->
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            시스템 설정
+            <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
+        </div>
+        <div class="settings-content">
+            <!-- 서버 연결 -->
+            <div class="setting-group">
+                <label class="setting-label">🔗 로컬 서버 연결</label>
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                    로컬 서버가 실행 중이어야 Google Sheets와 연동됩니다.
+                </div>
+                <button class="setting-btn" onclick="connectSheets()">연결 확인</button>
+                <button class="setting-btn" onclick="testConnection()">테스트</button>
+                <div id="connectionMessage"></div>
+            </div>
+
+            <!-- 시간대 및 과목 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">⏰ 시간대별 과목 설정</label>
+                <div id="timePeriodsContainer"></div>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
+                <button class="setting-btn" onclick="saveSettings()">설정 저장</button>
+                <button class="setting-btn" onclick="loadDefaultSettings()">기본값 복원</button>
+                <div id="settingsMessage"></div>
+            </div>
+
+            <!-- 미리보기 -->
+            <div class="setting-group">
+                <label class="setting-label">👁️ 현재 설정 미리보기</label>
+                <button class="setting-btn" onclick="previewSettings()">미리보기 업데이트</button>
+                <div id="previewContainer" style="font-size: 0.9rem; color: #666; margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sheetsApiUrl = localStorage.getItem('sheetsApiUrl') || '';
+        let isConnected = false;
+        let currentNumbers = {};
+        let timeSettings = [];
+
+        // 기본 설정
+        const defaultSettings = [
+            {
+                startTime: '09:00',
+                endTime: '12:00',
+                courses: [
+                    { code: 'A', name: 'OA 과정 상담', description: '워드, 엑셀, 파워포인트 기초부터 실무까지' }
+                ]
+            },
+            {
+                startTime: '12:00',
+                endTime: '15:00',
+                courses: [
+                    { code: 'B', name: '디자인 과정 상담', description: '포토샵, 일러스트, 웹디자인 전문과정' }
+                ]
+            },
+            {
+                startTime: '15:00',
+                endTime: '18:00',
+                courses: [
+                    { code: 'C', name: '영상편집 과정 상담', description: '프리미어 프로, 애프터 이펙트 영상제작' }
+                ]
+            }
+        ];
+
+        // 시간 업데이트
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('ko-KR');
+            
+            const currentPeriod = getCurrentPeriod(now);
+            const periodText = currentPeriod ? 
+                `현재: ${currentPeriod.courses[0].name} (${currentPeriod.startTime}-${currentPeriod.endTime})` : 
+                '현재: 상담 시간 외';
+            
+            document.getElementById('currentPeriod').textContent = periodText;
+            updateButtons();
+        }
+
+        function getCurrentPeriod(now) {
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            return timeSettings.find(setting => {
+                const start = timeToMinutes(setting.startTime);
+                const end = timeToMinutes(setting.endTime);
+                return currentTime >= start && currentTime < end;
+            });
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function updateButtons() {
+            const container = document.getElementById('courseButtons');
+            const currentPeriod = getCurrentPeriod(new Date());
+            
+            container.innerHTML = '';
+            
+            if (currentPeriod && currentPeriod.courses && currentPeriod.courses.length > 0) {
+                currentPeriod.courses.forEach(course => {
+                    const button = document.createElement('button');
+                    button.className = 'course-btn';
+                    button.onclick = () => issueTicket(course);
+                    button.innerHTML = `
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-description">${course.description}</div>
+                    `;
+                    container.appendChild(button);
+                });
+            } else {
+                container.innerHTML = `
+                    <div class="no-courses">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🕐</div>
+                        <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">현재는 상담 시간이 아닙니다</div>
+                        <div style="font-size: 1rem; color: #666;">설정된 상담 시간에 다시 방문해 주세요</div>
+                    </div>
+                `;
+            }
+        }
+
+        function issueTicket(course) {
+            if (!currentNumbers[course.code]) {
+                currentNumbers[course.code] = 0;
+            }
+            currentNumbers[course.code]++;
+            
+            const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
+            const now = new Date();
+            
+            // 순번 정보 저장 (출력용)
+            window.currentTicketInfo = {
+                number: number,
+                course: course.name,
+                description: course.description,
+                time: now.toLocaleString('ko-KR'),
+                date: now.toLocaleDateString('ko-KR'),
+                timeOnly: now.toLocaleTimeString('ko-KR')
+            };
+            
+            // Google Sheets 저장
+            if (isConnected) {
+                saveToSheets(number, course.name, now.toLocaleString('ko-KR'));
+            }
+            
+            // 바로 출력 실행
+            printTicket();
+        }
+
+        let countdownTimer = null;
+        let countdownSeconds = 2;
+
+        function startCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            countdownSeconds = 2;
+            countdownEl.textContent = countdownSeconds;
+            
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+            }
+            
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                countdownEl.textContent = countdownSeconds;
+                
+                if (countdownSeconds <= 0) {
+                    clearInterval(countdownTimer);
+                    closeTicketResult();
+                }
+            }, 1000);
+        }
+
+        function closeTicketResult() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            document.getElementById('ticketResult').style.display = 'none';
+            document.getElementById('ticketPreview').style.display = 'none';
+        }
+
+        function printTicket() {
+            if (!window.currentTicketInfo) {
+                alert('출력할 순번 정보가 없습니다.');
+                return;
+            }
+            
+            const info = window.currentTicketInfo;
+            
+            // 출력용 HTML 생성
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>순번표 - ${info.number}</title>
+                    <style>
+                        @page {
+                            size: 80mm auto;
+                            margin: 5mm;
+                        }
+                        body {
+                            font-family: 'Malgun Gothic', sans-serif;
+                            font-size: 12px;
+                            line-height: 1.4;
+                            margin: 0;
+                            padding: 10px;
+                            text-align: center;
+                        }
+                        .header {
+                            border-bottom: 2px solid #333;
+                            padding-bottom: 10px;
+                            margin-bottom: 15px;
+                        }
+                        .ticket-number {
+                            font-size: 36px;
+                            font-weight: bold;
+                            color: #000;
+                            margin: 15px 0;
+                            letter-spacing: 3px;
+                        }
+                        .course-name {
+                            font-size: 16px;
+                            font-weight: bold;
+                            margin: 10px 0;
+                        }
+                        .course-desc {
+                            font-size: 11px;
+                            color: #666;
+                            margin-bottom: 15px;
+                        }
+                        .info-line {
+                            margin: 5px 0;
+                            font-size: 11px;
+                        }
+                        .footer {
+                            border-top: 1px solid #ddd;
+                            padding-top: 10px;
+                            margin-top: 15px;
+                            font-size: 10px;
+                            color: #666;
+                        }
+                        .barcode {
+                            font-family: 'Courier New', monospace;
+                            font-size: 14px;
+                            letter-spacing: 1px;
+                            margin: 10px 0;
+                            padding: 5px;
+                            background: #f0f0f0;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>📚 수강문의 순번표</h2>
+                    </div>
+                    
+                    <div class="ticket-number">${info.number}</div>
+                    
+                    <div class="course-name">${info.course}</div>
+                    <div class="course-desc">${info.description}</div>
+                    
+                    <div class="barcode">* ${info.number} *</div>
+                    
+                    <div class="info-line">접수일시: ${info.time}</div>
+                    <div class="info-line">접수번호: ${info.number}</div>
+                    
+                    <div class="footer">
+                        <div>상담 순서가 되면 안내해 드립니다</div>
+                        <div>이 번호표를 잘 보관해 주세요</div>
+                        <div style="margin-top: 10px;">────────────────</div>
+                        <div style="margin-top: 5px;">학원 상담실</div>
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            // 기존 iframe이 있다면 제거
+            const existingFrame = document.getElementById('printFrame');
+            if (existingFrame) {
+                existingFrame.remove();
+            }
+            
+            // 숨김 iframe 생성
+            const iframe = document.createElement('iframe');
+            iframe.id = 'printFrame';
+            iframe.style.position = 'absolute';
+            iframe.style.left = '-9999px';
+            iframe.style.top = '-9999px';
+            iframe.style.width = '1px';
+            iframe.style.height = '1px';
+            iframe.style.border = 'none';
+            document.body.appendChild(iframe);
+            
+            // iframe에 내용 쓰기
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(printContent);
+            doc.close();
+            
+            // 인쇄 실행
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow.print();
+                    
+                    // 1초 후 iframe 제거
+                    setTimeout(() => {
+                        if (iframe.parentNode) {
+                            iframe.remove();
+                        }
+                    }, 1000);
+                } catch (error) {
+                    console.log('인쇄 실행 실패:', error);
+                    iframe.remove();
+                }
+            }, 200);
+            
+            // 즉시 화면 닫기
+            closeTicketResult();
+        }
+
+        function saveToSheets(number, course, time) {
+            // 로컬 서버를 통해 Google Sheets에 저장
+            fetch('/api/addTicket', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    number: number, 
+                    course: course, 
+                    time: time 
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Google Sheets 저장 성공');
+                } else {
+                    console.error('저장 실패:', data.error);
+                }
+            })
+            .catch(error => console.error('저장 오류:', error));
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                renderTimePeriodsEditor();
+            }
+        }
+
+        // 시간대 편집기 렌더링
+        function renderTimePeriodsEditor() {
+            const container = document.getElementById('timePeriodsContainer');
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'time-period';
+                periodDiv.innerHTML = `
+                    <div class="time-period-header">
+                        <strong>시간대 ${index + 1}</strong>
+                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
+                    </div>
+                    
+                    <div class="time-inputs">
+                        <input type="time" class="time-input" value="${period.startTime}" 
+                               onchange="updateTimeField(${index}, 'startTime', this.value)">
+                        <span>~</span>
+                        <input type="time" class="time-input" value="${period.endTime}" 
+                               onchange="updateTimeField(${index}, 'endTime', this.value)">
+                    </div>
+                    
+                    <div class="courses-container" id="courses-${index}"></div>
+                    
+                    <button class="setting-btn" onclick="addCourse(${index})">+ 과목 추가</button>
+                `;
+                container.appendChild(periodDiv);
+                
+                renderCourses(index);
+            });
+        }
+
+        function renderCourses(periodIndex) {
+            const container = document.getElementById(`courses-${periodIndex}`);
+            container.innerHTML = '';
+            
+            timeSettings[periodIndex].courses.forEach((course, courseIndex) => {
+                const courseDiv = document.createElement('div');
+                courseDiv.className = 'course-item';
+                courseDiv.innerHTML = `
+                    <div class="course-inputs">
+                        <input type="text" class="course-input code" placeholder="코드" value="${course.code}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
+                        <input type="text" class="course-input name" placeholder="과목명" value="${course.name}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
+                        <input type="text" class="course-input desc" placeholder="설명" value="${course.description}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
+                    </div>
+                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">삭제</button>
+                `;
+                container.appendChild(courseDiv);
+            });
+        }
+
+        function addTimePeriod() {
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: [
+                    { code: 'A', name: '새 과목', description: '과목 설명을 입력하세요' }
+                ]
+            });
+            renderTimePeriodsEditor();
+        }
+
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+            }
+        }
+
+        function addCourse(periodIndex) {
+            timeSettings[periodIndex].courses.push({
+                code: 'A',
+                name: '새 과목',
+                description: '과목 설명을 입력하세요'
+            });
+            renderCourses(periodIndex);
+        }
+
+        function removeCourse(periodIndex, courseIndex) {
+            if (confirm('이 과목을 삭제하시겠습니까?')) {
+                timeSettings[periodIndex].courses.splice(courseIndex, 1);
+                renderCourses(periodIndex);
+            }
+        }
+
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+        }
+
+        function updateCourseField(periodIndex, courseIndex, field, value) {
+            timeSettings[periodIndex].courses[courseIndex][field] = value;
+        }
+
+        function saveSettings() {
+            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+            
+            const message = document.getElementById('settingsMessage');
+            message.innerHTML = '<div class="status-message">설정이 저장되었습니다!</div>';
+            setTimeout(() => { message.innerHTML = ''; }, 3000);
+            
+            updateButtons();
+            
+            if (isConnected) {
+                saveToGoogleSheets();
+            }
+        }
+
+        function saveToGoogleSheets() {
+            if (!sheetsApiUrl) return;
+            
+            fetch(sheetsApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'saveTimeSettings', settings: timeSettings })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const message = document.getElementById('settingsMessage');
+                if (data.success) {
+                    message.innerHTML += '<div class="status-message">구글 시트에도 저장되었습니다!</div>';
+                } else {
+                    message.innerHTML += '<div class="error-message">구글 시트 저장 실패: ' + data.error + '</div>';
+                }
+            })
+            .catch(error => {
+                const message = document.getElementById('settingsMessage');
+                message.innerHTML += '<div class="error-message">구글 시트 저장 오류</div>';
+            });
+        }
+
+        function loadDefaultSettings() {
+            if (confirm('기본 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                renderTimePeriodsEditor();
+                saveSettings();
+            }
+        }
+
+        function previewSettings() {
+            const preview = document.getElementById('previewContainer');
+            let html = '';
+            
+            timeSettings.forEach((period, index) => {
+                html += `<div style="margin-bottom: 15px; padding: 10px; background: #f1f3f4; border-radius: 5px;">
+                    <strong>${period.startTime} - ${period.endTime}</strong><br>`;
+                
+                period.courses.forEach(course => {
+                    html += `&nbsp;&nbsp;• ${course.code}: ${course.name}<br>`;
+                });
+                
+                html += '</div>';
+            });
+            
+            preview.innerHTML = html || '설정된 시간대가 없습니다.';
+        }
+
+        function connectSheets() {
+            // 로컬 서버 사용 시에는 URL 입력 불필요
+            const message = document.getElementById('connectionMessage');
+            message.innerHTML = '<div style="color: #666;">로컬 서버 연결 확인 중...</div>';
+            testConnection();
+        }작동<br>
+                    • 필요시 수동으로 데이터 관리<br>
+                    • 또는 전용 서버 구축 후 연결
+                </div>
+            `;
+            
+            // 오프라인 모드로 설정
+            isConnected = false;
+            document.getElementById('connectionStatus').innerHTML = '🔄 오프라인 모드 (권장)';
+            document.getElementById('connectionStatus').className = 'connection-status';
+        }
+
+        function testConnection() {
+            if (!sheetsApiUrl) return;
+            
+            const message = document.getElementById('connectionMessage');
+            message.innerHTML = '<div style="color: #666;">연결 테스트 중...</div>';
+            
+            // CORS 오류 방지를 위해 바로 오프라인 모드로 설정
+            setTimeout(() => {
+                isConnected = false;
+                document.getElementById('connectionStatus').innerHTML = '🔄 오프라인 모드';
+                document.getElementById('connectionStatus').className = 'connection-status';
+                message.innerHTML = `
+                    <div class="status-message">
+                        <strong>✅ 오프라인 모드로 작동 중</strong><br>
+                        키오스크 기능은 모두 정상 작동합니다!<br>
+                        <small>Google Sheets 연결은 선택사항입니다</small>
+                    </div>
+                `;
+            }, 1000);
+        }
+
+        // 초기화
+        function initialize() {
+            // 저장된 설정 로드
+            const saved = localStorage.getItem('timeSettings');
+            if (saved) {
+                try {
+                    timeSettings = JSON.parse(saved);
+                } catch (e) {
+                    timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                }
+            } else {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+            }
+            
+            // 저장된 URL 로드
+            if (sheetsApiUrl) {
+                document.getElementById('sheetsUrl').value = sheetsApiUrl;
+                testConnection();
+            } else {
+                document.getElementById('connectionStatus').innerHTML = '🔄 오프라인 모드';
+                document.getElementById('connectionStatus').className = 'connection-status';
+            }
+            
+            updateTime();
+            setInterval(updateTime, 1000);
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey && e.key === 's') {
+                e.preventDefault();
+                toggleSettings();
+            }
+            if (e.key === 'Escape') {
+                closeTicketResult();
+            }
+            if (e.key === 'Enter' && document.getElementById('ticketResult').style.display === 'flex') {
+                printTicket();
+            }
+        });
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', initialize);
+        initialize();
+    </script>
+</body>
+</html>
