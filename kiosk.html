@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수강문의 접수 - 영어 출력</title>
+    <title>순번대기표 접수</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -42,12 +42,18 @@
             color: #2c3e50;
             margin-bottom: 10px;
         }
-        .connection-status, .printer-status {
+        .connection-status {
             font-size: 1.2rem;
-            margin: 5px 0;
+            margin-bottom: 10px;
         }
-        .connected { color: #27ae60; }
-        .disconnected { color: #e74c3c; }
+        .connection-status.connected { color: #27ae60; }
+        .connection-status.disconnected { color: #e74c3c; }
+        .printer-status {
+            font-size: 1rem;
+            color: #666;
+        }
+        .printer-status.connected { color: #27ae60; }
+        .printer-status.disconnected { color: #e74c3c; }
         .main-content {
             flex: 1;
             display: flex;
@@ -101,9 +107,10 @@
             max-width: 600px;
             margin: 0 auto;
         }
-        .settings-toggle, .printer-connect {
+        .settings-toggle {
             position: fixed;
             top: 20px;
+            right: 20px;
             background: rgba(255, 255, 255, 0.9);
             border: none;
             border-radius: 50%;
@@ -113,8 +120,19 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .settings-toggle { right: 20px; }
-        .printer-connect { right: 90px; }
+        .printer-connect {
+            position: fixed;
+            top: 20px;
+            right: 90px;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
         .settings-panel {
             position: fixed;
             top: 0;
@@ -179,49 +197,6 @@
         .setting-btn.danger:hover { background: #c0392b; }
         .setting-btn.success { background: #27ae60; }
         .setting-btn.success:hover { background: #229954; }
-        .status-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
-        .warning-message {
-            background: #fff3cd;
-            color: #856404;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
-        .print-success {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(39, 174, 96, 0.95);
-            color: white;
-            padding: 30px 50px;
-            border-radius: 20px;
-            font-size: 2rem;
-            font-weight: 700;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            z-index: 10000;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .print-success.show { opacity: 1; }
         .time-period {
             border: 2px solid #ecf0f1;
             border-radius: 10px;
@@ -272,17 +247,42 @@
         .course-input.code { width: 60px; }
         .course-input.name { width: 180px; }
         .course-input.desc { width: 250px; }
-        .preview-area {
-            background: #2c3e50;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 15px 0;
-            font-size: 0.85rem;
-            line-height: 1.6;
-            white-space: pre-line;
+        .course-input.english { width: 200px; }
+        .status-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
         }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        .print-success {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(39, 174, 96, 0.95);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 2rem;
+            font-weight: 700;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 10000;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .print-success.show { opacity: 1; }
         @media (max-width: 768px) {
             .course-buttons { grid-template-columns: 1fr; }
             .settings-panel { width: 100%; right: -100%; }
@@ -298,7 +298,7 @@
         <button class="settings-toggle" onclick="toggleSettings()">⚙️</button>
         
         <div class="header">
-            <h1>📚 수강문의 접수</h1>
+            <h1>🎫 순번대기표 접수</h1>
             <p style="color: white; font-size: 1.3rem;">원하는 과정을 선택해 주세요</p>
         </div>
 
@@ -310,7 +310,7 @@
         </div>
 
         <div class="main-content">
-            <div class="service-title">수강 상담을 원하는 과정을 터치해 주세요</div>
+            <div class="service-title">상담을 원하는 과정을 터치해 주세요</div>
             
             <div class="course-buttons" id="courseButtons">
                 <!-- 과목 버튼들이 여기에 표시됩니다 -->
@@ -320,7 +320,7 @@
 
     <div class="print-success" id="printSuccess">
         <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
-        <div id="printSuccessMessage">번호표 출력 완료!</div>
+        <div id="printSuccessMessage">대기표 출력 완료!</div>
     </div>
 
     <div class="settings-panel" id="settingsPanel">
@@ -329,9 +329,9 @@
             <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
         </div>
         <div class="settings-content">
-            <!-- 프린터 연결 -->
+            <!-- 프린터 설정 -->
             <div class="setting-group">
-                <label class="setting-label">🖨️ 프린터 연결</label>
+                <label class="setting-label">🖨️ 시리얼 프린터 설정</label>
                 <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
                     Chrome 기반 브라우저에서 Web Serial API를 사용합니다.
                 </div>
@@ -348,7 +348,7 @@
                 <div id="printerMessage"></div>
             </div>
 
-            <!-- 출력 형식 설정 -->
+            <!-- ESC/POS 명령어 설정 -->
             <div class="setting-group">
                 <label class="setting-label">📝 출력 형식 설정</label>
                 
@@ -373,14 +373,12 @@
                     <option value="none">자르지 않음</option>
                 </select>
                 
-                <div class="warning-message">
-                    <strong>💡 출력 언어:</strong><br>
-                    UI는 한국어로 표시되지만, 프린터 출력은 영어로 됩니다.<br>
-                    이렇게 하면 한글 폰트 문제 없이 안정적으로 출력할 수 있습니다.
+                <div style="background: #e8f5e8; border: 1px solid #4caf50; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem;">
+                    <strong>💡 출력 정보:</strong><br>
+                    • 대기표는 영문으로 출력됩니다<br>
+                    • 한글 과목명은 영문명으로 자동 변환<br>
+                    • 중국어는 병음으로 변환되어 출력
                 </div>
-                
-                <button class="setting-btn" onclick="previewTicket()">번호표 미리보기</button>
-                <div class="preview-area" id="ticketPreview"></div>
             </div>
 
             <!-- 시간대별 과목 설정 -->
@@ -404,61 +402,66 @@
         let currentNumbers = {};
         let timeSettings = [];
 
-        // 기본 설정 (한국어)
+        // 기본 설정 (다국어 과목)
         const defaultSettings = [
             {
                 startTime: '09:00',
                 endTime: '12:00',
                 courses: [
-                    { code: 'A', name: 'OA 과정 상담', description: '워드, 엑셀, 파워포인트 기초부터 실무까지', english: 'Office Application Course' }
+                    { 
+                        code: 'CH', 
+                        name: '中文课程 (Chinese Course)', 
+                        description: '중국어 기초부터 고급까지',
+                        englishName: 'Chinese Language Course',
+                        englishDesc: 'Chinese from Basic to Advanced'
+                    }
                 ]
             },
             {
                 startTime: '12:00',
                 endTime: '15:00',
                 courses: [
-                    { code: 'B', name: '디자인 과정 상담', description: '포토샵, 일러스트, 웹디자인 전문과정', english: 'Design Course Consultation' }
+                    { 
+                        code: 'EN', 
+                        name: 'English Course', 
+                        description: '영어 회화 및 비즈니스 영어',
+                        englishName: 'English Conversation Course',
+                        englishDesc: 'English Conversation & Business English'
+                    }
                 ]
             },
             {
                 startTime: '15:00',
                 endTime: '18:00',
                 courses: [
-                    { code: 'C', name: '영상편집 과정 상담', description: '프리미어 프로, 애프터 이펙트 영상제작', english: 'Video Editing Course' }
+                    { 
+                        code: 'HSK', 
+                        name: 'HSK 시험 준비반', 
+                        description: 'HSK 1-6급 시험 대비',
+                        englishName: 'HSK Test Preparation',
+                        englishDesc: 'HSK Level 1-6 Test Preparation'
+                    }
+                ]
+            },
+            {
+                startTime: '18:00',
+                endTime: '21:00',
+                courses: [
+                    { 
+                        code: 'TO', 
+                        name: 'TOEIC 집중반', 
+                        description: 'TOEIC 고득점 대비반',
+                        englishName: 'TOEIC Intensive Course',
+                        englishDesc: 'TOEIC High Score Preparation'
+                    }
                 ]
             }
         ];
 
-        // 한국어-영어 변환 매핑
-        const koreanToEnglish = {
-            // 과정명
-            'OA 과정 상담': 'Office Application Course',
-            '디자인 과정 상담': 'Design Course Consultation',
-            '영상편집 과정 상담': 'Video Editing Course',
-            '웹개발 과정 상담': 'Web Development Course',
-            '프로그래밍 과정 상담': 'Programming Course',
-            
-            // 설명
-            '워드, 엑셀, 파워포인트 기초부터 실무까지': 'Word, Excel, PowerPoint from basics to advanced',
-            '포토샵, 일러스트, 웹디자인 전문과정': 'Photoshop, Illustrator, Web Design Professional Course',
-            '프리미어 프로, 애프터 이펙트 영상제작': 'Premiere Pro, After Effects Video Production',
-            'HTML, CSS, JavaScript 웹개발': 'HTML, CSS, JavaScript Web Development',
-            'Python, Java 프로그래밍': 'Python, Java Programming',
-            
-            // 일반 단어
-            '수강문의': 'Course Inquiry',
-            '접수': 'Reception',
-            '상담': 'Consultation',
-            '번호표': 'Ticket',
-            '순번': 'Number',
-            '대기': 'Waiting',
-            '학원': 'Academy',
-            '상담실': 'Consultation Office'
-        };
-
         // ESC/POS 명령어
         const ESC = '\x1B';
         const GS = '\x1D';
+        const FS = '\x1C';
         
         const ESCPOS = {
             INIT: ESC + '@',
@@ -469,35 +472,94 @@
             FONT_XLARGE: ESC + '!' + '\x30',
             BOLD_ON: ESC + 'E1',
             BOLD_OFF: ESC + 'E0',
+            UNDERLINE_ON: ESC + '-1',
+            UNDERLINE_OFF: ESC + '-0',
             CUT_FULL: GS + 'V0',
             CUT_PARTIAL: GS + 'V1',
             LINE_FEED: '\n',
+            FORM_FEED: '\x0C',
             DOUBLE_WIDTH: GS + '!1',
             DOUBLE_HEIGHT: GS + '!16',
             DOUBLE_BOTH: GS + '!17',
             NORMAL_SIZE: GS + '!0'
         };
 
-        // 한국어를 영어로 변환
-        function translateToEnglish(text) {
-            // 정확한 매칭 먼저 시도
-            if (koreanToEnglish[text]) {
-                return koreanToEnglish[text];
-            }
-            
-            // 부분 매칭 시도
-            for (const [korean, english] of Object.entries(koreanToEnglish)) {
-                if (text.includes(korean)) {
-                    text = text.replace(korean, english);
-                }
-            }
-            
-            return text;
-        }
-
         // Web Serial API 지원 확인
         function isSerialSupported() {
             return 'serial' in navigator;
+        }
+
+        // 중국어를 병음으로 변환하는 간단한 함수
+        function convertChineseToPinyin(text) {
+            const chinesePinyinMap = {
+                '中文': 'Zhongwen',
+                '课程': 'Kecheng',
+                '汉语': 'Hanyu',
+                '普通话': 'Putonghua',
+                '商务': 'Shangwu',
+                '考试': 'Kaoshi',
+                '准备': 'Zhunbei',
+                '基础': 'Jichu',
+                '高级': 'Gaoji',
+                '会话': 'Huihua',
+                '语法': 'Yufa',
+                '听力': 'Tingli',
+                '阅读': 'Yuedu',
+                '写作': 'Xiezuo',
+                '口语': 'Kouyu'
+            };
+            
+            let result = text;
+            for (const [chinese, pinyin] of Object.entries(chinesePinyinMap)) {
+                result = result.replace(new RegExp(chinese, 'g'), pinyin);
+            }
+            
+            // 남은 중국어 문자는 간단히 제거하거나 ? 로 표시
+            result = result.replace(/[\u4e00-\u9fff]/g, '?');
+            
+            return result;
+        }
+
+        // 한글을 영문으로 변환
+        function convertKoreanToEnglish(text) {
+            const koreanEnglishMap = {
+                '상담': 'Consultation',
+                '과정': 'Course',
+                '기초': 'Basic',
+                '고급': 'Advanced',
+                '회화': 'Conversation',
+                '비즈니스': 'Business',
+                '시험': 'Test',
+                '준비': 'Preparation',
+                '집중': 'Intensive',
+                '대비': 'Preparation',
+                '고득점': 'High Score',
+                '순번': 'Number',
+                '대기표': 'Waiting Ticket',
+                '접수': 'Reception',
+                '시간': 'Time',
+                '번호': 'Number',
+                '학원': 'Academy',
+                '상담실': 'Consultation Room'
+            };
+            
+            let result = text;
+            for (const [korean, english] of Object.entries(koreanEnglishMap)) {
+                result = result.replace(new RegExp(korean, 'g'), english);
+            }
+            
+            // 남은 한글은 제거
+            result = result.replace(/[가-힣]/g, '');
+            
+            return result.trim();
+        }
+
+        // 텍스트를 영문으로 변환 (한글 + 중국어)
+        function convertToEnglish(text) {
+            let result = text;
+            result = convertChineseToPinyin(result);
+            result = convertKoreanToEnglish(result);
+            return result;
         }
 
         // 프린터 연결
@@ -573,20 +635,14 @@
             }
             
             try {
-                if (typeof data === 'string') {
-                    await writer.write(data);
-                } else if (data instanceof Uint8Array) {
-                    await writer.write(data);
-                } else {
-                    await writer.write(data.toString());
-                }
+                await writer.write(data);
             } catch (error) {
                 console.error('프린터 전송 오류:', error);
                 throw error;
             }
         }
 
-        // 텍스트 중앙 정렬
+        // 텍스트를 중앙 정렬로 패딩
         function centerText(text, width) {
             const padding = Math.max(0, Math.floor((width - text.length) / 2));
             return ' '.repeat(padding) + text;
@@ -597,7 +653,7 @@
             return char.repeat(width);
         }
 
-        // 번호표 출력 (영어로)
+        // 대기표 출력 (영문)
         async function printTicket() {
             if (!window.currentTicketInfo) {
                 alert('출력할 순번 정보가 없습니다.');
@@ -625,13 +681,11 @@
                 
                 let printData = '';
                 
-                // 헤더 (영어로)
+                // 헤더 (영문)
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += fontCommand;
                 printData += ESCPOS.BOLD_ON;
-                
-                const headerText = 'COURSE INQUIRY TICKET';
-                printData += centerText(headerText, paperWidth) + ESCPOS.LINE_FEED;
+                printData += centerText('WAITING TICKET', paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.BOLD_OFF;
                 printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
@@ -645,35 +699,34 @@
                 printData += fontCommand;
                 printData += ESCPOS.LINE_FEED;
                 
-                // 과정명 (영어로 변환)
+                // 과정명 (영문 변환)
                 printData += ESCPOS.BOLD_ON;
-                const englishCourseName = translateToEnglish(info.course);
+                const englishCourseName = info.englishName || convertToEnglish(info.course);
                 printData += centerText(englishCourseName, paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.BOLD_OFF;
                 
-                const englishCourseDesc = translateToEnglish(info.description);
+                const englishCourseDesc = info.englishDesc || convertToEnglish(info.description);
                 printData += centerText(englishCourseDesc, paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // 바코드 형태
+                // 바코드 형태 표시
                 printData += centerText('* ' + info.number + ' *', paperWidth) + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // 정보 (영어로)
+                // 정보 (영문)
                 printData += ESCPOS.ALIGN_LEFT;
-                printData += 'Reception Time: ' + info.time + ESCPOS.LINE_FEED;
-                printData += 'Ticket Number: ' + info.number + ESCPOS.LINE_FEED;
+                printData += 'Issue Time: ' + info.time + ESCPOS.LINE_FEED;
+                printData += 'Ticket No.: ' + info.number + ESCPOS.LINE_FEED;
                 printData += ESCPOS.LINE_FEED;
                 
-                // 하단 메시지 (영어로)
+                // 하단 메시지 (영문)
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                
                 printData += centerText('Please wait for your turn', paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText('We will guide you', paperWidth) + ESCPOS.LINE_FEED;
+                printData += centerText('We will call you soon', paperWidth) + ESCPOS.LINE_FEED;
                 printData += centerText('Keep this ticket safe', paperWidth) + ESCPOS.LINE_FEED;
                 printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText('Academy Consultation Office', paperWidth) + ESCPOS.LINE_FEED;
+                printData += centerText('Language Center', paperWidth) + ESCPOS.LINE_FEED;
                 printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 
                 // 여백 및 용지 자르기
@@ -688,6 +741,7 @@
                 // 프린터로 전송
                 await sendToPrinter(printData);
                 
+                // 성공 메시지 표시
                 showPrintSuccess(info.number);
                 
             } catch (error) {
@@ -711,11 +765,364 @@
                 let testData = '';
                 testData += ESCPOS.ALIGN_CENTER;
                 testData += ESCPOS.BOLD_ON;
-                
-                testData += centerText('PRINTER TEST', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('TEST PRINT', paperWidth) + ESCPOS.LINE_FEED;
                 testData += ESCPOS.BOLD_OFF;
                 testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                
-                testData += centerText('Connection successful!', paperWidth) + ESCPOS.LINE_FEED;
-                testData += centerText('Ready to print tickets', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Printer connected successfully!', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Multi-language support ready', paperWidth) + ESCPOS.LINE_FEED;
                 testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Korean: 한글 테스트', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Chinese: 中文测试', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('English: English Test', paperWidth) + ESCPOS.LINE_FEED;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText(new Date().toLocaleString(), paperWidth) + ESCPOS.LINE_FEED;
+                testData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                testData += ESCPOS.CUT_FULL;
+
+                await sendToPrinter(testData);
+                showMessage('printerMessage', '테스트 출력이 완료되었습니다!', 'success');
+                
+            } catch (error) {
+                console.error('테스트 출력 오류:', error);
+                showMessage('printerMessage', '테스트 출력 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 프린터 상태 업데이트
+        function updatePrinterStatus() {
+            const statusEl = document.getElementById('printerStatus');
+            if (isPrinterConnected) {
+                statusEl.textContent = '🖨️ 프린터 연결됨';
+                statusEl.className = 'printer-status connected';
+            } else {
+                statusEl.textContent = '🖨️ 프린터 연결 안됨';
+                statusEl.className = 'printer-status disconnected';
+            }
+        }
+
+        // 출력 성공 메시지
+        function showPrintSuccess(number) {
+            const successEl = document.getElementById('printSuccess');
+            const messageEl = document.getElementById('printSuccessMessage');
+            messageEl.textContent = `${number} 대기표 출력 완료!`;
+            
+            successEl.classList.add('show');
+            setTimeout(() => {
+                successEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // 메시지 표시
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'error-message' : 'status-message';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+
+        // 시간 업데이트
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('ko-KR');
+            
+            const currentPeriod = getCurrentPeriod(now);
+            const periodText = currentPeriod ? 
+                `현재: ${currentPeriod.courses[0].name} (${currentPeriod.startTime}-${currentPeriod.endTime})` : 
+                '현재: 상담 시간 외';
+            
+            document.getElementById('currentPeriod').textContent = periodText;
+            updateButtons();
+        }
+
+        function getCurrentPeriod(now) {
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            return timeSettings.find(setting => {
+                const start = timeToMinutes(setting.startTime);
+                const end = timeToMinutes(setting.endTime);
+                return currentTime >= start && currentTime < end;
+            });
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function updateButtons() {
+            const container = document.getElementById('courseButtons');
+            const currentPeriod = getCurrentPeriod(new Date());
+            
+            container.innerHTML = '';
+            
+            if (currentPeriod && currentPeriod.courses && currentPeriod.courses.length > 0) {
+                currentPeriod.courses.forEach(course => {
+                    const button = document.createElement('button');
+                    button.className = 'course-btn';
+                    button.onclick = () => issueTicket(course);
+                    button.innerHTML = `
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-description">${course.description}</div>
+                    `;
+                    container.appendChild(button);
+                });
+            } else {
+                container.innerHTML = `
+                    <div class="no-courses">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">🕐</div>
+                        <div style="font-size: 1.5rem; font-weight: 600; margin-bottom: 10px;">현재는 상담 시간이 아닙니다</div>
+                        <div style="font-size: 1rem; color: #666;">설정된 상담 시간에 다시 방문해 주세요</div>
+                    </div>
+                `;
+            }
+        }
+
+        function issueTicket(course) {
+            if (!currentNumbers[course.code]) {
+                currentNumbers[course.code] = 0;
+            }
+            currentNumbers[course.code]++;
+            
+            const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
+            const now = new Date();
+            
+            // 순번 정보 저장 (영문명 포함)
+            window.currentTicketInfo = {
+                number: number,
+                course: course.name,
+                description: course.description,
+                englishName: course.englishName,
+                englishDesc: course.englishDesc,
+                time: now.toLocaleString('ko-KR'),
+                date: now.toLocaleDateString('ko-KR'),
+                timeOnly: now.toLocaleTimeString('ko-KR')
+            };
+            
+            // 로컬 스토리지에 저장
+            saveToLocalStorage(number, course.name, now.toLocaleString('ko-KR'));
+            
+            // 즉시 출력
+            printTicket();
+        }
+
+        function saveToLocalStorage(number, course, time) {
+            try {
+                let sharedData = JSON.parse(localStorage.getItem('counterSystemData') || '{}');
+                
+                if (!sharedData.waiting) sharedData.waiting = [];
+                sharedData.waiting.push({
+                    number: number,
+                    course: course,
+                    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                });
+                
+                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                
+                if (!sharedData.counters) {
+                    sharedData.counters = [
+                        { id: 1, current: null, course: null, count: 0 },
+                        { id: 2, current: null, course: null, count: 0 },
+                        { id: 3, current: null, course: null, count: 0 },
+                        { id: 4, current: null, course: null, count: 0 },
+                        { id: 5, current: null, course: null, count: 0 },
+                        { id: 6, current: null, course: null, count: 0 }
+                    ];
+                }
+                
+                if (!sharedData.currentCall) {
+                    sharedData.currentCall = { number: '-', counter: 0, course: '-' };
+                }
+                
+                localStorage.setItem('counterSystemData', JSON.stringify(sharedData));
+                console.log('데이터 저장 성공:', number);
+            } catch (error) {
+                console.error('데이터 저장 오류:', error);
+            }
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                renderTimePeriodsEditor();
+            }
+        }
+
+        function renderTimePeriodsEditor() {
+            const container = document.getElementById('timePeriodsContainer');
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'time-period';
+                periodDiv.innerHTML = `
+                    <div class="time-period-header">
+                        <strong>시간대 ${index + 1}</strong>
+                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
+                    </div>
+                    
+                    <div class="time-inputs">
+                        <input type="time" class="time-input" value="${period.startTime}" 
+                               onchange="updateTimeField(${index}, 'startTime', this.value)">
+                        <span>~</span>
+                        <input type="time" class="time-input" value="${period.endTime}" 
+                               onchange="updateTimeField(${index}, 'endTime', this.value)">
+                    </div>
+                    
+                    <div class="courses-container" id="courses-${index}"></div>
+                    
+                    <button class="setting-btn" onclick="addCourse(${index})">+ 과목 추가</button>
+                `;
+                container.appendChild(periodDiv);
+                
+                renderCourses(index);
+            });
+        }
+
+        function renderCourses(periodIndex) {
+            const container = document.getElementById(`courses-${periodIndex}`);
+            container.innerHTML = '';
+            
+            timeSettings[periodIndex].courses.forEach((course, courseIndex) => {
+                const courseDiv = document.createElement('div');
+                courseDiv.className = 'course-item';
+                courseDiv.innerHTML = `
+                    <div class="course-inputs">
+                        <input type="text" class="course-input code" placeholder="코드" value="${course.code}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
+                        <input type="text" class="course-input name" placeholder="과목명 (한글/중문)" value="${course.name}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
+                        <input type="text" class="course-input desc" placeholder="설명" value="${course.description}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
+                        <input type="text" class="course-input english" placeholder="영문 과목명" value="${course.englishName || ''}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'englishName', this.value)">
+                        <input type="text" class="course-input english" placeholder="영문 설명" value="${course.englishDesc || ''}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'englishDesc', this.value)">
+                    </div>
+                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">삭제</button>
+                `;
+                container.appendChild(courseDiv);
+            });
+        }
+
+        function addTimePeriod() {
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: [
+                    { 
+                        code: 'NEW', 
+                        name: '새 과목', 
+                        description: '과목 설명을 입력하세요',
+                        englishName: 'New Course',
+                        englishDesc: 'Enter course description'
+                    }
+                ]
+            });
+            renderTimePeriodsEditor();
+        }
+
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+            }
+        }
+
+        function addCourse(periodIndex) {
+            timeSettings[periodIndex].courses.push({
+                code: 'NEW',
+                name: '새 과목',
+                description: '과목 설명을 입력하세요',
+                englishName: 'New Course',
+                englishDesc: 'Enter course description'
+            });
+            renderCourses(periodIndex);
+        }
+
+        function removeCourse(periodIndex, courseIndex) {
+            if (confirm('이 과목을 삭제하시겠습니까?')) {
+                timeSettings[periodIndex].courses.splice(courseIndex, 1);
+                renderCourses(periodIndex);
+            }
+        }
+
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+        }
+
+        function updateCourseField(periodIndex, courseIndex, field, value) {
+            timeSettings[periodIndex].courses[courseIndex][field] = value;
+        }
+
+        function saveSettings() {
+            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+            
+            const message = document.getElementById('settingsMessage');
+            message.innerHTML = '<div class="status-message">설정이 저장되었습니다!</div>';
+            setTimeout(() => { message.innerHTML = ''; }, 3000);
+            
+            updateButtons();
+        }
+
+        function loadDefaultSettings() {
+            if (confirm('기본 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                renderTimePeriodsEditor();
+                saveSettings();
+            }
+        }
+
+        // 초기화
+        function initialize() {
+            // Web Serial API 지원 확인
+            if (!isSerialSupported()) {
+                console.warn('Web Serial API가 지원되지 않습니다.');
+                document.getElementById('printerStatus').textContent = '🖨️ Web Serial API 미지원';
+                document.getElementById('printerStatus').className = 'printer-status disconnected';
+            }
+
+            // 저장된 설정 로드
+            const saved = localStorage.getItem('timeSettings');
+            if (saved) {
+                try {
+                    timeSettings = JSON.parse(saved);
+                } catch (e) {
+                    timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                }
+            } else {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+            }
+            
+            updateTime();
+            setInterval(updateTime, 1000);
+            updatePrinterStatus();
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.altKey && e.key === 's') {
+                e.preventDefault();
+                toggleSettings();
+            }
+            if (e.ctrlKey && e.altKey && e.key === 'p') {
+                e.preventDefault();
+                connectPrinter();
+            }
+        });
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', initialize);
+        
+        // 페이지 언로드 시 연결 정리
+        window.addEventListener('beforeunload', () => {
+            if (isPrinterConnected) {
+                disconnectPrinter();
+            }
+        });
+
+        initialize();
+    </script>
+</body>
+</html>
