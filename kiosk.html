@@ -482,8 +482,89 @@ app.post('/print', (req, res) => {
             }
         }
 
+        // 프린터 상태 업데이트
+        function updatePrinterStatus(status, message) {
+            const statusEl = document.getElementById('printerStatus');
+            if (!statusEl) return;
+            
+            const indicator = statusEl.querySelector('.status-indicator');
+            
+            statusEl.className = `printer-status ${status}`;
+            if (indicator) {
+                indicator.className = `status-indicator ${status}`;
+            }
+            statusEl.innerHTML = `<span class="status-indicator ${status}"></span>${message}`;
+        }
+
+        // 초기화 함수
+        function initialize() {
+            console.log('페이지 초기화 시작');
+            
+            // DOM 요소 확인
+            const settingsToggle = document.querySelector('.settings-toggle');
+            const settingsPanel = document.getElementById('settingsPanel');
+            
+            console.log('설정 버튼:', settingsToggle);
+            console.log('설정 패널:', settingsPanel);
+            
+            // 설정 버튼에 이벤트 리스너 직접 추가 (백업)
+            if (settingsToggle) {
+                settingsToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('설정 버튼 클릭됨 (addEventListener)');
+                    toggleSettings();
+                });
+            }
+
+            // 저장된 ESC/POS 설정 로드
+            const saved = localStorage.getItem('escPosSettings');
+            if (saved) {
+                try {
+                    escPosSettings = { ...escPosSettings, ...JSON.parse(saved) };
+                    const cutCmd = document.getElementById('cutCommand');
+                    const fontCmd = document.getElementById('fontCommand');
+                    const alignCmd = document.getElementById('alignCommand');
+                    const koreanCmd = document.getElementById('koreanCommand');
+                    const charsetCmd = document.getElementById('charsetCommand');
+                    
+                    if (cutCmd) cutCmd.value = escPosSettings.cut || '1D564200';
+                    if (fontCmd) fontCmd.value = escPosSettings.font || '1D2100';
+                    if (alignCmd) alignCmd.value = escPosSettings.align || '1B6101';
+                    if (koreanCmd) koreanCmd.value = escPosSettings.korean || '1C2600';
+                    if (charsetCmd) charsetCmd.value = escPosSettings.charset || '1B7400';
+                } catch (e) {
+                    console.log('ESC/POS 설정 로드 실패');
+                }
+            }
+
+            // 저장된 한글 설정 로드
+            const savedKorean = localStorage.getItem('koreanSettings');
+            if (savedKorean) {
+                try {
+                    const koreanSettings = JSON.parse(savedKorean);
+                    const koreanMode = document.getElementById('koreanMode');
+                    const eucKrMode = document.getElementById('eucKrMode');
+                    const charsetMode = document.getElementById('charsetMode');
+                    
+                    if (koreanMode) koreanMode.checked = koreanSettings.korean ?? true;
+                    if (eucKrMode) eucKrMode.checked = koreanSettings.eucKr ?? false;
+                    if (charsetMode) charsetMode.value = koreanSettings.charset || 'utf8';
+                } catch (e) {
+                    console.log('한글 설정 로드 실패');
+                }
+            }
+            
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            checkSerialSupport();
+            
+            console.log('페이지 초기화 완료');
+        }
+
         // 시리얼 포트 연결
         async function connectSerial() {
+            console.log('connectSerial 함수 호출됨');
             if (!checkSerialSupport()) {
                 alert('이 브라우저는 Web Serial API를 지원하지 않습니다.\nChrome 89+ 버전을 사용하세요.');
                 return;
@@ -492,7 +573,7 @@ app.post('/print', (req, res) => {
             try {
                 updatePrinterStatus('connecting', '포트 연결 중...');
                 
-                const baudRate = parseInt(document.getElementById('baudRate').value);
+                const baudRate = parseInt(document.getElementById('baudRate')?.value || '115200');
                 
                 // 사용자가 포트 선택
                 serialPort = await navigator.serial.requestPort();
@@ -515,19 +596,24 @@ app.post('/print', (req, res) => {
                 await sendTestData();
                 
                 const message = document.getElementById('serialMessage');
-                message.innerHTML = '<div style="color: #27ae60; padding: 10px; background: #d4edda; border-radius: 5px;">✅ 프린터 연결 성공!</div>';
+                if (message) {
+                    message.innerHTML = '<div style="color: #27ae60; padding: 10px; background: #d4edda; border-radius: 5px;">✅ 프린터 연결 성공!</div>';
+                }
 
             } catch (error) {
                 console.error('시리얼 연결 오류:', error);
                 updatePrinterStatus('disconnected', '연결 실패');
                 
                 const message = document.getElementById('serialMessage');
-                message.innerHTML = `<div style="color: #721c24; padding: 10px; background: #f8d7da; border-radius: 5px;">❌ 연결 실패: ${error.message}</div>`;
+                if (message) {
+                    message.innerHTML = `<div style="color: #721c24; padding: 10px; background: #f8d7da; border-radius: 5px;">❌ 연결 실패: ${error.message}</div>`;
+                }
             }
         }
 
         // 시리얼 포트 연결 해제
         async function disconnectSerial() {
+            console.log('disconnectSerial 함수 호출됨');
             try {
                 if (writer) {
                     await writer.close();
@@ -545,21 +631,13 @@ app.post('/print', (req, res) => {
                 updatePrinterStatus('disconnected', '프린터 미연결');
                 
                 const message = document.getElementById('serialMessage');
-                message.innerHTML = '<div style="color: #666; padding: 10px; background: #e9ecef; border-radius: 5px;">🔌 연결이 해제되었습니다.</div>';
+                if (message) {
+                    message.innerHTML = '<div style="color: #666; padding: 10px; background: #e9ecef; border-radius: 5px;">🔌 연결이 해제되었습니다.</div>';
+                }
                 
             } catch (error) {
                 console.error('연결 해제 오류:', error);
             }
-        }
-
-        // 프린터 상태 업데이트
-        function updatePrinterStatus(status, message) {
-            const statusEl = document.getElementById('printerStatus');
-            const indicator = statusEl.querySelector('.status-indicator');
-            
-            statusEl.className = `printer-status ${status}`;
-            indicator.className = `status-indicator ${status}`;
-            statusEl.innerHTML = `<span class="status-indicator ${status}"></span>${message}`;
         }
 
         // HEX 문자열을 Uint8Array로 변환
@@ -1070,17 +1148,12 @@ app.post('/print', (req, res) => {
 
         // 키보드 단축키
         document.addEventListener('keydown', function(e) {
-        // 설정 패널 토글
-        function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
-            panel.classList.toggle('open');
-        }
-
-        // 키보드 단축키
+        // 키보드 단축키 및 이벤트 리스너
         document.addEventListener('keydown', function(e) {
             // Ctrl+Alt+S: 설정 열기
             if (e.ctrlKey && e.altKey && e.key === 's') {
                 e.preventDefault();
+                console.log('Ctrl+Alt+S 단축키로 설정 열기');
                 toggleSettings();
             }
             
@@ -1099,7 +1172,7 @@ app.post('/print', (req, res) => {
             // ESC: 설정 닫기
             if (e.key === 'Escape') {
                 const panel = document.getElementById('settingsPanel');
-                if (panel.classList.contains('open')) {
+                if (panel && panel.classList.contains('open')) {
                     toggleSettings();
                 }
             }
@@ -1112,13 +1185,39 @@ app.post('/print', (req, res) => {
             }
         });
 
-        // 초기화
-        document.addEventListener('DOMContentLoaded', initialize);
+        // DOM 로딩 완료 후 초기화
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initialize);
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOMContentLoaded 이벤트');
+                initialize();
+            });
         } else {
+            console.log('문서 이미 로드됨, 즉시 초기화');
             initialize();
         }
+
+        // 추가 백업 초기화 (window.onload)
+        window.addEventListener('load', function() {
+            console.log('window load 이벤트');
+            // 설정 버튼 재확인
+            const settingsToggle = document.querySelector('.settings-toggle');
+            if (settingsToggle && !settingsToggle.onclick) {
+                console.log('설정 버튼에 onclick 이벤트 추가');
+                settingsToggle.onclick = function(e) {
+                    e.preventDefault();
+                    console.log('설정 버튼 클릭됨 (onclick)');
+                    toggleSettings();
+                };
+            }
+        });
+
+        // 전역에서 접근 가능하도록 함수 노출
+        window.toggleSettings = toggleSettings;
+        window.connectSerial = connectSerial;
+        window.disconnectSerial = disconnectSerial;
+        window.testPrint = testPrint;
+        
+        console.log('스크립트 로딩 완료');
     </script>
 </body>
 </html>
