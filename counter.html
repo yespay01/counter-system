@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상담창구 시스템 - Firebase 연동</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .counter-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .counter-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .counter-btn.active {
+            background: rgba(255,255,255,0.9);
+            color: #667eea;
+            border-color: white;
+        }
+        .counter-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .admin-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .admin-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .admin-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .admin-btn.danger {
+            border-color: rgba(255,107,107,0.5);
+            background: rgba(255,107,107,0.2);
+        }
+        .admin-btn.danger:hover {
+            background: rgba(255,107,107,0.3);
+        }
+        .main-content {
+            padding: 40px;
+        }
+        .current-status {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+        }
+        .current-number {
+            font-size: 5rem;
+            font-weight: 900;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        .current-course {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        /* 재호출 버튼 - 현재 상담 상태 옆에 추가 */
+        .recall-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(243,156,18,0.3);
+            display: none; /* 기본적으로 숨김 */
+        }
+        
+        .recall-btn:hover {
+            background: #e67e22;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(243,156,18,0.4);
+        }
+        
+        .recall-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .recall-btn.show {
+            display: block;
+            animation: recallPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes recallPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr; /* 4개 버튼으로 확장 */
+            gap: 15px; /* 간격 조금 줄임 */
+            margin-bottom: 30px;
+        }
+        .action-btn {
+            padding: 18px; /* 패딩 조금 줄임 */
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem; /* 폰트 크기 조금 줄임 */
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-direction: column; /* 세로 배치로 변경 */
+        }
+        .call-btn {
+            background: #00b894;
+            color: white;
+        }
+        .call-btn:hover {
+            background: #00a085;
+            transform: translateY(-2px);
+        }
+        .call-btn:disabled {
+            background: #ddd;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .recall-action-btn {
+            background: #f39c12;
+            color: white;
+        }
+        .recall-action-btn:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+        .recall-action-btn:disabled {
+            background: #ddd;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .complete-btn {
+            background: #fdcb6e;
+            color: #2d3436;
+        }
+        .complete-btn:hover {
+            background: #e17055;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .complete-btn:disabled {
+            background: #ddd;
+            color: #999;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .reset-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        .reset-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+        .waiting-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .waiting-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+        }
+        .waiting-item {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .waiting-item:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .waiting-item.next {
+            border-color: #00b894;
+            background: #d1f2eb;
+            color: #00b894;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .stat-item {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        .online { border-left: 4px solid #00b894; }
+        .offline { border-left: 4px solid #e74c3c; }
+        .firebase { border-left: 4px solid #ff6b35; }
+
+        /* 재호출 효과 */
+        .recall-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(243,156,18,0.3);
+            z-index: 100;
+            opacity: 0;
+            animation: recallEffect 2s ease-out;
+        }
+        
+        @keyframes recallEffect {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+        }
+
+        /* 모달 스타일 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal h2 {
+            color: #e74c3c;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        .modal p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .modal-btn.confirm {
+            background: #e74c3c;
+            color: white;
+        }
+        .modal-btn.confirm:hover {
+            background: #c0392b;
+        }
+        .modal-btn.cancel {
+            background: #95a5a6;
+            color: white;
+        }
+        .modal-btn.cancel:hover {
+            background: #7f8c8d;
+        }
+
+        /* 성공 메시지 */
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #d4edda;
+            color: #155724;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .success-message.show {
+            opacity: 1;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .action-buttons { 
+                grid-template-columns: 1fr 1fr; /* 모바일에서는 2x2 그리드 */
+                gap: 12px;
+            }
+            .action-btn {
+                padding: 15px 10px;
+                font-size: 1rem;
+            }
+            .counter-selector { 
+                flex-direction: column; 
+                align-items: center; 
+            }
+            .stats { 
+                grid-template-columns: 1fr; 
+            }
+            .admin-controls {
+                position: static;
+                justify-content: center;
+                margin-top: 15px;
+            }
+            .recall-btn {
+                top: 15px;
+                right: 15px;
+                padding: 10px 12px;
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .action-buttons {
+                grid-template-columns: 1fr; /* 초소형 화면에서는 세로 배치 */
+            }
+        }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove, off } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuvEDDEoMLwLB2miGHCWX1-B5u8gKlGEQ",
+            authDomain: "counter-system-26479.firebaseapp.com",
+            databaseURL: "https://counter-system-26479-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "counter-system-26479",
+            storageBucket: "counter-system-26479.firebasestorage.app",
+            messagingSenderId: "316144964417",
+            appId: "1:316144964417:web:8a95a80f9db622f4ee87c0"
+        };
+
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // 전역 변수로 설정하여 다른 스크립트에서 사용 가능
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebasePush = push;
+        window.firebaseOnValue = onValue;
+        window.firebaseRemove = remove;
+        window.firebaseOff = off;
+
+        // Firebase 연결 상태 확인
+        const connectedRef = ref(database, '.info/connected');
+        onValue(connectedRef, (snapshot) => {
+            const connected = snapshot.val();
+            const statusEl = document.getElementById('statusIndicator');
+            if (statusEl) {
+                if (connected) {
+                    statusEl.innerHTML = '🔥 Firebase 연결됨';
+                    statusEl.className = 'status-indicator firebase';
+                } else {
+                    statusEl.innerHTML = '❌ Firebase 연결 끊김';
+                    statusEl.className = 'status-indicator offline';
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="status-indicator" id="statusIndicator">🔄 Firebase 연결 중...</div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="admin-controls">
+                <button class="admin-btn" onclick="showResetModal('partial')">📊 통계 초기화</button>
+                <button class="admin-btn danger" onclick="showResetModal('all')">🗑️ 전체 초기화</button>
+            </div>
+            
+            <h1>🏢 상담창구 시스템</h1>
+            <div class="counter-selector">
+                <button class="counter-btn active" onclick="selectCounter(1)">1번 창구</button>
+                <button class="counter-btn" onclick="selectCounter(2)">2번 창구</button>
+                <button class="counter-btn" onclick="selectCounter(3)">3번 창구</button>
+                <button class="counter-btn" onclick="selectCounter(4)">4번 창구</button>
+                <button class="counter-btn" onclick="selectCounter(5)">5번 창구</button>
+                <button class="counter-btn" onclick="selectCounter(6)">6번 창구</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="current-status">
+                <!-- 재호출 버튼 (현재 상담 중일 때만 표시) -->
+                <button class="recall-btn" id="recallBtn" onclick="recallCurrent()" title="현재 번호 재호출">
+                    🔔
+                </button>
+                
+                <div style="font-size: 1.2rem; color: #666; margin-bottom: 10px;">
+                    <span id="counterName">1번 창구</span> 현재 상담
+                </div>
+                <div class="current-number" id="currentNumber">-</div>
+                <div class="current-course" id="currentCourse">대기 중</div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn call-btn" id="callBtn" onclick="callNext()">
+                    📢
+                    <span>다음번호 호출</span>
+                </button>
+                <button class="action-btn recall-action-btn" id="recallActionBtn" onclick="recallCurrent()">
+                    🔔
+                    <span>현재번호 재호출</span>
+                </button>
+                <button class="action-btn complete-btn" id="completeBtn" onclick="completeService()">
+                    ✅
+                    <span>상담 완료</span>
+                </button>
+                <button class="action-btn reset-btn" onclick="showResetModal('waiting')">
+                    🔄
+                    <span>대기열 초기화</span>
+                </button>
+            </div>
+
+            <div class="waiting-section">
+                <div class="section-title">
+                    ⏳ 대기번호 현황
+                    <span style="background: #667eea; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem;" id="waitingCount">0명 대기</span>
+                </div>
+                <div class="waiting-list" id="waitingList">
+                    <!-- 대기번호들이 여기에 표시 -->
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="todayCount">0</div>
+                    <div class="stat-label">오늘 총 접수</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="myCount">0</div>
+                    <div class="stat-label">내 상담 완료</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="currentWaiting">0</div>
+                    <div class="stat-label">현재 대기</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 초기화 확인 모달 -->
+    <div id="resetModal" class="modal">
+        <div class="modal-content">
+            <h2>⚠️ 초기화 확인</h2>
+            <p id="resetMessage"></p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="confirmReset()">초기화 실행</button>
+                <button class="modal-btn cancel" onclick="closeResetModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 성공 메시지 -->
+    <div id="successMessage" class="success-message"></div>
+
+    <script>
+        let currentCounter = 1;
+        let currentResetType = '';
+        let lastRecallTime = 0; // 재호출 방지용
+        let sharedData = {
+            currentCall: { number: '-', counter: 0, course: '-' },
+            waiting: [],
+            counters: [
+                { id: 1, current: null, course: null, count: 0 },
+                { id: 2, current: null, course: null, count: 0 },
+                { id: 3, current: null, course: null, count: 0 },
+                { id: 4, current: null, course: null, count: 0 },
+                { id: 5, current: null, course: null, count: 0 },
+                { id: 6, current: null, course: null, count: 0 }
+            ],
+            totalToday: 0,
+            lastUpdated: null
+        };
+
+        // Firebase 실시간 데이터 감지
+        function setupFirebaseListeners() {
+            if (!window.firebaseDB) {
+                console.error('Firebase가 초기화되지 않았습니다.');
+                return;
+            }
+
+            const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+            
+            window.firebaseOnValue(systemRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    console.log('🔥 Firebase 데이터 수신:', data);
+                    sharedData = { ...sharedData, ...data };
+                    updateDisplay();
+                } else {
+                    console.log('📭 Firebase 데이터 없음 - 초기 데이터 생성');
+                    saveToFirebase();
+                }
+            });
+        }
+
+        // Firebase에 데이터 저장
+        function saveToFirebase() {
+            if (!window.firebaseDB) {
+                console.error('Firebase가 초기화되지 않았습니다.');
+                return;
+            }
+
+            try {
+                sharedData.lastUpdated = new Date().toISOString();
+                const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+                
+                window.firebaseSet(systemRef, sharedData).then(() => {
+                    console.log('✅ Firebase 저장 완료');
+                }).catch((error) => {
+                    console.error('❌ Firebase 저장 실패:', error);
+                });
+            } catch (error) {
+                console.error('❌ Firebase 저장 오류:', error);
+            }
+        }
+
+        // URL에서 창구 번호 자동 감지
+        function getCounterFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const counterId = urlParams.get('id');
+            if (counterId && counterId >= 1 && counterId <= 6) {
+                return parseInt(counterId);
+            }
+            return 1;
+        }
+
+        function selectCounter(counterNum) {
+            currentCounter = counterNum;
+            
+            // 버튼 활성화 상태 변경
+            document.querySelectorAll('.counter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.counter-btn')[counterNum - 1].classList.add('active');
+            
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            document.getElementById('counterName').textContent = `${currentCounter}번 창구`;
+            document.getElementById('currentNumber').textContent = counter.current || '-';
+            document.getElementById('currentCourse').textContent = counter.course || '대기 중';
+            
+            // 버튼 상태 업데이트
+            const callBtn = document.getElementById('callBtn');
+            const completeBtn = document.getElementById('completeBtn');
+            const recallBtn = document.getElementById('recallBtn');
+            const recallActionBtn = document.getElementById('recallActionBtn');
+            
+            const hasWaiting = sharedData.waiting && sharedData.waiting.length > 0;
+            const hasCurrent = counter.current && counter.current !== '-';
+            
+            callBtn.disabled = !hasWaiting;
+            completeBtn.disabled = !hasCurrent;
+            recallActionBtn.disabled = !hasCurrent;
+            
+            // 재호출 버튼 표시/숨김
+            if (hasCurrent) {
+                recallBtn.classList.add('show');
+            } else {
+                recallBtn.classList.remove('show');
+            }
+            
+            // 대기번호 표시
+            const waitingContainer = document.getElementById('waitingList');
+            waitingContainer.innerHTML = '';
+            
+            if (sharedData.waiting && sharedData.waiting.length > 0) {
+                sharedData.waiting.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'waiting-item';
+                    if (index === 0) div.classList.add('next');
+                    
+                    div.innerHTML = `
+                        <div style="font-weight: 900; font-size: 1.2rem;">${item.number}</div>
+                        <div style="font-size: 0.8rem; color: #666;">${item.course}</div>
+                        <div style="font-size: 0.7rem; color: #999;">${item.time}</div>
+                    `;
+                    
+                    div.onclick = () => callSpecific(item.number);
+                    waitingContainer.appendChild(div);
+                });
+            } else {
+                waitingContainer.innerHTML = '<div style="text-align: center; color: #999; padding: 40px;">대기 중인 번호가 없습니다</div>';
+            }
+            
+            // 통계 업데이트
+            const waitingLength = sharedData.waiting ? sharedData.waiting.length : 0;
+            document.getElementById('waitingCount').textContent = `${waitingLength}명 대기`;
+            document.getElementById('todayCount').textContent = sharedData.totalToday || 0;
+            document.getElementById('myCount').textContent = counter.count || 0;
+            document.getElementById('currentWaiting').textContent = waitingLength;
+        }
+
+        function callNext() {
+            if (!sharedData.waiting || sharedData.waiting.length === 0) {
+                alert('대기 중인 번호가 없습니다.');
+                return;
+            }
+            
+            const nextCustomer = sharedData.waiting.shift();
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            counter.current = nextCustomer.number;
+            counter.course = nextCustomer.course;
+            
+            // 현재 호출 업데이트
+            sharedData.currentCall = {
+                number: nextCustomer.number,
+                counter: currentCounter,
+                course: nextCustomer.course
+            };
+            
+            saveToFirebase();
+            playCallSound();
+            
+            // 성공 메시지
+            showMessage(`🔔 ${counter.current} 재호출 완료!`);
+            
+            console.log(`🔔 재호출 실행: ${counter.current} (${currentCounter}번 창구)`);
+        }
+
+        // 재호출 효과 표시
+        function showRecallEffect(number) {
+            const currentStatus = document.querySelector('.current-status');
+            
+            // 기존 효과 제거
+            const existingEffect = document.querySelector('.recall-effect');
+            if (existingEffect) {
+                existingEffect.remove();
+            }
+            
+            // 새 효과 생성
+            const effect = document.createElement('div');
+            effect.className = 'recall-effect';
+            effect.textContent = `🔔 ${number} 재호출`;
+            
+            currentStatus.appendChild(effect);
+            
+            // 2초 후 제거
+            setTimeout(() => {
+                if (effect.parentNode) {
+                    effect.parentNode.removeChild(effect);
+                }
+            }, 2000);
+        }
+
+        function completeService() {
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            if (!counter.current) {
+                alert('현재 상담 중인 고객이 없습니다.');
+                return;
+            }
+            
+            const completedNumber = counter.current;
+            
+            counter.current = null;
+            counter.course = null;
+            counter.count = (counter.count || 0) + 1;
+            
+            // 현재 호출 정보도 초기화
+            sharedData.currentCall = {
+                number: '-',
+                counter: 0,
+                course: '-'
+            };
+            
+            saveToFirebase();
+            
+            // 성공 메시지
+            showMessage(`${completedNumber} 상담 완료!`);
+        }
+
+        function callSpecific(number) {
+            if (!sharedData.waiting) return;
+            
+            const customerIndex = sharedData.waiting.findIndex(item => item.number === number);
+            if (customerIndex === -1) return;
+            
+            const customer = sharedData.waiting.splice(customerIndex, 1)[0];
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            counter.current = customer.number;
+            counter.course = customer.course;
+            
+            // 현재 호출 업데이트
+            sharedData.currentCall = {
+                number: customer.number,
+                counter: currentCounter,
+                course: customer.course
+            };
+            
+            saveToFirebase();
+            playCallSound();
+            
+            showMessage(`${customer.number} 호출 완료!`);
+        }
+
+        // 초기화 관련 함수들
+        function showResetModal(type) {
+            currentResetType = type;
+            const modal = document.getElementById('resetModal');
+            const message = document.getElementById('resetMessage');
+            
+            let messageText = '';
+            switch(type) {
+                case 'waiting':
+                    messageText = '현재 대기 중인 모든 번호를 삭제합니다.<br><strong>진행 중인 상담은 유지됩니다.</strong>';
+                    break;
+                case 'partial':
+                    messageText = '오늘 총 접수 수와 모든 창구의 상담 완료 수를 0으로 초기화합니다.<br><strong>현재 대기열과 진행 중인 상담은 유지됩니다.</strong>';
+                    break;
+                case 'all':
+                    messageText = '<strong style="color: #e74c3c;">모든 데이터를 완전히 초기화합니다!</strong><br>• 모든 대기번호 삭제<br>• 진행 중인 상담 종료<br>• 모든 통계 초기화<br><br><strong>이 작업은 되돌릴 수 없습니다.</strong>';
+                    break;
+            }
+            
+            message.innerHTML = messageText;
+            modal.style.display = 'block';
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetModal').style.display = 'none';
+            currentResetType = '';
+        }
+
+        function confirmReset() {
+            let successMsg = '';
+            
+            switch(currentResetType) {
+                case 'waiting':
+                    // 대기열만 초기화
+                    sharedData.waiting = [];
+                    successMsg = '대기열이 초기화되었습니다.';
+                    break;
+                    
+                case 'partial':
+                    // 통계만 초기화 (대기열과 현재 상담은 유지)
+                    sharedData.totalToday = 0;
+                    sharedData.counters.forEach(counter => {
+                        counter.count = 0;
+                    });
+                    successMsg = '통계가 초기화되었습니다.';
+                    break;
+                    
+                case 'all':
+                    // 전체 초기화
+                    sharedData = {
+                        currentCall: { number: '-', counter: 0, course: '-' },
+                        waiting: [],
+                        counters: [
+                            { id: 1, current: null, course: null, count: 0 },
+                            { id: 2, current: null, course: null, count: 0 },
+                            { id: 3, current: null, course: null, count: 0 },
+                            { id: 4, current: null, course: null, count: 0 },
+                            { id: 5, current: null, course: null, count: 0 },
+                            { id: 6, current: null, course: null, count: 0 }
+                        ],
+                        totalToday: 0,
+                        lastUpdated: null
+                    };
+                    successMsg = '모든 데이터가 초기화되었습니다.';
+                    break;
+            }
+            
+            // Firebase에 저장
+            saveToFirebase();
+            
+            // 모달 닫기
+            closeResetModal();
+            
+            // 성공 메시지 표시
+            showMessage(successMsg);
+        }
+
+        // 향상된 호출음 (재호출 시 2번 울림)
+        function playCallSound(isRecall = false) {
+            try {
+                // Web Audio API를 사용한 더 나은 호출음
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                function createBeep(frequency, startTime, duration) {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, startTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + duration);
+                }
+                
+                const now = audioContext.currentTime;
+                
+                if (isRecall) {
+                    // 재호출 시: 더 긴 음 2번
+                    createBeep(800, now, 0.8);
+                    createBeep(600, now + 0.9, 0.8);
+                } else {
+                    // 일반 호출: 짧은 음 2번
+                    createBeep(800, now, 0.5);
+                    createBeep(600, now + 0.6, 0.5);
+                }
+                
+                console.log(`🔊 호출음 재생 ${isRecall ? '(재호출)' : '(일반)'}`);
+                
+            } catch (error) {
+                console.error('호출음 재생 오류:', error);
+                // 폴백: 기본 오디오
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS1/LNeSsF');
+                    audio.play().catch(() => {});
+                } catch (e) {
+                    console.error('폴백 오디오도 실패:', e);
+                }
+            }
+        }
+
+        function showMessage(text) {
+            const messageEl = document.getElementById('successMessage');
+            messageEl.textContent = text;
+            messageEl.classList.add('show');
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // 키보드 단축키 추가 (재호출 기능 포함)
+        document.addEventListener('keydown', function(e) {
+            // Ctrl + R: 재호출
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                recallCurrent();
+            }
+            
+            // Ctrl + N: 다음 호출  
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                callNext();
+            }
+            
+            // Ctrl + E: 상담 완료
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                completeService();
+            }
+            
+            // R 키만으로도 재호출 (단순화)
+            if (e.key === 'r' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+                // 입력 필드에 포커스가 없을 때만
+                if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                    e.preventDefault();
+                    recallCurrent();
+                }
+            }
+        });
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('resetModal');
+            if (event.target === modal) {
+                closeResetModal();
+            }
+        }
+
+        // 재호출 기능이 추가된 호출 함수들 개선
+        function callNext() {
+            if (!sharedData.waiting || sharedData.waiting.length === 0) {
+                alert('대기 중인 번호가 없습니다.');
+                return;
+            }
+            
+            const nextCustomer = sharedData.waiting.shift();
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            counter.current = nextCustomer.number;
+            counter.course = nextCustomer.course;
+            
+            // 현재 호출 업데이트 (일반 호출)
+            sharedData.currentCall = {
+                number: nextCustomer.number,
+                counter: currentCounter,
+                course: nextCustomer.course,
+                isRecall: false,
+                callTime: new Date().toISOString()
+            };
+            
+            saveToFirebase();
+            playCallSound(false); // 일반 호출음
+            
+            // 성공 메시지
+            showMessage(`📢 ${nextCustomer.number} 호출 완료!`);
+        }
+
+        function callSpecific(number) {
+            if (!sharedData.waiting) return;
+            
+            const customerIndex = sharedData.waiting.findIndex(item => item.number === number);
+            if (customerIndex === -1) return;
+            
+            const customer = sharedData.waiting.splice(customerIndex, 1)[0];
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            counter.current = customer.number;
+            counter.course = customer.course;
+            
+            // 현재 호출 업데이트 (직접 호출)
+            sharedData.currentCall = {
+                number: customer.number,
+                counter: currentCounter,
+                course: customer.course,
+                isRecall: false,
+                isDirectCall: true,
+                callTime: new Date().toISOString()
+            };
+            
+            saveToFirebase();
+            playCallSound(false); // 일반 호출음
+            
+            showMessage(`📢 ${customer.number} 호출 완료!`);
+        }
+
+        // 초기화
+        function initialize() {
+            currentCounter = getCounterFromUrl();
+            selectCounter(currentCounter);
+            
+            // Firebase 리스너 설정
+            setTimeout(() => {
+                setupFirebaseListeners();
+            }, 1000);
+            
+            // 재호출 기능 안내 (최초 1회만)
+            if (!localStorage.getItem('recallInfoShown')) {
+                setTimeout(() => {
+                    showMessage('💡 재호출 기능: 🔔 버튼 클릭 또는 R키 사용');
+                    localStorage.setItem('recallInfoShown', 'true');
+                }, 3000);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>
+            showMessage(`${nextCustomer.number} 호출 완료!`);
+        }
+
+        // 재호출 기능 (NEW!)
+        function recallCurrent() {
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            if (!counter.current || counter.current === '-') {
+                alert('현재 상담 중인 번호가 없습니다.');
+                return;
+            }
+            
+            // 연속 호출 방지 (3초 이내 재호출 불가)
+            const now = Date.now();
+            if (now - lastRecallTime < 3000) {
+                showMessage('잠시 후 다시 시도해 주세요.');
+                return;
+            }
+            lastRecallTime = now;
+            
+            // 현재 호출 정보 업데이트 (재호출 표시)
+            sharedData.currentCall = {
+                number: counter.current,
+                counter: currentCounter,
+                course: counter.course,
+                isRecall: true,
+                recallTime: new Date().toISOString()
+            };
+            
+            saveToFirebase();
+            playCallSound();
+            
+            // 재호출 효과 표시
+            showRecallEffect(counter.current);
+            
+            // 성공 메시지
