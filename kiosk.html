@@ -230,7 +230,6 @@
         }
         
         .settings-panel {
-            display: none;
             position: fixed;
             top: 0;
             right: -500px;
@@ -242,7 +241,10 @@
             overflow-y: auto;
             box-shadow: -5px 0 20px rgba(0,0,0,0.2);
         }
-        .settings-panel.open { right: 0; }
+        
+        .settings-panel.open { 
+            right: 0; 
+        }
         .settings-header {
             background: #3498db;
             color: white;
@@ -488,7 +490,7 @@
 <body>
     <div class="container loading">
         <div class="header">
-            <button class="settings-button" onclick="document.getElementById('settingsPanel').classList.toggle('open'); if(document.getElementById('settingsPanel').classList.contains('open')) { renderTimePeriodsEditor(); console.log('🔧 설정 패널 열림'); }" title="관리자 설정">⚙️</button>
+            <button class="settings-button" onclick="toggleSettingsPanel()" title="관리자 설정">⚙️</button>
             <h1>순번대기표 접수</h1>
             <p>원하는 과정을 선택해 주세요</p>
         </div>
@@ -516,7 +518,7 @@
     <div class="settings-panel" id="settingsPanel">
         <div class="settings-header">
             시스템 설정
-            <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
+            <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettingsPanel()">×</button>
         </div>
         <div class="settings-content">
             <!-- 프린터 설정 -->
@@ -1045,15 +1047,25 @@
         let adminClicks = 0;
         let adminTimeout;
         
-        function toggleSettings() {
+        function toggleSettingsPanel() {
             const panel = document.getElementById('settingsPanel');
-            panel.classList.toggle('open');
-            if (panel.classList.contains('open')) {
-                renderTimePeriodsEditor();
-                console.log('🔧 관리자 설정 패널 열림');
-            } else {
+            const isOpen = panel.classList.contains('open');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
                 console.log('❌ 관리자 설정 패널 닫힘');
+            } else {
+                panel.classList.add('open');
+                // 패널이 열릴 때 설정 내용 렌더링
+                setTimeout(() => {
+                    renderTimePeriodsEditor();
+                }, 100);
+                console.log('🔧 관리자 설정 패널 열림');
             }
+        }
+        
+        function toggleSettings() {
+            toggleSettingsPanel();
         }
         
         // 시간 클릭으로도 접근 가능 (백업 방법)
@@ -1073,7 +1085,7 @@
                 
                 if (adminClicks >= 5) {
                     // 5번 클릭하면 설정 패널 표시
-                    toggleSettings();
+                    toggleSettingsPanel();
                     adminClicks = 0;
                 }
                 
