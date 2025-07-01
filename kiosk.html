@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+// <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -36,27 +36,27 @@
         
         .settings-button {
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 50px;
-            height: 50px;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid rgba(255,255,255,0.2);
+            top: 10px;
+            right: 10px;
+            width: 25px;
+            height: 25px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            color: rgba(255,255,255,0.7);
-            backdrop-filter: blur(10px);
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+            backdrop-filter: blur(5px);
         }
         
         .settings-button:hover {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            transform: scale(1.1) rotate(45deg);
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+            transform: scale(1.2) rotate(45deg);
         }
         
         .status-bar {
@@ -67,31 +67,11 @@
             margin-bottom: 30px;
             text-align: center;
             color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         
         .current-time {
             font-size: 1.8rem;
             font-weight: 700;
-        }
-        
-        .printer-status {
-            font-size: 1rem;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .printer-status.connected {
-            background: rgba(0,255,136,0.2);
-            color: #00ff88;
-        }
-        
-        .printer-status.disconnected {
-            background: rgba(255,107,107,0.2);
-            color: #ff6b6b;
         }
         
         .main-content {
@@ -359,7 +339,6 @@
 
         <div class="status-bar">
             <div class="current-time" id="currentTime"></div>
-            <div class="printer-status" id="printerStatus">🖨️ 프린터 연결 안됨</div>
         </div>
 
         <div class="main-content">
@@ -452,9 +431,25 @@
                 </div>
             </div>
 
+            <!-- 시간대별 과목 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">⏰ 시간대별 과목 설정</label>
+                <div class="setting-description">
+                    시간대별로 다른 과목을 표시할 수 있습니다. 현재 시간에 해당하는 과목만 화면에 나타납니다.
+                </div>
+                <div id="timePeriodsContainer"></div>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
+                <button class="setting-btn" onclick="saveTimeSettings()">시간 설정 저장</button>
+                <button class="setting-btn" onclick="loadDefaultTimeSettings()">기본값 복원</button>
+                <div id="timeSettingsMessage"></div>
+            </div>
+
             <!-- 과목 설정 -->
             <div class="setting-group">
-                <label class="setting-label">📚 상담 과목 설정</label>
+                <label class="setting-label">📚 전체 과목 관리</label>
+                <div class="setting-description">
+                    모든 과목을 관리합니다. 위의 시간대별 설정에서 이 과목들을 선택하여 사용할 수 있습니다.
+                </div>
                 <div id="courseSettings">
                     <!-- 과목 설정이 여기에 표시됩니다 -->
                 </div>
@@ -485,6 +480,7 @@
             lastUpdated: null
         };
         let currentNumbers = {};
+        let timeSettings = [];
         
         // 기본 과목 설정
         let courses = [
@@ -492,6 +488,30 @@
             { code: 'EN', name: '영어 과정', englishName: 'English Course' },
             { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
             { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+        ];
+
+        // 기본 시간대 설정
+        const defaultTimeSettings = [
+            {
+                startTime: '09:00',
+                endTime: '12:00',
+                courses: ['CH', 'EN']
+            },
+            {
+                startTime: '12:00',
+                endTime: '15:00',
+                courses: ['EN', 'HSK']
+            },
+            {
+                startTime: '15:00',
+                endTime: '18:00',
+                courses: ['HSK', 'TO']
+            },
+            {
+                startTime: '18:00',
+                endTime: '21:00',
+                courses: ['TO', 'CH']
+            }
         ];
 
         // ESC/POS 명령어
@@ -831,7 +851,8 @@
                 numberFontSize: document.getElementById('numberFontSize').value,
                 textFontSize: document.getElementById('textFontSize').value,
                 paperCut: document.getElementById('paperCut').value,
-                courses: courses
+                courses: courses,
+                timeSettings: timeSettings
             };
             
             localStorage.setItem('kioskSettings', JSON.stringify(settings));
@@ -856,10 +877,19 @@
                         courses = settings.courses;
                     }
                     
+                    if (settings.timeSettings) {
+                        timeSettings = settings.timeSettings;
+                    } else {
+                        timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+                    }
+                    
                     console.log('✅ 설정 로드 완료');
+                } else {
+                    timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
                 }
             } catch (error) {
                 console.error('설정 로드 오류:', error);
+                timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
             }
         }
 
@@ -916,12 +946,34 @@
             createCourseButtons();
         }
 
-        // 과목 버튼 생성
+        // 과목 버튼 생성 (시간대별 필터링)
         function createCourseButtons() {
             const container = document.getElementById('courseButtons');
             container.innerHTML = '';
             
-            courses.forEach(course => {
+            const currentCourses = getCurrentCourses();
+            
+            if (currentCourses.length === 0) {
+                const noCoursesDiv = document.createElement('div');
+                noCoursesDiv.style.cssText = `
+                    text-align: center;
+                    background: rgba(255, 255, 255, 0.95);
+                    border-radius: 20px;
+                    padding: 60px 40px;
+                    max-width: 500px;
+                    margin: 0 auto;
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+                `;
+                noCoursesDiv.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.7;">🕐</div>
+                    <h3 style="font-size: 1.8rem; font-weight: 600; margin-bottom: 15px; color: #2c3e50;">현재는 상담 시간이 아닙니다</h3>
+                    <p style="font-size: 1.1rem; color: #7f8c8d; line-height: 1.5;">설정된 상담 시간에 다시 방문해 주세요</p>
+                `;
+                container.appendChild(noCoursesDiv);
+                return;
+            }
+            
+            currentCourses.forEach(course => {
                 const button = document.createElement('button');
                 button.className = 'course-btn';
                 button.onclick = () => issueTicket(course);
@@ -934,28 +986,174 @@
             });
         }
 
+        // 현재 시간에 해당하는 과목들 가져오기
+        function getCurrentCourses() {
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            
+            const currentPeriod = timeSettings.find(setting => {
+                const start = timeToMinutes(setting.startTime);
+                const end = timeToMinutes(setting.endTime);
+                return currentTime >= start && currentTime < end;
+            });
+            
+            if (!currentPeriod) return [];
+            
+            return currentPeriod.courses.map(courseCode => 
+                courses.find(course => course.code === courseCode)
+            ).filter(course => course); // undefined 제거
+        }
+
+        // 시간을 분으로 변환
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        // 시간대 추가
+        function addTimePeriod() {
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: []
+            });
+            renderTimePeriodsEditor();
+        }
+
+        // 시간대 삭제
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+                createCourseButtons();
+            }
+        }
+
+        // 시간대별 설정 렌더링
+        function renderTimePeriodsEditor() {
+            const container = document.getElementById('timePeriodsContainer');
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.style.cssText = `
+                    border: 2px solid #ecf0f1;
+                    border-radius: 10px;
+                    padding: 20px;
+                    margin-bottom: 15px;
+                    background: white;
+                `;
+                
+                periodDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <strong>시간대 ${index + 1}</strong>
+                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                        <input type="time" value="${period.startTime}" 
+                               style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; width: 120px;"
+                               onchange="updateTimeField(${index}, 'startTime', this.value)">
+                        <span>~</span>
+                        <input type="time" value="${period.endTime}" 
+                               style="padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; width: 120px;"
+                               onchange="updateTimeField(${index}, 'endTime', this.value)">
+                    </div>
+                    
+                    <div>
+                        <label style="font-weight: 600; margin-bottom: 10px; display: block;">활성화할 과목 선택:</label>
+                        <div id="courseCheckboxes-${index}" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                    </div>
+                `;
+                container.appendChild(periodDiv);
+                
+                renderCourseCheckboxes(index);
+            });
+        }
+
+        // 과목 체크박스 렌더링
+        function renderCourseCheckboxes(periodIndex) {
+            const container = document.getElementById(`courseCheckboxes-${periodIndex}`);
+            container.innerHTML = '';
+            
+            courses.forEach(course => {
+                const isChecked = timeSettings[periodIndex].courses.includes(course.code);
+                
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    background: #f8f9fa;
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    border: 1px solid #dee2e6;
+                `;
+                
+                checkboxDiv.innerHTML = `
+                    <input type="checkbox" id="course-${periodIndex}-${course.code}" 
+                           ${isChecked ? 'checked' : ''}
+                           onchange="toggleCourseInPeriod(${periodIndex}, '${course.code}', this.checked)">
+                    <label for="course-${periodIndex}-${course.code}" style="font-size: 0.9rem; cursor: pointer;">
+                        ${course.name} (${course.code})
+                    </label>
+                `;
+                
+                container.appendChild(checkboxDiv);
+            });
+        }
+
+        // 시간대에서 과목 토글
+        function toggleCourseInPeriod(periodIndex, courseCode, isChecked) {
+            if (isChecked) {
+                if (!timeSettings[periodIndex].courses.includes(courseCode)) {
+                    timeSettings[periodIndex].courses.push(courseCode);
+                }
+            } else {
+                timeSettings[periodIndex].courses = timeSettings[periodIndex].courses.filter(code => code !== courseCode);
+            }
+            createCourseButtons();
+        }
+
+        // 시간 필드 업데이트
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+            createCourseButtons();
+        }
+
+        // 시간 설정 저장
+        function saveTimeSettings() {
+            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+            showMessage('timeSettingsMessage', '✅ 시간 설정이 저장되었습니다!', 'success');
+            createCourseButtons();
+        }
+
+        // 기본 시간 설정 복원
+        function loadDefaultTimeSettings() {
+            if (confirm('기본 시간 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+                renderTimePeriodsEditor();
+                createCourseButtons();
+                showMessage('timeSettingsMessage', '✅ 기본 설정으로 복원되었습니다!', 'success');
+            }
+        }
+
         // 프린터 상태 업데이트
         function updatePrinterStatus() {
-            const statusEl = document.getElementById('printerStatus');
-            if (isPrinterConnected) {
-                statusEl.textContent = '🖨️ 프린터 연결됨';
-                statusEl.className = 'printer-status connected';
-            } else {
-                statusEl.textContent = '🖨️ 프린터 연결 안됨';
-                statusEl.className = 'printer-status disconnected';
-            }
-            
-            // 버튼 상태 업데이트
+            // 버튼 상태만 업데이트 (화면에는 표시하지 않음)
             const buttons = document.querySelectorAll('.course-btn');
             buttons.forEach(btn => {
                 btn.disabled = !isPrinterConnected;
             });
         }
 
-        // 시간 업데이트
+        // 시간 업데이트 및 버튼 새로고침
         function updateTime() {
             document.getElementById('currentTime').textContent = 
                 new Date().toLocaleString('ko-KR');
+            
+            // 시간이 바뀔 때마다 표시할 과목 업데이트
+            createCourseButtons();
         }
 
         // 설정 패널 토글
@@ -969,6 +1167,7 @@
                 panel.classList.add('open');
                 updateSystemInfo();
                 renderCourseSettings();
+                renderTimePeriodsEditor();
                 updatePreview();
             }
         }
