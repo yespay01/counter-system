@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>키오스크 - 화면 대기표</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 900;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .status-bar {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .current-time {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .service-title {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .course-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .course-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 20px;
+            padding: 40px 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            min-width: 250px;
+            text-align: center;
+        }
+        
+        .course-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+        
+        .course-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .course-description {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+        
+        /* 대기표 팝업 */
+        .ticket-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .ticket-content {
+            background: white;
+            border-radius: 25px;
+            padding: 50px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .ticket-number {
+            font-size: 8rem;
+            font-weight: 900;
+            color: #e74c3c;
+            margin: 30px 0;
+            text-shadow: 0 4px 20px rgba(231,76,60,0.3);
+        }
+        
+        .ticket-course {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .ticket-time {
+            font-size: 1.3rem;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        
+        .qr-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+        
+        .qr-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .qr-code {
+            margin: 0 auto;
+        }
+        
+        .instructions {
+            background: #e8f5e8;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .instructions h3 {
+            color: #27ae60;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .instructions p {
+            color: #2c3e50;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        .close-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .download-section {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .download-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+        
+        .download-btn.secondary {
+            background: #f39c12;
+        }
+        
+        .download-btn.secondary:hover {
+            background: #e67e22;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .service-title { font-size: 2rem; }
+            .course-buttons { flex-direction: column; align-items: center; }
+            .course-btn { min-width: 300px; }
+            .ticket-number { font-size: 6rem; }
+            .ticket-content { padding: 30px; }
+        }
+    </style>
+    
+    <!-- QR코드 생성 라이브러리 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- jsPDF 라이브러리 (PDF 생성용) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, off } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuvEDDEoMLwLB2miGHCWX1-B5u8gKlGEQ",
+            authDomain: "counter-system-26479.firebaseapp.com",
+            databaseURL: "https://counter-system-26479-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "counter-system-26479",
+            storageBucket: "counter-system-26479.firebasestorage.app",
+            messagingSenderId: "316144964417",
+            appId: "1:316144964417:web:8a95a80f9db622f4ee87c0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebasePush = push;
+        window.firebaseOnValue = onValue;
+        window.firebaseOff = off;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 순번대기표 발급</h1>
+        </div>
+
+        <div class="status-bar">
+            <div class="current-time" id="currentTime"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="service-title">원하는 상담 과정을 선택해 주세요</div>
+            
+            <div class="course-buttons" id="courseButtons">
+                <!-- 과목 버튼들 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 대기표 팝업 -->
+    <div class="ticket-popup" id="ticketPopup">
+        <div class="ticket-content">
+            <h2>✨ 대기표가 발급되었습니다!</h2>
+            
+            <div class="ticket-number" id="ticketNumber">A001</div>
+            <div class="ticket-course" id="ticketCourse">중국어 과정</div>
+            <div class="ticket-time" id="ticketTime">2025-01-01 14:30</div>
+            
+            <div class="qr-section">
+                <div class="qr-title">📱 스마트폰으로 스캔하세요</div>
+                <canvas id="qrCode" class="qr-code"></canvas>
+            </div>
+            
+            <div class="instructions">
+                <h3>📋 이용 안내</h3>
+                <p>• 발급된 번호를 기억해 주세요</p>
+                <p>• 순서가 되면 화면과 음성으로 안내됩니다</p>
+                <p>• QR코드를 스캔하면 모바일에서도 확인 가능합니다</p>
+                <p>• 대기 시간은 약 10-15분 예상됩니다</p>
+            </div>
+            
+            <div class="download-section">
+                <button class="download-btn" onclick="downloadPDF()">📄 PDF 다운로드</button>
+                <button class="download-btn secondary" onclick="shareTicket()">📤 공유하기</button>
+            </div>
+            
+            <button class="close-btn" onclick="closeTicket()">확인</button>
+        </div>
+    </div>
+
+    <script>
+        let sharedData = {
+            waiting: [],
+            counters: Array(6).fill().map((_, i) => ({ id: i + 1, current: null, course: null, count: 0 })),
+            totalToday: 0,
+            lastUpdated: null
+        };
+        
+        let currentNumbers = {};
+        let currentTicketInfo = null;
+        
+        // 기본 과목 설정
+        const courses = [
+            { code: 'CH', name: '중국어 과정', description: '중국어 기초부터 고급까지' },
+            { code: 'EN', name: '영어 과정', description: '영어 회화 및 비즈니스 영어' },
+            { code: 'HSK', name: 'HSK 시험반', description: 'HSK 1-6급 시험 대비' },
+            { code: 'TO', name: 'TOEIC 집중반', description: 'TOEIC 고득점 대비' }
+        ];
+
+        // Firebase 저장
+        function saveToFirebase() {
+            if (!window.firebaseDB) return;
+            
+            try {
+                sharedData.lastUpdated = new Date().toISOString();
+                const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+                window.firebaseSet(systemRef, sharedData);
+                console.log('✅ Firebase 저장 완료');
+            } catch (error) {
+                console.error('❌ Firebase 저장 실패:', error);
+            }
+        }
+
+        // 시간 업데이트
+        function updateTime() {
+            document.getElementById('currentTime').textContent = 
+                new Date().toLocaleString('ko-KR');
+        }
+
+        // 과목 버튼 생성
+        function createCourseButtons() {
+            const container = document.getElementById('courseButtons');
+            container.innerHTML = '';
+            
+            courses.forEach(course => {
+                const button = document.createElement('button');
+                button.className = 'course-btn';
+                button.onclick = () => issueTicket(course);
+                button.innerHTML = `
+                    <div class="course-name">${course.name}</div>
+                    <div class="course-description">${course.description}</div>
+                `;
+                container.appendChild(button);
+            });
+        }
+
+        // 대기표 발급
+        function issueTicket(course) {
+            try {
+                // 번호 생성
+                if (!currentNumbers[course.code]) {
+                    currentNumbers[course.code] = 0;
+                }
+                currentNumbers[course.code]++;
+                
+                const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
+                const now = new Date();
+                
+                // 티켓 정보 저장
+                currentTicketInfo = {
+                    number: number,
+                    course: course.name,
+                    time: now.toLocaleString('ko-KR'),
+                    timestamp: now.toISOString()
+                };
+                
+                // Firebase에 추가
+                const newWaitingItem = {
+                    number: number,
+                    course: course.name,
+                    time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                };
+                
+                sharedData.waiting.push(newWaitingItem);
+                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                
+                saveToFirebase();
+                showTicket();
+                
+                console.log('✅ 대기표 발급 완료:', number);
+                
+            } catch (error) {
+                console.error('❌ 대기표 발급 오류:', error);
+                alert('대기표 발급 중 오류가 발생했습니다.');
+            }
+        }
+
+        // 대기표 표시
+        function showTicket() {
+            if (!currentTicketInfo) return;
+            
+            // 정보 표시
+            document.getElementById('ticketNumber').textContent = currentTicketInfo.number;
+            document.getElementById('ticketCourse').textContent = currentTicketInfo.course;
+            document.getElementById('ticketTime').textContent = currentTicketInfo.time;
+            
+            // QR코드 생성
+            generateQRCode();
+            
+            // 팝업 표시
+            document.getElementById('ticketPopup').style.display = 'flex';
+            
+            // 10초 후 자동 닫기
+            setTimeout(() => {
+                closeTicket();
+            }, 15000);
+        }
+
+        // QR코드 생성 (모바일 페이지 URL)
+        function generateQRCode() {
+            // 티켓 정보를 URL 매개변수로 인코딩
+            const ticketParams = new URLSearchParams({
+                number: currentTicketInfo.number,
+                ticket: encodeURIComponent(JSON.stringify({
+                    number: currentTicketInfo.number,
+                    course: currentTicketInfo.course,
+                    time: currentTicketInfo.time,
+                    timestamp: currentTicketInfo.timestamp
+                }))
+            });
+            
+            // 모바일 대기표 확인 페이지 URL 생성
+            const mobilePageURL = `${window.location.origin}/mobile-ticket.html?${ticketParams.toString()}`;
+            
+            const qr = new QRious({
+                element: document.getElementById('qrCode'),
+                value: mobilePageURL,
+                size: 200,
+                background: 'white',
+                foreground: 'black',
+                level: 'M'
+            });
+            
+            console.log('📱 QR 코드 URL:', mobilePageURL);
+        }
+
+        // PDF 다운로드
+        function downloadPDF() {
+            if (!window.jsPDF || !currentTicketInfo) return;
+            
+            const { jsPDF } = window.jsPDF;
+            const pdf = new jsPDF();
+            
+            // PDF 내용 생성
+            pdf.setFontSize(20);
+            pdf.text('순번 대기표', 105, 30, { align: 'center' });
+            
+            pdf.setFontSize(40);
+            pdf.text(currentTicketInfo.number, 105, 60, { align: 'center' });
+            
+            pdf.setFontSize(16);
+            pdf.text(currentTicketInfo.course, 105, 80, { align: 'center' });
+            pdf.text('발급시간: ' + currentTicketInfo.time, 105, 100, { align: 'center' });
+            
+            pdf.setFontSize(12);
+            pdf.text('※ 순서가 되면 안내해 드립니다', 105, 120, { align: 'center' });
+            pdf.text('※ 대기표를 잃어버리지 마세요', 105, 135, { align: 'center' });
+            
+            // QR코드 추가 (canvas를 이미지로 변환)
+            const canvas = document.getElementById('qrCode');
+            const qrImage = canvas.toDataURL('image/png');
+            pdf.addImage(qrImage, 'PNG', 80, 150, 50, 50);
+            
+            pdf.save(`대기표_${currentTicketInfo.number}.pdf`);
+        }
+
+        // 공유하기
+        function shareTicket() {
+            if (!currentTicketInfo) return;
+            
+            const shareData = {
+                title: '순번 대기표',
+                text: `대기번호: ${currentTicketInfo.number}\n과정: ${currentTicketInfo.course}\n발급시간: ${currentTicketInfo.time}`,
+                url: window.location.href
+            };
+            
+            if (navigator.share) {
+                navigator.share(shareData);
+            } else {
+                // 대체 방법: 클립보드 복사
+                const textToCopy = `대기번호: ${currentTicketInfo.number}\n과정: ${currentTicketInfo.course}\n발급시간: ${currentTicketInfo.time}`;
+                
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(textToCopy);
+                    alert('대기표 정보가 클립보드에 복사되었습니다!');
+                } else {
+                    alert(`대기번호: ${currentTicketInfo.number}\n과정: ${currentTicketInfo.course}`);
+                }
+            }
+        }
+
+        // 팝업 닫기
+        function closeTicket() {
+            document.getElementById('ticketPopup').style.display = 'none';
+            currentTicketInfo = null;
+        }
+
+        // 초기화
+        function initialize() {
+            console.log('🚀 간단한 키오스크 초기화');
+            
+            createCourseButtons();
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // Firebase 리스너 설정
+            setTimeout(() => {
+                if (window.firebaseDB) {
+                    const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+                    window.firebaseOnValue(systemRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            sharedData = { ...sharedData, ...data };
+                        }
+                    });
+                }
+            }, 1000);
+            
+            console.log('✅ 초기화 완료');
+        }
+
+        // 팝업 외부 클릭 시 닫기
+        document.getElementById('ticketPopup').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeTicket();
+            }
+        });
+
+        // 초기화 실행
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+    </script>
+</body>
+</html>
