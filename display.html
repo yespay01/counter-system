@@ -142,9 +142,10 @@
             border: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
             display: flex;
             flex-direction: column;
+            min-height: 400px;
         }
         
         .waiting-list::before {
@@ -168,6 +169,10 @@
             overflow-y: auto;
             padding-right: 10px;
             flex: 1;
+            min-height: 200px;
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 15px;
         }
         
         /* 스크롤바 커스터마이징 */
@@ -683,6 +688,9 @@
 
         function updateDisplay() {
             try {
+                console.log('🖥️ DISPLAY 화면 업데이트 시작');
+                console.log('현재 displayData:', displayData);
+                
                 // 현재 호출번호 업데이트
                 const currentNumber = displayData.currentCall.number || '-';
                 const currentCounter = displayData.currentCall.counter || 0;
@@ -697,27 +705,66 @@
                     document.getElementById('counterInfo').textContent = '대기 중';
                 }
 
-                // 대기번호 목록 업데이트
+                // 대기번호 목록 업데이트 - 강화된 렌더링
                 const waitingContainer = document.getElementById('waitingNumbers');
+                console.log('대기번호 컨테이너:', waitingContainer);
+                console.log('대기번호 데이터:', displayData.waiting);
+                
+                // 기존 내용 완전 초기화
                 waitingContainer.innerHTML = '';
+                waitingContainer.style.display = 'grid';
                 
                 if (displayData.waiting && displayData.waiting.length > 0) {
+                    console.log(`📋 ${displayData.waiting.length}개의 대기번호 렌더링 시작`);
+                    
                     displayData.waiting.forEach((item, index) => {
+                        console.log(`렌더링 중: ${index + 1}번째 항목:`, item);
+                        
                         const div = document.createElement('div');
-                        div.className = 'waiting-number loading';
-                        div.style.animationDelay = `${index * 0.1}s`;
+                        div.className = 'waiting-number';
                         if (index === 0) div.classList.add('next');
                         
+                        // 데이터 안전성 확보
+                        const number = item.number || item.num || `번호${index + 1}`;
+                        const course = item.course || item.courseName || '일반 상담';
+                        const time = item.time || item.timestamp || new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                        
                         div.innerHTML = `
-                            <div class="number-text">${item.number}</div>
-                            <div class="course-text">${item.course}</div>
-                            <div class="time-text">${item.time}</div>
+                            <div class="number-text">${number}</div>
+                            <div class="course-text">${course}</div>
+                            <div class="time-text">${time}</div>
                         `;
                         
+                        // 스타일 강제 적용
+                        div.style.visibility = 'visible';
+                        div.style.opacity = '1';
+                        div.style.display = 'flex';
+                        
                         waitingContainer.appendChild(div);
+                        console.log(`✅ ${number} 렌더링 완료`);
                     });
+                    
+                    console.log('📋 모든 대기번호 렌더링 완료');
+                    
+                    // 컨테이너 스타일 확인
+                    console.log('컨테이너 최종 상태:', {
+                        children: waitingContainer.children.length,
+                        display: getComputedStyle(waitingContainer).display,
+                        visibility: getComputedStyle(waitingContainer).visibility,
+                        height: getComputedStyle(waitingContainer).height
+                    });
+                    
                 } else {
-                    waitingContainer.innerHTML = '<div class="no-waiting">대기 중인 번호가 없습니다</div>';
+                    console.log('📭 대기번호 없음 - 안내 메시지 표시');
+                    const noWaitingDiv = document.createElement('div');
+                    noWaitingDiv.className = 'no-waiting';
+                    noWaitingDiv.textContent = '대기 중인 번호가 없습니다';
+                    noWaitingDiv.style.gridColumn = '1 / -1';
+                    noWaitingDiv.style.textAlign = 'center';
+                    noWaitingDiv.style.padding = '40px';
+                    noWaitingDiv.style.fontSize = '1.5rem';
+                    noWaitingDiv.style.opacity = '0.7';
+                    waitingContainer.appendChild(noWaitingDiv);
                 }
 
                 // 창구 현황 업데이트
@@ -726,8 +773,7 @@
                 
                 displayData.counters.slice(0, 6).forEach((counter, index) => {
                     const div = document.createElement('div');
-                    div.className = 'counter-item loading';
-                    div.style.animationDelay = `${index * 0.05}s`;
+                    div.className = 'counter-item';
                     
                     // 현재 활성 창구 표시
                     if (counter.current && counter.current !== '-') {
@@ -752,8 +798,11 @@
                     document.getElementById('lastUpdate').textContent = '-';
                 }
                 
+                console.log('🖥️ DISPLAY 화면 업데이트 완료');
+                
             } catch (error) {
-                console.error('화면 업데이트 오류:', error);
+                console.error('❌ 화면 업데이트 오류:', error);
+                console.error('오류 스택:', error.stack);
             }
         }
 
@@ -868,6 +917,9 @@
                         console.log('🎵 키보드 단축키:');
                         console.log('  T 키: 차임벨 호출음 테스트');
                         console.log('  S 키: 단순 호출음 테스트');
+                        console.log('  D 키: 데이터 동기화 디버그');
+                        console.log('  V 키: 강제 화면 새로고침');
+                        console.log('  C 키: CSS 스타일 강제 재적용');
                         console.log('  F11: 전체화면 토글');
                     }
                     
@@ -912,6 +964,35 @@
                 console.log('DISPLAY 처리된 데이터:', displayData);
                 loadSharedData();
                 updateDisplay();
+            }
+            
+            // V키: 강제 화면 새로고침
+            if (e.key === 'v' || e.key === 'V') {
+                console.log('🔄 강제 화면 새로고침');
+                loadSharedData();
+                updateDisplay();
+                
+                // 대기번호 컨테이너 강제 리렌더링
+                const container = document.getElementById('waitingNumbers');
+                container.style.display = 'none';
+                setTimeout(() => {
+                    container.style.display = 'grid';
+                }, 100);
+            }
+            
+            // C키: CSS 스타일 강제 재적용
+            if (e.key === 'c' || e.key === 'C') {
+                console.log('🎨 CSS 스타일 강제 재적용');
+                const container = document.getElementById('waitingNumbers');
+                const items = container.querySelectorAll('.waiting-number');
+                
+                items.forEach((item, index) => {
+                    item.style.display = 'flex';
+                    item.style.visibility = 'visible';
+                    item.style.opacity = '1';
+                    item.style.transform = 'scale(1)';
+                    console.log(`스타일 재적용: ${index + 1}번째 항목`);
+                });
             }
         });
 
