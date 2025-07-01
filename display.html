@@ -505,10 +505,104 @@
                 { id: 6, current: null, course: null }
             ],
             lastUpdateTime: null,
-            isConnected: false
+            isConnected: false,
+            lastCalledNumber: null  // 마지막 호출된 번호 추적
         };
 
         let isDebugMode = false;
+
+        // 호출음 재생 함수
+        function playCallSound() {
+            try {
+                // Web Audio API를 사용한 띵동 소리 생성
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 첫 번째 음 (띵)
+                const oscillator1 = audioContext.createOscillator();
+                const gainNode1 = audioContext.createGain();
+                
+                oscillator1.connect(gainNode1);
+                gainNode1.connect(audioContext.destination);
+                
+                oscillator1.frequency.setValueAtTime(800, audioContext.currentTime); // 높은 음
+                oscillator1.type = 'sine';
+                
+                gainNode1.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator1.start(audioContext.currentTime);
+                oscillator1.stop(audioContext.currentTime + 0.5);
+                
+                // 두 번째 음 (동) - 0.6초 후
+                setTimeout(() => {
+                    const oscillator2 = audioContext.createOscillator();
+                    const gainNode2 = audioContext.createGain();
+                    
+                    oscillator2.connect(gainNode2);
+                    gainNode2.connect(audioContext.destination);
+                    
+                    oscillator2.frequency.setValueAtTime(600, audioContext.currentTime); // 낮은 음
+                    oscillator2.type = 'sine';
+                    
+                    gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.7);
+                    
+                    oscillator2.start(audioContext.currentTime);
+                    oscillator2.stop(audioContext.currentTime + 0.7);
+                }, 600);
+                
+                console.log('🔔 호출음 재생');
+                
+            } catch (error) {
+                console.error('호출음 재생 오류:', error);
+                // 대체 알림음 (beep)
+                try {
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS1/LNeSsF');
+                    audio.volume = 0.3;
+                    audio.play().catch(() => {});
+                } catch (e) {
+                    console.log('대체 알림음도 재생 실패');
+                }
+            }
+        }
+
+        // 좀 더 부드러운 차임벨 소리 생성
+        function playChimeBell() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 화음을 만들기 위한 여러 주파수
+                const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 (도미솔)
+                const duration = 1.5;
+                
+                frequencies.forEach((freq, index) => {
+                    setTimeout(() => {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                        oscillator.type = 'sine';
+                        
+                        // 부드러운 페이드 인/아웃
+                        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                        gainNode.gain.linearRampToValueAtTime(0.2, audioContext.currentTime + 0.1);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                        
+                        oscillator.start(audioContext.currentTime);
+                        oscillator.stop(audioContext.currentTime + duration);
+                    }, index * 200); // 각 음을 0.2초씩 지연
+                });
+                
+                console.log('🎵 차임벨 호출음 재생');
+                
+            } catch (error) {
+                console.error('차임벨 재생 오류:', error);
+                playCallSound(); // 기본 호출음으로 대체
+            }
+        }
 
         // 로컬 스토리지에서 공유 데이터 읽기
         function loadSharedData() {
@@ -522,11 +616,29 @@
                     if (sharedData) {
                         // 현재 호출 정보 업데이트
                         if (sharedData.currentCall) {
+                            const newCallNumber = sharedData.currentCall.number || '-';
+                            const oldCallNumber = displayData.currentCall.number;
+                            
                             displayData.currentCall = {
-                                number: sharedData.currentCall.number || '-',
+                                number: newCallNumber,
                                 counter: sharedData.currentCall.counter || 0,
                                 course: sharedData.currentCall.course || '-'
                             };
+                            
+                            // 새로운 번호가 호출되었는지 확인 (알림음 재생)
+                            if (newCallNumber !== '-' && 
+                                newCallNumber !== oldCallNumber && 
+                                newCallNumber !== displayData.lastCalledNumber) {
+                                
+                                displayData.lastCalledNumber = newCallNumber;
+                                
+                                // 호출음 재생 (1초 지연으로 부드럽게)
+                                setTimeout(() => {
+                                    playChimeBell();
+                                }, 1000);
+                                
+                                console.log(`🔔 새 번호 호출: ${newCallNumber}`);
+                            }
                         }
                         
                         // 대기 목록 업데이트
@@ -776,6 +888,14 @@
                     // 7번 클릭하면 디버그 모드 토글
                     isDebugMode = !isDebugMode;
                     console.log('디버그 모드:', isDebugMode ? '활성화' : '비활성화');
+                    
+                    if (isDebugMode) {
+                        console.log('🎵 키보드 단축키:');
+                        console.log('  T 키: 차임벨 호출음 테스트');
+                        console.log('  S 키: 단순 호출음 테스트');
+                        console.log('  F11: 전체화면 토글');
+                    }
+                    
                     adminClicks = 0;
                 }
                 setTimeout(() => { adminClicks = 0; }, 3000);
@@ -796,6 +916,18 @@
             // ESC: 전체화면 해제
             if (e.key === 'Escape' && document.fullscreenElement) {
                 document.exitFullscreen();
+            }
+            
+            // T키: 테스트 호출음
+            if (e.key === 't' || e.key === 'T') {
+                playChimeBell();
+                console.log('🎵 테스트 호출음 재생');
+            }
+            
+            // S키: 단순 호출음
+            if (e.key === 's' || e.key === 'S') {
+                playCallSound();
+                console.log('🔔 단순 호출음 재생');
             }
         });
 
