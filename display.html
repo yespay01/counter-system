@@ -43,41 +43,14 @@
             50% { transform: translateY(-30px) rotate(180deg); }
         }
         
-        .header {
-            text-align: center;
-            padding: 30px 30px 20px 30px;
-            background: rgba(0,0,0,0.15);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            position: relative;
-            z-index: 1;
-        }
-        
-        .header h1 {
-            font-size: 3.8rem;
-            font-weight: 900;
-            margin-bottom: 10px;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            letter-spacing: -2px;
-            background: linear-gradient(45deg, #fff, #f1c40f);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .datetime {
-            font-size: 1.4rem;
-            opacity: 0.9;
-            font-weight: 300;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+        /* 헤더 제거 */
         
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 40px;
-            padding: 30px 40px 120px 40px;
-            height: calc(100vh - 180px);
+            padding: 40px 40px 120px 40px;
+            height: 100vh;
             position: relative;
             z-index: 1;
         }
@@ -385,15 +358,7 @@
                 gap: 20px;
                 padding: 20px 20px 100px 20px;
                 height: auto;
-                min-height: calc(100vh - 160px);
-            }
-            
-            .header {
-                padding: 25px 20px 15px 20px;
-            }
-            
-            .header h1 {
-                font-size: 2.8rem;
+                min-height: 100vh;
             }
             
             .current-number {
@@ -437,10 +402,6 @@
         }
         
         @media (max-width: 480px) {
-            .header h1 {
-                font-size: 2.3rem;
-            }
-            
             .current-number {
                 font-size: 4rem;
             }
@@ -482,11 +443,6 @@
     </style>
 </head>
 <body>
-    <div class="header loading">
-        <h1>대기번호 안내</h1>
-        <div class="datetime" id="datetime"></div>
-    </div>
-
     <div class="main-content">
         <div class="current-section loading">
             <div class="section-title">🔔 현재 호출</div>
@@ -715,14 +671,7 @@
         }
 
         function updateDateTime() {
-            const now = new Date();
-            document.getElementById('datetime').textContent = 
-                now.toLocaleDateString('ko-KR', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    weekday: 'long'
-                }) + ' ' + now.toLocaleTimeString('ko-KR');
+            // 시간 업데이트 함수 비활성화 (헤더 제거로 불필요)
         }
 
         function updateDisplay() {
@@ -846,10 +795,6 @@
             displayData.waiting = [];
             displayData.lastUpdateTime = null;
             
-            // 시간 업데이트 시작
-            updateDateTime();
-            setInterval(updateDateTime, 1000);
-            
             // 초기 데이터 로드
             loadSharedData();
             updateDisplay();
@@ -902,13 +847,13 @@
             }
         });
 
-        // 관리자 모드 (숨겨진 기능)
+        // 관리자 모드 (숨겨진 기능) - 시간 클릭 제거로 수정
         let adminClicks = 0;
         document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('datetime')) {
+            // 현재 호출 번호를 7번 클릭하면 디버그 모드
+            if (e.target.id === 'currentNumber') {
                 adminClicks++;
                 if (adminClicks >= 7) {
-                    // 7번 클릭하면 디버그 모드 토글
                     isDebugMode = !isDebugMode;
                     console.log('디버그 모드:', isDebugMode ? '활성화' : '비활성화');
                     
