@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>순번대기표 접수 - Firebase 연동</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 0;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            letter-spacing: -2px;
+        }
+        
+        /* Firebase 연결 상태 표시 */
+        .firebase-status {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .firebase-status.connected {
+            background: rgba(0,255,136,0.2);
+            border-color: rgba(0,255,136,0.3);
+        }
+        
+        .firebase-status.disconnected {
+            background: rgba(255,107,107,0.2);
+            border-color: rgba(255,107,107,0.3);
+        }
+        
+        .settings-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+        }
+        
+        .settings-button:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.9);
+            transform: scale(1.1) rotate(45deg);
+        }
+        
+        .status-bar {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 50px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .current-time {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .waiting-count {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.8);
+            margin-top: 10px;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .service-title {
+            text-align: center;
+            color: white;
+            font-size: 3.2rem;
+            font-weight: 700;
+            margin-bottom: 60px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+        }
+        
+        .course-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 1200px;
+        }
+        
+        .course-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 25px;
+            padding: 50px 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            flex: 1 1 400px;
+            min-width: 300px;
+            max-width: 500px;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        
+        .course-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .course-btn:active {
+            transform: scale(0.98);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .course-name {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .course-description {
+            font-size: 1.4rem;
+            color: #7f8c8d;
+            line-height: 1.5;
+            font-weight: 400;
+        }
+        
+        .no-courses {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 80px 40px;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
+        .no-courses .icon {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            opacity: 0.7;
+        }
+        
+        .no-courses h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .no-courses p {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+        
+        /* 성공 메시지 */
+        .print-success {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 25px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 10000;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .print-success.show { 
+            opacity: 1; 
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        /* 설정 패널 */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100%;
+            background: white;
+            transition: right 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+        }
+        
+        .settings-panel.open { 
+            right: 0; 
+        }
+        
+        .settings-header {
+            background: #3498db;
+            color: white;
+            padding: 25px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .settings-content { 
+            padding: 25px; 
+            padding-bottom: 100px;
+        }
+        
+        .setting-group { 
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .setting-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: #2c3e50;
+        }
+        
+        .setting-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .setting-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px 5px 5px 0;
+            transition: background 0.3s ease;
+        }
+        
+        .setting-btn:hover { background: #2980b9; }
+        .setting-btn.danger { background: #e74c3c; }
+        .setting-btn.danger:hover { background: #c0392b; }
+        .setting-btn.success { background: #27ae60; }
+        .setting-btn.success:hover { background: #229954; }
+        
+        .time-period {
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        
+        .time-period-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .time-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 80px;
+        }
+        
+        .course-item {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .course-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .course-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .course-input.code { width: 60px; }
+        .course-input.name { width: 180px; }
+        .course-input.desc { width: 250px; }
+        .course-input.english { width: 200px; }
+        
+        .status-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        /* 모바일 최적화 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            .header h1 { 
+                font-size: 3rem; 
+            }
+            
+            .service-title {
+                font-size: 2.5rem;
+                margin-bottom: 40px;
+            }
+            
+            .course-buttons { 
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .course-btn {
+                padding: 40px 30px;
+                min-width: unset;
+                max-width: unset;
+            }
+            
+            .course-name {
+                font-size: 1.8rem;
+            }
+            
+            .course-description {
+                font-size: 1.2rem;
+            }
+            
+            .current-time {
+                font-size: 2.5rem;
+            }
+            
+            .firebase-status {
+                position: relative;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 { 
+                font-size: 2.5rem; 
+            }
+            
+            .service-title {
+                font-size: 2rem;
+            }
+            
+            .course-name {
+                font-size: 1.6rem;
+            }
+            
+            .course-description {
+                font-size: 1.1rem;
+            }
+            
+            .current-time {
+                font-size: 2rem;
+            }
+        }
+        
+        /* 접근성 향상 */
+        .course-btn:focus {
+            outline: 3px solid rgba(255,255,255,0.8);
+            outline-offset: 4px;
+        }
+        
+        /* 로딩 애니메이션 */
+        .container.loading {
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, off } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuvEDDEoMLwLB2miGHCWX1-B5u8gKlGEQ",
+            authDomain: "counter-system-26479.firebaseapp.com",
+            databaseURL: "https://counter-system-26479-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "counter-system-26479",
+            storageBucket: "counter-system-26479.firebasestorage.app",
+            messagingSenderId: "316144964417",
+            appId: "1:316144964417:web:8a95a80f9db622f4ee87c0"
+        };
+
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // 전역 변수로 설정
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebasePush = push;
+        window.firebaseOnValue = onValue;
+        window.firebaseOff = off;
+
+        // Firebase 연결 상태 모니터링
+        const connectedRef = ref(database, '.info/connected');
+        onValue(connectedRef, (snapshot) => {
+            const connected = snapshot.val();
+            const statusEl = document.querySelector('.firebase-status');
+            if (statusEl) {
+                if (connected) {
+                    statusEl.textContent = '🔥 Firebase 연결됨';
+                    statusEl.className = 'firebase-status connected';
+                } else {
+                    statusEl.textContent = '❌ Firebase 연결 끊김';
+                    statusEl.className = 'firebase-status disconnected';
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container loading">
+        <div class="header">
+            <div class="firebase-status" id="firebaseStatus">🔄 Firebase 연결 중...</div>
+            <button class="settings-button" onclick="toggleSettingsPanel()" title="관리자 설정">⚙️</button>
+            <h1>순번대기표 접수</h1>
+        </div>
+
+        <div class="status-bar">
+            <div class="current-time" id="currentTime"></div>
+            <div class="waiting-count" id="waitingCount">현재 대기: 0명</div>
+        </div>
+
+        <div class="main-content">
+            <div class="service-title">상담을 원하는 과정을 터치해 주세요</div>
+            
+            <div class="course-buttons" id="courseButtons">
+                <!-- 과목 버튼들이 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <div class="print-success" id="printSuccess">
+        <div class="success-icon">✨</div>
+        <div id="printSuccessMessage">대기표 출력 완료!</div>
+    </div>
+
+    <!-- 설정 패널 -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            시스템 설정
+            <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettingsPanel()">×</button>
+        </div>
+        <div class="settings-content">
+            <!-- 시간대별 과목 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">⏰ 시간대별 과목 설정</label>
+                <div id="timePeriodsContainer"></div>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
+                <button class="setting-btn" onclick="saveSettings()">설정 저장</button>
+                <button class="setting-btn" onclick="loadDefaultSettings()">기본값 복원</button>
+                <div id="settingsMessage"></div>
+            </div>
+
+            <!-- Firebase 상태 -->
+            <div class="setting-group">
+                <label class="setting-label">🔥 Firebase 연결 상태</label>
+                <div id="firebaseInfo">
+                    <div>데이터베이스: counter-system-26479</div>
+                    <div>지역: Asia Southeast 1</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isConnected = false;
+        let sharedData = {
+            currentCall: { number: '-', counter: 0, course: '-' },
+            waiting: [],
+            counters: [
+                { id: 1, current: null, course: null, count: 0 },
+                { id: 2, current: null, course: null, count: 0 },
+                { id: 3, current: null, course: null, count: 0 },
+                { id: 4, current: null, course: null, count: 0 },
+                { id: 5, current: null, course: null, count: 0 },
+                { id: 6, current: null, course: null, count: 0 }
+            ],
+            totalToday: 0,
+            lastUpdated: null
+        };
+        let timeSettings = [];
+        let currentNumbers = {};
+
+        // 기본 설정
+        const defaultSettings = [
+            {
+                startTime: '09:00',
+                endTime: '12:00',
+                courses: [
+                    { 
+                        code: 'CH', 
+                        name: '중국어 과정', 
+                        description: '중국어 기초부터 고급까지',
+                        englishName: 'Chinese Language Course',
+                        englishDesc: 'Chinese from Basic to Advanced'
+                    }
+                ]
+            },
+            {
+                startTime: '12:00',
+                endTime: '15:00',
+                courses: [
+                    { 
+                        code: 'EN', 
+                        name: '영어 과정', 
+                        description: '영어 회화 및 비즈니스 영어',
+                        englishName: 'English Conversation Course',
+                        englishDesc: 'English Conversation & Business English'
+                    }
+                ]
+            },
+            {
+                startTime: '15:00',
+                endTime: '18:00',
+                courses: [
+                    { 
+                        code: 'HSK', 
+                        name: 'HSK 시험 준비반', 
+                        description: 'HSK 1-6급 시험 대비',
+                        englishName: 'HSK Test Preparation',
+                        englishDesc: 'HSK Level 1-6 Test Preparation'
+                    }
+                ]
+            },
+            {
+                startTime: '18:00',
+                endTime: '21:00',
+                courses: [
+                    { 
+                        code: 'TO', 
+                        name: 'TOEIC 집중반', 
+                        description: 'TOEIC 고득점 대비반',
+                        englishName: 'TOEIC Intensive Course',
+                        englishDesc: 'TOEIC High Score Preparation'
+                    }
+                ]
+            }
+        ];
+
+        // Firebase 실시간 데이터 감지
+        function setupFirebaseListeners() {
+            if (!window.firebaseDB) {
+                console.error('Firebase가 초기화되지 않았습니다.');
+                return;
+            }
+
+            const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+            
+            window.firebaseOnValue(systemRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    console.log('🔥 Firebase 데이터 수신:', data);
+                    sharedData = { ...sharedData, ...data };
+                    updateWaitingCount();
+                } else {
+                    console.log('📭 Firebase 데이터 없음');
+                }
+            });
+        }
+
+        // Firebase에 데이터 저장
+        function saveToFirebase() {
+            if (!window.firebaseDB) {
+                console.error('Firebase가 초기화되지 않았습니다.');
+                return;
+            }
+
+            try {
+                sharedData.lastUpdated = new Date().toISOString();
+                const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+                
+                window.firebaseSet(systemRef, sharedData).then(() => {
+                    console.log('✅ Firebase 저장 완료');
+                }).catch((error) => {
+                    console.error('❌ Firebase 저장 실패:', error);
+                });
+            } catch (error) {
+                console.error('❌ Firebase 저장 오류:', error);
+            }
+        }
+
+        // 시간 업데이트
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('ko-KR');
+            updateButtons();
+        }
+
+        // 대기 인원 수 업데이트
+        function updateWaitingCount() {
+            const waitingCount = sharedData.waiting ? sharedData.waiting.length : 0;
+            document.getElementById('waitingCount').textContent = `현재 대기: ${waitingCount}명`;
+        }
+
+        function getCurrentPeriod(now) {
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            return timeSettings.find(setting => {
+                const start = timeToMinutes(setting.startTime);
+                const end = timeToMinutes(setting.endTime);
+                return currentTime >= start && currentTime < end;
+            });
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function updateButtons() {
+            const container = document.getElementById('courseButtons');
+            const currentPeriod = getCurrentPeriod(new Date());
+            
+            container.innerHTML = '';
+            
+            if (currentPeriod && currentPeriod.courses && currentPeriod.courses.length > 0) {
+                currentPeriod.courses.forEach((course, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'course-btn';
+                    button.onclick = () => issueTicket(course);
+                    button.innerHTML = `
+                        <div class="course-name">${course.name}</div>
+                        <div class="course-description">${course.description}</div>
+                    `;
+                    container.appendChild(button);
+                });
+            } else {
+                const noCoursesDiv = document.createElement('div');
+                noCoursesDiv.className = 'no-courses';
+                noCoursesDiv.innerHTML = `
+                    <div class="icon">🕐</div>
+                    <h3>현재는 상담 시간이 아닙니다</h3>
+                    <p>설정된 상담 시간에 다시 방문해 주세요</p>
+                `;
+                container.appendChild(noCoursesDiv);
+            }
+        }
+
+        function issueTicket(course) {
+            console.log('🎫 순번 발행 시작:', course);
+            
+            try {
+                if (!course || !course.code) {
+                    console.error('❌ 유효하지 않은 과정 데이터:', course);
+                    alert('과정 정보가 올바르지 않습니다.');
+                    return;
+                }
+                
+                // 현재 번호 관리
+                if (!currentNumbers[course.code]) {
+                    currentNumbers[course.code] = 0;
+                }
+                currentNumbers[course.code]++;
+                
+                // 순번 생성
+                const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
+                console.log('🔢 생성된 순번:', number);
+                
+                const now = new Date();
+                const timeString = now.toLocaleString('ko-KR');
+                
+                // 새 대기번호 추가
+                const newWaitingItem = {
+                    number: number,
+                    course: course.name,
+                    time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                };
+                
+                // 기존 데이터 구조 보장
+                if (!sharedData.waiting) {
+                    sharedData.waiting = [];
+                }
+                
+                sharedData.waiting.push(newWaitingItem);
+                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                
+                // Firebase에 저장
+                saveToFirebase();
+                
+                // 성공 메시지 표시
+                showPrintSuccess(number);
+                
+                console.log('✅ 순번 발행 완료:', number);
+                
+            } catch (error) {
+                console.error('❌ 순번 발행 오류:', error);
+                alert('순번 발행 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 출력 성공 메시지
+        function showPrintSuccess(number) {
+            const successEl = document.getElementById('printSuccess');
+            const messageEl = document.getElementById('printSuccessMessage');
+            messageEl.textContent = `${number} 대기표 발행 완료!`;
+            
+            successEl.classList.add('show');
+            setTimeout(() => {
+                successEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // 설정 패널 토글
+        function toggleSettingsPanel() {
+            const panel = document.getElementById('settingsPanel');
+            const isOpen = panel.classList.contains('open');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
+                console.log('❌ 관리자 설정 패널 닫힘');
+            } else {
+                panel.classList.add('open');
+                setTimeout(() => {
+                    renderTimePeriodsEditor();
+                }, 100);
+                console.log('🔧 관리자 설정 패널 열림');
+            }
+        }
+
+        // 시간 클릭으로 설정 접근 (백업 방법)
+        let adminClicks = 0;
+        let adminTimeout;
+        
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'currentTime' || e.target.classList.contains('current-time')) {
+                adminClicks++;
+                
+                e.target.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    e.target.style.transform = 'scale(1)';
+                }, 100);
+                
+                console.log(`관리자 모드 클릭: ${adminClicks}/5`);
+                
+                if (adminClicks >= 5) {
+                    toggleSettingsPanel();
+                    adminClicks = 0;
+                }
+                
+                clearTimeout(adminTimeout);
+                adminTimeout = setTimeout(() => { 
+                    adminClicks = 0; 
+                    console.log('🔄 클릭 카운트 리셋');
+                }, 3000);
+            }
+        });
+
+        function renderTimePeriodsEditor() {
+            const container = document.getElementById('timePeriodsContainer');
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'time-period';
+                periodDiv.innerHTML = `
+                    <div class="time-period-header">
+                        <strong>시간대 ${index + 1}</strong>
+                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
+                    </div>
+                    
+                    <div class="time-inputs">
+                        <input type="time" class="time-input" value="${period.startTime}" 
+                               onchange="updateTimeField(${index}, 'startTime', this.value)">
+                        <span>~</span>
+                        <input type="time" class="time-input" value="${period.endTime}" 
+                               onchange="updateTimeField(${index}, 'endTime', this.value)">
+                    </div>
+                    
+                    <div class="courses-container" id="courses-${index}"></div>
+                    
+                    <button class="setting-btn" onclick="addCourse(${index})">+ 과목 추가</button>
+                `;
+                container.appendChild(periodDiv);
+                
+                renderCourses(index);
+            });
+        }
+
+        function renderCourses(periodIndex) {
+            const container = document.getElementById(`courses-${periodIndex}`);
+            container.innerHTML = '';
+            
+            timeSettings[periodIndex].courses.forEach((course, courseIndex) => {
+                const courseDiv = document.createElement('div');
+                courseDiv.className = 'course-item';
+                courseDiv.innerHTML = `
+                    <div class="course-inputs">
+                        <input type="text" class="course-input code" placeholder="코드" value="${course.code}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
+                        <input type="text" class="course-input name" placeholder="과목명" value="${course.name}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
+                        <input type="text" class="course-input desc" placeholder="설명" value="${course.description}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
+                        <input type="text" class="course-input english" placeholder="영문 과목명" value="${course.englishName || ''}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'englishName', this.value)">
+                        <input type="text" class="course-input english" placeholder="영문 설명" value="${course.englishDesc || ''}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'englishDesc', this.value)">
+                    </div>
+                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">삭제</button>
+                `;
+                container.appendChild(courseDiv);
+            });
+        }
+
+        function addTimePeriod() {
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: [
+                    { 
+                        code: 'NEW', 
+                        name: '새 과목', 
+                        description: '과목 설명을 입력하세요',
+                        englishName: 'New Course',
+                        englishDesc: 'Enter course description'
+                    }
+                ]
+            });
+            renderTimePeriodsEditor();
+        }
+
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+            }
+        }
+
+        function addCourse(periodIndex) {
+            timeSettings[periodIndex].courses.push({
+                code: 'NEW',
+                name: '새 과목',
+                description: '과목 설명을 입력하세요',
+                englishName: 'New Course',
+                englishDesc: 'Enter course description'
+            });
+            renderCourses(periodIndex);
+        }
+
+        function removeCourse(periodIndex, courseIndex) {
+            if (confirm('이 과목을 삭제하시겠습니까?')) {
+                timeSettings[periodIndex].courses.splice(courseIndex, 1);
+                renderCourses(periodIndex);
+            }
+        }
+
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+        }
+
+        function updateCourseField(periodIndex, courseIndex, field, value) {
+            timeSettings[periodIndex].courses[courseIndex][field] = value;
+        }
+
+        function saveSettings() {
+            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+            
+            const message = document.getElementById('settingsMessage');
+            message.innerHTML = '<div class="status-message">설정이 저장되었습니다!</div>';
+            setTimeout(() => { message.innerHTML = ''; }, 3000);
+            
+            updateButtons();
+        }
+
+        function loadDefaultSettings() {
+            if (confirm('기본 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                renderTimePeriodsEditor();
+                saveSettings();
+            }
+        }
+
+        // 초기화
+        function initialize() {
+            console.log('🚀 KIOSK Firebase 버전 초기화 시작');
+            
+            // 저장된 설정 로드
+            try {
+                const savedSettings = localStorage.getItem('timeSettings');
+                if (savedSettings && savedSettings !== 'null') {
+                    timeSettings = JSON.parse(savedSettings);
+                    console.log('✅ 설정 로드 성공:', timeSettings);
+                } else {
+                    console.log('🔄 기본 설정 사용');
+                    timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                    localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+                }
+            } catch (error) {
+                console.error('❌ 설정 로드 오류:', error);
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+            }
+            
+            // Firebase 리스너 설정
+            setTimeout(() => {
+                setupFirebaseListeners();
+            }, 1000);
+            
+            // 시간 업데이트 시작
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // 로딩 애니메이션 종료
+            setTimeout(() => {
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.classList.remove('loading');
+                }
+            }, 100);
+            
+            console.log('✅ KIOSK Firebase 버전 초기화 완료');
+        }
+
+        // 페이지 로드 시 초기화
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+    </script>
+</body>
+</html>
