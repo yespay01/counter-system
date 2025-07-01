@@ -5,209 +5,467 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>대기번호 출력 화면</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
         body {
-            font-family: 'Malgun Gothic', sans-serif;
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
             overflow: hidden;
+            position: relative;
         }
+        
+        /* 배경 장식 요소 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            animation: float 25s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(180deg); }
+        }
+        
         .header {
             text-align: center;
-            padding: 30px;
-            background: rgba(0,0,0,0.2);
+            padding: 40px 30px;
+            background: rgba(0,0,0,0.15);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+            z-index: 1;
         }
+        
         .header h1 {
-            font-size: 4rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-size: 4.5rem;
+            font-weight: 900;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            letter-spacing: -2px;
+            background: linear-gradient(45deg, #fff, #f1c40f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
+        
         .datetime {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             opacity: 0.9;
+            font-weight: 300;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
+        
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            padding: 40px;
-            height: calc(100vh - 200px);
+            gap: 50px;
+            padding: 50px;
+            height: calc(100vh - 250px);
+            position: relative;
+            z-index: 1;
         }
+        
         .current-section {
             background: rgba(255,255,255,0.1);
-            border-radius: 25px;
-            padding: 40px;
+            border-radius: 30px;
+            padding: 50px;
             text-align: center;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
         }
+        
+        .current-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #f1c40f, #e74c3c, #9b59b6, #3498db, #2ecc71);
+            background-size: 300% 100%;
+            animation: rainbow 3s linear infinite;
+        }
+        
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 300% 50%; }
+        }
+        
         .section-title {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 700;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             color: #FFD700;
+            text-shadow: 0 2px 15px rgba(255,215,0,0.4);
         }
+        
         .current-number {
-            font-size: 8rem;
+            font-size: 9rem;
             font-weight: 900;
             color: #00FF88;
-            text-shadow: 0 0 30px rgba(0,255,136,0.5);
-            margin: 20px 0;
-            animation: glow 2s ease-in-out infinite alternate;
+            text-shadow: 
+                0 0 30px rgba(0,255,136,0.6),
+                0 0 60px rgba(0,255,136,0.4),
+                0 0 90px rgba(0,255,136,0.2);
+            margin: 30px 0;
+            animation: glow 2.5s ease-in-out infinite alternate;
+            letter-spacing: -5px;
         }
+        
         @keyframes glow {
-            from { text-shadow: 0 0 30px rgba(0,255,136,0.5); }
-            to { text-shadow: 0 0 50px rgba(0,255,136,0.8); }
+            from { 
+                text-shadow: 
+                    0 0 30px rgba(0,255,136,0.6),
+                    0 0 60px rgba(0,255,136,0.4),
+                    0 0 90px rgba(0,255,136,0.2);
+            }
+            to { 
+                text-shadow: 
+                    0 0 50px rgba(0,255,136,0.8),
+                    0 0 80px rgba(0,255,136,0.6),
+                    0 0 120px rgba(0,255,136,0.4);
+            }
         }
+        
         .counter-info {
-            font-size: 2rem;
-            margin-top: 20px;
+            font-size: 2.3rem;
+            margin-top: 30px;
             opacity: 0.9;
+            font-weight: 500;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
+        
         .waiting-list {
             background: rgba(255,255,255,0.1);
-            border-radius: 25px;
-            padding: 40px;
-            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 50px;
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
         }
+        
+        .waiting-list::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #2ecc71, #f1c40f, #e74c3c, #9b59b6);
+            background-size: 300% 100%;
+            animation: rainbow 3s linear infinite reverse;
+        }
+        
         .waiting-numbers {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-            max-height: 400px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            max-height: 450px;
             overflow-y: auto;
+            padding-right: 10px;
         }
+        
+        /* 스크롤바 커스터마이징 */
+        .waiting-numbers::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .waiting-numbers::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+        
+        .waiting-numbers::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+        
+        .waiting-numbers::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
         .waiting-number {
-            background: rgba(255,255,255,0.2);
-            border-radius: 15px;
-            padding: 20px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 25px;
             text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            border: 2px solid rgba(255,255,255,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 8px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(10px);
         }
+        
         .waiting-number.next {
             border-color: #FFD700;
             background: rgba(255,215,0,0.2);
             animation: pulse 2s infinite;
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
         }
+        
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% { transform: scale(1.05); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1.05); }
         }
+        
         .number-text {
-            font-size: 1.8rem;
+            font-size: 2rem;
             font-weight: 900;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
+        
         .course-text {
-            font-size: 0.9rem;
+            font-size: 1rem;
             opacity: 0.8;
+            font-weight: 500;
         }
+        
         .time-text {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             opacity: 0.7;
+            font-weight: 400;
         }
+        
         .counter-status {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 30px;
+            gap: 25px;
+            margin-top: 40px;
         }
+        
         .counter-item {
             background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
+            border-radius: 20px;
+            padding: 25px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
+        
         .counter-item.active {
             border-color: #00FF88;
-            background: rgba(0,255,136,0.1);
+            background: rgba(0,255,136,0.15);
+            box-shadow: 0 10px 30px rgba(0,255,136,0.2);
+            transform: scale(1.05);
         }
+        
         .counter-name {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            opacity: 0.9;
         }
+        
         .counter-number {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 900;
             color: #FFD700;
+            text-shadow: 0 2px 15px rgba(255,215,0,0.4);
         }
+        
         .counter-course {
-            font-size: 0.9rem;
+            font-size: 1rem;
             opacity: 0.8;
-            margin-top: 5px;
+            margin-top: 10px;
+            font-weight: 400;
         }
+        
         .status-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: rgba(0,0,0,0.8);
-            padding: 15px;
+            backdrop-filter: blur(20px);
+            padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 10;
         }
+        
         .total-waiting {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 600;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
+        
         .last-update {
-            font-size: 1rem;
+            font-size: 1.1rem;
             opacity: 0.7;
+            font-weight: 400;
         }
-        .status-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255,255,255,0.2);
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 1rem;
-            backdrop-filter: blur(10px);
-        }
-        .online { color: #00FF88; }
-        .offline { color: #FF6B6B; }
+        
         .no-waiting {
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             opacity: 0.7;
-            padding: 40px;
+            padding: 60px;
+            font-weight: 300;
         }
+        
+        /* 숨겨진 요소들 */
+        .status-indicator,
         .debug-info {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            max-width: 300px;
             display: none;
+        }
+        
+        /* 로딩 애니메이션 */
+        .loading {
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 1200px) {
+            .main-content {
+                gap: 30px;
+                padding: 30px;
+            }
+            
+            .header h1 {
+                font-size: 3.5rem;
+            }
+            
+            .current-number {
+                font-size: 7rem;
+            }
+            
+            .section-title {
+                font-size: 2.3rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+                height: auto;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 3rem;
+            }
+            
+            .current-number {
+                font-size: 6rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .counter-status {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .waiting-numbers {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 15px;
+            }
+            
+            .number-text {
+                font-size: 1.7rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .total-waiting {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .current-number {
+                font-size: 5rem;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+            }
+            
+            .counter-status {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 고급 효과 */
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* 접근성 향상 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="status-indicator" id="statusIndicator">🔄 시뮬레이션 모드</div>
-    
-    <div class="header">
-        <h1>📢 대기번호 안내</h1>
+    <div class="header loading">
+        <h1>대기번호 안내</h1>
         <div class="datetime" id="datetime"></div>
     </div>
 
     <div class="main-content">
-        <div class="current-section">
+        <div class="current-section loading">
             <div class="section-title">🔔 현재 호출</div>
             <div class="current-number" id="currentNumber">-</div>
             <div class="counter-info" id="counterInfo">대기 중</div>
@@ -217,7 +475,7 @@
             </div>
         </div>
 
-        <div class="waiting-list">
+        <div class="waiting-list loading">
             <div class="section-title">⏳ 대기번호</div>
             <div class="waiting-numbers" id="waitingNumbers">
                 <!-- 대기번호들 -->
@@ -225,17 +483,13 @@
         </div>
     </div>
 
-    <div class="status-bar">
+    <div class="status-bar loading">
         <div class="total-waiting">
             총 대기: <span id="totalWaiting">0</span>명
         </div>
         <div class="last-update">
             마지막 업데이트: <span id="lastUpdate">-</span>
         </div>
-    </div>
-
-    <div class="debug-info" id="debugInfo">
-        <!-- 디버그 정보 -->
     </div>
 
     <script>
@@ -308,20 +562,10 @@
                         
                         displayData.isConnected = true;
                         displayData.lastUpdateTime = new Date();
-                        
-                        // 상태 표시 업데이트
-                        document.getElementById('statusIndicator').innerHTML = '🟢 실시간 연동';
-                        document.getElementById('statusIndicator').className = 'status-indicator online';
-                        
-                        if (isDebugMode) {
-                            updateDebugInfo('데이터 로드 성공', sharedData);
-                        }
                     }
                 } else {
                     // 로컬 스토리지에 데이터가 없는 경우
                     displayData.isConnected = false;
-                    document.getElementById('statusIndicator').innerHTML = '🔄 시뮬레이션 모드';
-                    document.getElementById('statusIndicator').className = 'status-indicator offline';
                     
                     // 시뮬레이션 데이터 사용
                     if (!displayData.waiting.length) {
@@ -332,12 +576,6 @@
             } catch (error) {
                 console.error('데이터 로드 오류:', error);
                 displayData.isConnected = false;
-                document.getElementById('statusIndicator').innerHTML = '❌ 연결 오류';
-                document.getElementById('statusIndicator').className = 'status-indicator offline';
-                
-                if (isDebugMode) {
-                    updateDebugInfo('데이터 로드 오류', error.message);
-                }
             }
         }
 
@@ -375,7 +613,8 @@
                 if (displayData.waiting && displayData.waiting.length > 0) {
                     displayData.waiting.forEach((item, index) => {
                         const div = document.createElement('div');
-                        div.className = 'waiting-number';
+                        div.className = 'waiting-number loading';
+                        div.style.animationDelay = `${index * 0.1}s`;
                         if (index === 0) div.classList.add('next');
                         
                         div.innerHTML = `
@@ -394,9 +633,10 @@
                 const counterContainer = document.getElementById('counterStatus');
                 counterContainer.innerHTML = '';
                 
-                displayData.counters.slice(0, 6).forEach(counter => {
+                displayData.counters.slice(0, 6).forEach((counter, index) => {
                     const div = document.createElement('div');
-                    div.className = 'counter-item';
+                    div.className = 'counter-item loading';
+                    div.style.animationDelay = `${index * 0.05}s`;
                     
                     // 현재 활성 창구 표시
                     if (counter.current && counter.current !== '-') {
@@ -423,9 +663,6 @@
                 
             } catch (error) {
                 console.error('화면 업데이트 오류:', error);
-                if (isDebugMode) {
-                    updateDebugInfo('화면 업데이트 오류', error.message);
-                }
             }
         }
 
@@ -466,40 +703,6 @@
             }
         }
 
-        function updateDebugInfo(title, data) {
-            const debugEl = document.getElementById('debugInfo');
-            if (debugEl) {
-                debugEl.innerHTML = `
-                    <strong>${title}</strong><br>
-                    <small>${new Date().toLocaleTimeString()}</small><br>
-                    <pre style="font-size: 0.7rem; margin-top: 5px;">${JSON.stringify(data, null, 2).substring(0, 200)}...</pre>
-                `;
-            }
-        }
-
-        // 키보드 단축키 (디버그 모드)
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.altKey && e.key === 'd') {
-                e.preventDefault();
-                isDebugMode = !isDebugMode;
-                const debugEl = document.getElementById('debugInfo');
-                debugEl.style.display = isDebugMode ? 'block' : 'none';
-                
-                if (isDebugMode) {
-                    updateDebugInfo('디버그 모드 활성화', { 
-                        connected: displayData.isConnected,
-                        waitingCount: displayData.waiting.length
-                    });
-                }
-            }
-            
-            // 새로고침 단축키
-            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-                e.preventDefault();
-                location.reload();
-            }
-        });
-
         // 초기화 함수
         function initialize() {
             console.log('DISPLAY 화면 초기화 시작');
@@ -515,6 +718,15 @@
             // 초기 데이터 로드
             loadSharedData();
             updateDisplay();
+            
+            // 로딩 애니메이션 트리거
+            setTimeout(() => {
+                document.querySelectorAll('.loading').forEach((el, index) => {
+                    setTimeout(() => {
+                        el.classList.remove('loading');
+                    }, index * 200);
+                });
+            }, 500);
             
             // 주기적 업데이트 (2초마다)
             setInterval(() => {
@@ -550,6 +762,53 @@
         window.addEventListener('storage', (e) => {
             if (e.key === 'counterSystemData') {
                 console.log('로컬 스토리지 변경 감지');
+                loadSharedData();
+                updateDisplay();
+            }
+        });
+
+        // 관리자 모드 (숨겨진 기능)
+        let adminClicks = 0;
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('datetime')) {
+                adminClicks++;
+                if (adminClicks >= 7) {
+                    // 7번 클릭하면 디버그 모드 토글
+                    isDebugMode = !isDebugMode;
+                    console.log('디버그 모드:', isDebugMode ? '활성화' : '비활성화');
+                    adminClicks = 0;
+                }
+                setTimeout(() => { adminClicks = 0; }, 3000);
+            }
+        });
+
+        // 키보드 단축키 (F11: 전체화면)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+            
+            // ESC: 전체화면 해제
+            if (e.key === 'Escape' && document.fullscreenElement) {
+                document.exitFullscreen();
+            }
+        });
+
+        // 자동 새로고침 (30분마다)
+        setInterval(() => {
+            if (!isDebugMode) {
+                location.reload();
+            }
+        }, 30 * 60 * 1000);
+
+        // 페이지 가시성 변경 감지
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
                 loadSharedData();
                 updateDisplay();
             }
