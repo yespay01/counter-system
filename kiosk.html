@@ -428,7 +428,8 @@
                 <label class="setting-label">🖨️ 프린터 연결 설정</label>
                 <div class="setting-description">
                     USB 또는 시리얼 포트로 연결된 ESC/POS 프린터를 설정합니다.<br>
-                    <strong>요구사항:</strong> Chrome 89+ 브라우저, HTTPS 환경
+                    <strong>요구사항:</strong> Chrome 89+ 브라우저, HTTPS 환경<br>
+                    <strong>포트 고정:</strong> 한 번 연결하면 포트 정보가 자동 저장됩니다.
                 </div>
                 
                 <label>통신 속도 (Baud Rate):</label>
@@ -444,6 +445,14 @@
                     <button class="setting-btn" onclick="connectPrinter()">🔌 프린터 연결</button>
                     <button class="setting-btn" onclick="disconnectPrinter()">🔌 연결 해제</button>
                     <button class="setting-btn" onclick="testPrint()">🖨️ 테스트 출력</button>
+                    <button class="setting-btn" onclick="clearPrinterPort()">🗑️ 포트 정보 삭제</button>
+                </div>
+                
+                <div style="background: #e8f4fd; border: 1px solid #bee5eb; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem;">
+                    <strong>📍 포트 고정 기능:</strong><br>
+                    • 처음 연결 시: 프린터 포트를 선택하고 정보가 자동 저장됩니다<br>
+                    • 재연결 시: 저장된 포트로 자동 연결을 시도합니다<br>
+                    • 포트 변경 시: "포트 정보 삭제" 후 다시 연결하세요
                 </div>
                 
                 <div id="printerMessage"></div>
@@ -711,7 +720,7 @@
             }
         }
 
-        // 대기표 출력 (용지 길이 4센치로 확대)
+        // 대기표 출력 (구분선 추가)
         async function printTicket(ticketInfo) {
             if (!isPrinterConnected) {
                 console.log('⚠️ 프린터 미연결 - 출력 시뮬레이션');
@@ -722,6 +731,7 @@
             try {
                 const numberFontSize = document.getElementById('numberFontSize').value;
                 const paperCut = document.getElementById('paperCut').value;
+                const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
 
                 // 프린터 완전 초기화
                 await sendToPrinter(ESCPOS.INIT);
@@ -729,21 +739,31 @@
                 
                 let printData = '';
                 
-                // 상단 여백 (4센치 = 약 10cm = 약 15줄)
-                for (let i = 0; i < 8; i++) {
-                    printData += ESCPOS.LINE_FEED;
-                }
+                // 상단 여백 (3줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
-                // 대기번호만 출력 (중앙 정렬)
+                // 상단 구분선
+                printData += ESCPOS.ALIGN_CENTER;
+                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                
+                // 상단 여백 (3줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 대기번호 출력 (중앙 정렬)
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += getFontSizeCommand(numberFontSize);
-                printData += ticketInfo.number;
-                printData += ESCPOS.LINE_FEED;
+                printData += ticketInfo.number + ESCPOS.LINE_FEED;
                 
-                // 하단 여백 (4센치 = 약 10cm = 약 15줄)
-                for (let i = 0; i < 8; i++) {
-                    printData += ESCPOS.LINE_FEED;
-                }
+                // 하단 여백 (3줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 하단 구분선
+                printData += ESCPOS.ALIGN_CENTER;
+                printData += ESCPOS.FONT_NORMAL; // 구분선은 일반 크기로
+                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                
+                // 하단 여백 (3줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
                 // 용지 자르기
                 if (paperCut === 'full') {
@@ -821,14 +841,21 @@
             }
         }
 
-        // 출력 미리보기 생성 (용지 길이 반영)
+        // 출력 미리보기 생성 (구분선 포함)
         function generatePreview(ticketNumber = 'CH001') {
             const numberFontSize = document.getElementById('numberFontSize').value;
+            const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
             
             let preview = '';
             
-            // 상단 여백 (4센치 반영)
-            preview += '\n\n\n\n\n\n\n\n';
+            // 상단 여백
+            preview += '\n\n\n';
+            
+            // 상단 구분선
+            preview += createLine('-', paperWidth) + '\n';
+            
+            // 상단 여백
+            preview += '\n\n\n';
             
             // 대기번호 크기별 표시
             if (numberFontSize === 'huge') {
@@ -847,8 +874,14 @@
                 preview += '         ' + ticketNumber + '\n';
             }
             
-            // 하단 여백 (4센치 반영)
-            preview += '\n\n\n\n\n\n\n\n';
+            // 하단 여백
+            preview += '\n\n\n';
+            
+            // 하단 구분선
+            preview += createLine('-', paperWidth) + '\n';
+            
+            // 하단 여백
+            preview += '\n\n\n';
             
             return preview;
         }
@@ -1278,6 +1311,26 @@
             createCourseButtons();
         }
 
+        // 포트 정보 삭제 (새 포트 선택용)
+        function clearPrinterPort() {
+            if (confirm('저장된 프린터 포트 정보를 삭제하시겠습니까?\n다음 연결 시 새로운 포트를 선택해야 합니다.')) {
+                localStorage.removeItem('printerPortInfo');
+                showMessage('printerMessage', '✅ 포트 정보가 삭제되었습니다. 다음 연결 시 새 포트를 선택하세요.', 'success');
+                console.log('🗑️ 프린터 포트 정보 삭제됨');
+            }
+        }
+
+        // 초기화 시 자동 연결 시도
+        function tryAutoConnect() {
+            const savedPortInfo = localStorage.getItem('printerPortInfo');
+            if (savedPortInfo && !isPrinterConnected) {
+                console.log('🔄 저장된 포트로 자동 연결 시도');
+                setTimeout(() => {
+                    connectPrinter();
+                }, 2000); // 2초 후 자동 연결 시도
+            }
+        }
+
         // 설정 패널 토글
         function toggleSettings() {
             const panel = document.getElementById('settingsPanel');
@@ -1364,6 +1417,9 @@
             
             // 미리보기 초기 생성
             updatePreview();
+            
+            // 자동 연결 시도
+            tryAutoConnect();
             
             console.log('✅ 키오스크 초기화 완료');
         }
