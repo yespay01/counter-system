@@ -524,9 +524,14 @@
             <!-- 프린터 설정 -->
             <div class="setting-group">
                 <label class="setting-label">🖨️ 시리얼 프린터 설정</label>
-                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
-                    Chrome 기반 브라우저에서 Web Serial API를 사용합니다.
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+                    <strong>요구사항:</strong><br>
+                    • Chrome 89+ 또는 Edge 89+ 브라우저<br>
+                    • USB 또는 시리얼 포트로 연결된 ESC/POS 프린터<br>
+                    • HTTPS 환경 (보안 필요)
                 </div>
+                
+                <label>통신 속도 (Baud Rate):</label>
                 <select class="setting-input" id="baudRate">
                     <option value="9600">9600 baud</option>
                     <option value="19200">19200 baud</option>
@@ -534,9 +539,20 @@
                     <option value="57600">57600 baud</option>
                     <option value="115200" selected>115200 baud</option>
                 </select>
-                <button class="setting-btn" onclick="connectPrinter()">프린터 연결</button>
-                <button class="setting-btn" onclick="disconnectPrinter()">연결 해제</button>
-                <button class="setting-btn" onclick="testPrint()">테스트 출력</button>
+                
+                <div style="margin: 15px 0;">
+                    <button class="setting-btn" onclick="connectPrinter()">🔌 프린터 연결</button>
+                    <button class="setting-btn" onclick="disconnectPrinter()">🔌 연결 해제</button>
+                    <button class="setting-btn" onclick="testPrint()">🖨️ 테스트 출력</button>
+                </div>
+                
+                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.9rem;">
+                    <strong>⚠️ 연결 시 주의사항:</strong><br>
+                    • 프린터 전원이 켜져 있는지 확인<br>
+                    • 다른 프로그램에서 프린터를 사용 중이지 않은지 확인<br>
+                    • USB 케이블이 제대로 연결되어 있는지 확인
+                </div>
+                
                 <div id="printerMessage"></div>
             </div>
 
@@ -750,22 +766,34 @@
             return result;
         }
 
-        // 프린터 연결 (백그라운드에서 자동 처리)
+        // 프린터 연결 (백그라운드에서 자동 처리) - 수정된 버전
         async function connectPrinter() {
             if (!isSerialSupported()) {
+                showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
                 return;
             }
 
             try {
+                const baudRate = parseInt(document.getElementById('baudRate').value) || 115200;
+                
+                // 기존 연결이 있다면 먼저 해제
+                if (serialPort) {
+                    await disconnectPrinter();
+                }
+                
+                // 사용자에게 포트 선택 요청
                 serialPort = await navigator.serial.requestPort();
+                
+                // 포트 열기
                 await serialPort.open({ 
-                    baudRate: 115200,
+                    baudRate: baudRate,
                     dataBits: 8,
                     stopBits: 1,
                     parity: 'none',
                     flowControl: 'none'
                 });
 
+                // 스트림 설정
                 const textDecoder = new TextDecoderStream();
                 const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
                 reader = textDecoder.readable.getReader();
@@ -775,10 +803,32 @@
                 writer = textEncoder.writable.getWriter();
 
                 isPrinterConnected = true;
+                
+                // 프린터 초기화
                 await sendToPrinter(ESCPOS.INIT);
+                
+                showMessage('printerMessage', '프린터가 성공적으로 연결되었습니다!', 'success');
+                console.log('🖨️ 프린터 연결 성공');
 
             } catch (error) {
                 console.error('프린터 연결 오류:', error);
+                isPrinterConnected = false;
+                serialPort = null;
+                reader = null;
+                writer = null;
+                
+                let errorMsg = '프린터 연결 실패: ';
+                if (error.name === 'NotFoundError') {
+                    errorMsg += '사용자가 포트 선택을 취소했습니다.';
+                } else if (error.name === 'InvalidStateError') {
+                    errorMsg += '포트가 이미 사용 중입니다.';
+                } else if (error.name === 'NetworkError') {
+                    errorMsg += '포트를 열 수 없습니다. 다른 프로그램이 사용 중일 수 있습니다.';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                showMessage('printerMessage', errorMsg, 'error');
             }
         }
 
@@ -1223,7 +1273,7 @@
             }
         }
 
-        // 프린터 연결 해제
+        // 프린터 연결 해제 - 개선된 버전
         async function disconnectPrinter() {
             try {
                 if (reader) {
@@ -1241,22 +1291,29 @@
                 
                 isPrinterConnected = false;
                 showMessage('printerMessage', '프린터 연결이 해제되었습니다.', 'success');
+                console.log('🖨️ 프린터 연결 해제');
                 
             } catch (error) {
                 console.error('프린터 해제 오류:', error);
                 showMessage('printerMessage', '프린터 해제 실패: ' + error.message, 'error');
+                
+                // 강제로 변수들 초기화
+                isPrinterConnected = false;
+                serialPort = null;
+                reader = null;
+                writer = null;
             }
         }
 
-        // 테스트 출력
+        // 테스트 출력 - 개선된 버전
         async function testPrint() {
             if (!isPrinterConnected) {
-                alert('프린터가 연결되지 않았습니다.');
+                showMessage('printerMessage', '프린터가 연결되지 않았습니다. 먼저 프린터를 연결해주세요.', 'error');
                 return;
             }
 
             try {
-                const paperWidth = parseInt(document.getElementById('paperWidth').value);
+                const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
                 
                 await sendToPrinter(ESCPOS.INIT);
                 
@@ -1279,10 +1336,17 @@
 
                 await sendToPrinter(testData);
                 showMessage('printerMessage', '테스트 출력이 완료되었습니다!', 'success');
+                console.log('🖨️ 테스트 출력 완료');
                 
             } catch (error) {
                 console.error('테스트 출력 오류:', error);
                 showMessage('printerMessage', '테스트 출력 실패: ' + error.message, 'error');
+                
+                // 연결 상태 재확인
+                if (!serialPort || !writer) {
+                    isPrinterConnected = false;
+                    showMessage('printerMessage', '프린터 연결이 끊어졌습니다. 다시 연결해주세요.', 'error');
+                }
             }
         }
 
