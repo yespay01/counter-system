@@ -54,6 +54,7 @@
         .header {
             text-align: center;
             margin-bottom: 50px;
+            position: relative;
         }
         
         .header h1 {
@@ -70,6 +71,37 @@
             font-size: 1.4rem;
             font-weight: 300;
             text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        /* 작은 설정 버튼 */
+        .settings-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.7);
+            backdrop-filter: blur(10px);
+        }
+        
+        .settings-button:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.9);
+            transform: scale(1.1) rotate(45deg);
+        }
+        
+        .settings-button:active {
+            transform: scale(0.95) rotate(45deg);
         }
         
         .status-bar {
@@ -206,7 +238,7 @@
             line-height: 1.5;
         }
         
-        /* 관리자 영역 - 숨김 처리 */
+        /* 관리자 영역 - 설정 버튼은 보이게 하되 기능은 유지 */
         .settings-toggle,
         .printer-connect {
             display: none;
@@ -214,6 +246,135 @@
         
         .settings-panel {
             display: none;
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100%;
+            background: white;
+            transition: right 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+        }
+        .settings-panel.open { right: 0; }
+        .settings-header {
+            background: #3498db;
+            color: white;
+            padding: 25px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .settings-content { 
+            padding: 25px; 
+            padding-bottom: 100px;
+        }
+        .setting-group { 
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .setting-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: #2c3e50;
+        }
+        .setting-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        .setting-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px 5px 5px 0;
+            transition: background 0.3s ease;
+        }
+        .setting-btn:hover { background: #2980b9; }
+        .setting-btn.danger { background: #e74c3c; }
+        .setting-btn.danger:hover { background: #c0392b; }
+        .setting-btn.success { background: #27ae60; }
+        .setting-btn.success:hover { background: #229954; }
+        .time-period {
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            background: white;
+        }
+        .time-period-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .time-inputs {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .time-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 80px;
+        }
+        .course-item {
+            background: #f1f3f4;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .course-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        .course-input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .course-input.code { width: 60px; }
+        .course-input.name { width: 180px; }
+        .course-input.desc { width: 250px; }
+        .course-input.english { width: 200px; }
+        .status-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
         }
         
         /* 성공 메시지 */
@@ -261,41 +422,47 @@
         }
         
         /* 모바일 최적화 */
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px 15px;
+            @media (max-width: 768px) {
+                .container {
+                    padding: 20px 15px;
+                }
+                
+                .header h1 { 
+                    font-size: 3rem; 
+                }
+                
+                .settings-button {
+                    width: 35px;
+                    height: 35px;
+                    font-size: 1rem;
+                }
+                
+                .service-title {
+                    font-size: 2.5rem;
+                    margin-bottom: 40px;
+                }
+                
+                .course-buttons { 
+                    grid-template-columns: 1fr;
+                    gap: 20px;
+                }
+                
+                .course-btn {
+                    padding: 40px 30px;
+                }
+                
+                .course-name {
+                    font-size: 1.8rem;
+                }
+                
+                .course-description {
+                    font-size: 1.2rem;
+                }
+                
+                .current-time {
+                    font-size: 2.5rem;
+                }
             }
-            
-            .header h1 { 
-                font-size: 3rem; 
-            }
-            
-            .service-title {
-                font-size: 2.5rem;
-                margin-bottom: 40px;
-            }
-            
-            .course-buttons { 
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .course-btn {
-                padding: 40px 30px;
-            }
-            
-            .course-name {
-                font-size: 1.8rem;
-            }
-            
-            .course-description {
-                font-size: 1.2rem;
-            }
-            
-            .current-time {
-                font-size: 2.5rem;
-            }
-        }
         
         @media (max-width: 480px) {
             .header h1 { 
@@ -336,6 +503,7 @@
 <body>
     <div class="container loading">
         <div class="header">
+            <button class="settings-button" onclick="toggleSettings()" title="관리자 설정">⚙️</button>
             <h1>순번대기표 접수</h1>
             <p>원하는 과정을 선택해 주세요</p>
         </div>
@@ -360,8 +528,74 @@
     </div>
 
     <!-- 숨겨진 설정 패널 (관리자 전용) -->
-    <div class="settings-panel" id="settingsPanel" style="display: none;">
-        <!-- 기존 설정 내용 유지 (숨김 처리) -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            시스템 설정
+            <button style="float: right; background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;" onclick="toggleSettings()">×</button>
+        </div>
+        <div class="settings-content">
+            <!-- 프린터 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">🖨️ 시리얼 프린터 설정</label>
+                <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">
+                    Chrome 기반 브라우저에서 Web Serial API를 사용합니다.
+                </div>
+                <select class="setting-input" id="baudRate">
+                    <option value="9600">9600 baud</option>
+                    <option value="19200">19200 baud</option>
+                    <option value="38400">38400 baud</option>
+                    <option value="57600">57600 baud</option>
+                    <option value="115200" selected>115200 baud</option>
+                </select>
+                <button class="setting-btn" onclick="connectPrinter()">프린터 연결</button>
+                <button class="setting-btn" onclick="disconnectPrinter()">연결 해제</button>
+                <button class="setting-btn" onclick="testPrint()">테스트 출력</button>
+                <div id="printerMessage"></div>
+            </div>
+
+            <!-- ESC/POS 명령어 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">📝 출력 형식 설정</label>
+                
+                <label>용지 폭:</label>
+                <select class="setting-input" id="paperWidth">
+                    <option value="32">32 characters (58mm)</option>
+                    <option value="42" selected>42 characters (80mm)</option>
+                    <option value="48">48 characters (112mm)</option>
+                </select>
+                
+                <label>폰트 크기:</label>
+                <select class="setting-input" id="fontSize">
+                    <option value="normal" selected>일반</option>
+                    <option value="large">큰 글씨</option>
+                    <option value="xlarge">매우 큰 글씨</option>
+                </select>
+                
+                <label>용지 자르기:</label>
+                <select class="setting-input" id="paperCut">
+                    <option value="full" selected>전체 자르기</option>
+                    <option value="partial">부분 자르기</option>
+                    <option value="none">자르지 않음</option>
+                </select>
+                
+                <div style="background: #e8f5e8; border: 1px solid #4caf50; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem;">
+                    <strong>💡 출력 정보:</strong><br>
+                    • 대기표는 영문으로 출력됩니다<br>
+                    • 한글 과목명은 영문명으로 자동 변환<br>
+                    • 중국어는 병음으로 변환되어 출력
+                </div>
+            </div>
+
+            <!-- 시간대별 과목 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">⏰ 시간대별 과목 설정</label>
+                <div id="timePeriodsContainer"></div>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
+                <button class="setting-btn" onclick="saveSettings()">설정 저장</button>
+                <button class="setting-btn" onclick="loadDefaultSettings()">기본값 복원</button>
+                <div id="settingsMessage"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -823,22 +1057,248 @@
             }, 100);
         }
 
-        // 관리자 모드 (숨겨진 기능)
+        // 관리자 모드 (설정 버튼과 숨겨진 시간 클릭 두 방법 모두 지원)
         let adminClicks = 0;
+        let adminTimeout;
+        
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                renderTimePeriodsEditor();
+                console.log('🔧 관리자 설정 패널 열림');
+            } else {
+                console.log('❌ 관리자 설정 패널 닫힘');
+            }
+        }
+        
+        // 시간 클릭으로도 접근 가능 (백업 방법)
         document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('current-time')) {
+            // 시간 표시 부분을 클릭할 때
+            if (e.target.id === 'currentTime' || e.target.classList.contains('current-time')) {
                 adminClicks++;
+                
+                // 시각적 피드백 추가
+                e.target.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    e.target.style.transform = 'scale(1)';
+                }, 100);
+                
+                // 클릭 횟수 표시 (개발자 콘솔)
+                console.log(`관리자 모드 클릭: ${adminClicks}/5`);
+                
                 if (adminClicks >= 5) {
                     // 5번 클릭하면 설정 패널 표시
-                    const panel = document.getElementById('settingsPanel');
-                    if (panel) {
-                        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-                    }
+                    toggleSettings();
                     adminClicks = 0;
                 }
-                setTimeout(() => { adminClicks = 0; }, 3000);
+                
+                // 3초 후 클릭 카운트 리셋
+                clearTimeout(adminTimeout);
+                adminTimeout = setTimeout(() => { 
+                    adminClicks = 0; 
+                    console.log('🔄 클릭 카운트 리셋');
+                }, 3000);
             }
         });
+
+        function renderTimePeriodsEditor() {
+            const container = document.getElementById('timePeriodsContainer');
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'time-period';
+                periodDiv.innerHTML = `
+                    <div class="time-period-header">
+                        <strong>시간대 ${index + 1}</strong>
+                        <button class="setting-btn danger" onclick="removeTimePeriod(${index})">삭제</button>
+                    </div>
+                    
+                    <div class="time-inputs">
+                        <input type="time" class="time-input" value="${period.startTime}" 
+                               onchange="updateTimeField(${index}, 'startTime', this.value)">
+                        <span>~</span>
+                        <input type="time" class="time-input" value="${period.endTime}" 
+                               onchange="updateTimeField(${index}, 'endTime', this.value)">
+                    </div>
+                    
+                    <div class="courses-container" id="courses-${index}"></div>
+                    
+                    <button class="setting-btn" onclick="addCourse(${index})">+ 과목 추가</button>
+                `;
+                container.appendChild(periodDiv);
+                
+                renderCourses(index);
+            });
+        }
+
+        function renderCourses(periodIndex) {
+            const container = document.getElementById(`courses-${periodIndex}`);
+            container.innerHTML = '';
+            
+            timeSettings[periodIndex].courses.forEach((course, courseIndex) => {
+                const courseDiv = document.createElement('div');
+                courseDiv.className = 'course-item';
+                courseDiv.innerHTML = `
+                    <div class="course-inputs">
+                        <input type="text" class="course-input code" placeholder="코드" value="${course.code}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'code', this.value)">
+                        <input type="text" class="course-input name" placeholder="과목명 (한글/중문)" value="${course.name}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'name', this.value)">
+                        <input type="text" class="course-input desc" placeholder="설명" value="${course.description}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'description', this.value)">
+                        <input type="text" class="course-input english" placeholder="영문 과목명" value="${course.englishName || ''}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'englishName', this.value)">
+                        <input type="text" class="course-input english" placeholder="영문 설명" value="${course.englishDesc || ''}"
+                               onchange="updateCourseField(${periodIndex}, ${courseIndex}, 'englishDesc', this.value)">
+                    </div>
+                    <button class="setting-btn danger" onclick="removeCourse(${periodIndex}, ${courseIndex})">삭제</button>
+                `;
+                container.appendChild(courseDiv);
+            });
+        }
+
+        function addTimePeriod() {
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: [
+                    { 
+                        code: 'NEW', 
+                        name: '새 과목', 
+                        description: '과목 설명을 입력하세요',
+                        englishName: 'New Course',
+                        englishDesc: 'Enter course description'
+                    }
+                ]
+            });
+            renderTimePeriodsEditor();
+        }
+
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+            }
+        }
+
+        function addCourse(periodIndex) {
+            timeSettings[periodIndex].courses.push({
+                code: 'NEW',
+                name: '새 과목',
+                description: '과목 설명을 입력하세요',
+                englishName: 'New Course',
+                englishDesc: 'Enter course description'
+            });
+            renderCourses(periodIndex);
+        }
+
+        function removeCourse(periodIndex, courseIndex) {
+            if (confirm('이 과목을 삭제하시겠습니까?')) {
+                timeSettings[periodIndex].courses.splice(courseIndex, 1);
+                renderCourses(periodIndex);
+            }
+        }
+
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+        }
+
+        function updateCourseField(periodIndex, courseIndex, field, value) {
+            timeSettings[periodIndex].courses[courseIndex][field] = value;
+        }
+
+        function saveSettings() {
+            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+            
+            const message = document.getElementById('settingsMessage');
+            message.innerHTML = '<div class="status-message">설정이 저장되었습니다!</div>';
+            setTimeout(() => { message.innerHTML = ''; }, 3000);
+            
+            updateButtons();
+        }
+
+        function loadDefaultSettings() {
+            if (confirm('기본 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                renderTimePeriodsEditor();
+                saveSettings();
+            }
+        }
+
+        // 프린터 연결 해제
+        async function disconnectPrinter() {
+            try {
+                if (reader) {
+                    await reader.cancel();
+                    reader = null;
+                }
+                if (writer) {
+                    await writer.close();
+                    writer = null;
+                }
+                if (serialPort) {
+                    await serialPort.close();
+                    serialPort = null;
+                }
+                
+                isPrinterConnected = false;
+                showMessage('printerMessage', '프린터 연결이 해제되었습니다.', 'success');
+                
+            } catch (error) {
+                console.error('프린터 해제 오류:', error);
+                showMessage('printerMessage', '프린터 해제 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 테스트 출력
+        async function testPrint() {
+            if (!isPrinterConnected) {
+                alert('프린터가 연결되지 않았습니다.');
+                return;
+            }
+
+            try {
+                const paperWidth = parseInt(document.getElementById('paperWidth').value);
+                
+                await sendToPrinter(ESCPOS.INIT);
+                
+                let testData = '';
+                testData += ESCPOS.ALIGN_CENTER;
+                testData += ESCPOS.BOLD_ON;
+                testData += centerText('TEST PRINT', paperWidth) + ESCPOS.LINE_FEED;
+                testData += ESCPOS.BOLD_OFF;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Printer connected successfully!', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Multi-language support ready', paperWidth) + ESCPOS.LINE_FEED;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Korean: 한글 테스트', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('Chinese: 中文测试', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText('English: English Test', paperWidth) + ESCPOS.LINE_FEED;
+                testData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                testData += centerText(new Date().toLocaleString(), paperWidth) + ESCPOS.LINE_FEED;
+                testData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                testData += ESCPOS.CUT_FULL;
+
+                await sendToPrinter(testData);
+                showMessage('printerMessage', '테스트 출력이 완료되었습니다!', 'success');
+                
+            } catch (error) {
+                console.error('테스트 출력 오류:', error);
+                showMessage('printerMessage', '테스트 출력 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'error-message' : 'status-message';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
 
         // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', initialize);
