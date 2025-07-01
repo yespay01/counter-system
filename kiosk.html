@@ -167,11 +167,26 @@
             right: 0; 
         }
         
-        /* 낮은 해상도 대응 */
+        /* 낮은 해상도 대응 - 체크박스 영역 확대 */
         @media (max-width: 1024px) {
             .settings-panel {
                 width: 400px;
                 right: -400px;
+            }
+            
+            /* 체크박스 터치 영역 확대 */
+            .checkboxDiv {
+                min-height: 50px !important;
+                padding: 15px !important;
+                margin-bottom: 8px !important;
+            }
+            
+            .time-period {
+                padding: 25px !important;
+            }
+            
+            .course-inputs {
+                gap: 15px !important;
             }
         }
         
@@ -179,6 +194,17 @@
             .settings-panel {
                 width: 350px;
                 right: -350px;
+            }
+            
+            /* 더 큰 터치 영역 */
+            .checkboxDiv {
+                min-height: 55px !important;
+                padding: 18px !important;
+            }
+            
+            .setting-btn {
+                min-height: 50px !important;
+                padding: 15px 25px !important;
             }
         }
         
@@ -196,6 +222,12 @@
             .setting-group {
                 margin-bottom: 20px;
                 padding: 15px;
+            }
+            
+            /* 체크박스 컴팩트 모드 */
+            .checkboxDiv {
+                min-height: 45px !important;
+                padding: 12px !important;
             }
         }
         
@@ -720,7 +752,7 @@
             }
         }
 
-        // 대기표 출력 (구분선 추가)
+        // 대기표 출력 (구분선 폰트 크기 고정)
         async function printTicket(ticketInfo) {
             if (!isPrinterConnected) {
                 console.log('⚠️ 프린터 미연결 - 출력 시뮬레이션');
@@ -742,24 +774,26 @@
                 // 상단 여백 (3줄)
                 printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
-                // 상단 구분선
+                // 상단 구분선 (일반 폰트 크기로 고정)
                 printData += ESCPOS.ALIGN_CENTER;
+                printData += ESCPOS.FONT_NORMAL; // 구분선은 항상 일반 크기
                 printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 
                 // 상단 여백 (3줄)
                 printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
-                // 대기번호 출력 (중앙 정렬)
+                // 대기번호 출력 (설정된 크기)
                 printData += ESCPOS.ALIGN_CENTER;
                 printData += getFontSizeCommand(numberFontSize);
                 printData += ticketInfo.number + ESCPOS.LINE_FEED;
                 
-                // 하단 여백 (3줄)
+                // 하단 여백 (3줄) - 폰트 크기 리셋 후
+                printData += ESCPOS.FONT_NORMAL; // 폰트 크기 리셋
                 printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
-                // 하단 구분선
+                // 하단 구분선 (일반 폰트 크기로 고정)
                 printData += ESCPOS.ALIGN_CENTER;
-                printData += ESCPOS.FONT_NORMAL; // 구분선은 일반 크기로
+                printData += ESCPOS.FONT_NORMAL; // 구분선은 항상 일반 크기
                 printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
                 
                 // 하단 여백 (3줄)
@@ -1198,7 +1232,7 @@
             });
         }
 
-        // 과목 체크박스 렌더링 (클릭 이벤트 개선)
+        // 과목 체크박스 렌더링 (해상도 대응 개선)
         function renderCourseCheckboxes(periodIndex) {
             const container = document.getElementById(`courseCheckboxes-${periodIndex}`);
             container.innerHTML = '';
@@ -1207,23 +1241,27 @@
                 const isChecked = timeSettings[periodIndex].courses.includes(course.code);
                 
                 const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'checkboxDiv'; // 클래스 추가로 CSS 적용
                 checkboxDiv.style.cssText = `
                     display: flex;
                     align-items: center;
                     gap: 8px;
                     background: #f8f9fa;
-                    padding: 10px 15px;
+                    padding: 12px 15px;
                     border-radius: 8px;
-                    border: 1px solid #dee2e6;
+                    border: 2px solid #dee2e6;
                     cursor: pointer;
                     transition: all 0.2s ease;
-                    min-height: 44px;
+                    min-height: 48px;
+                    margin-bottom: 5px;
+                    box-sizing: border-box;
                 `;
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = `course-${periodIndex}-${course.code}`;
                 checkbox.checked = isChecked;
+                checkbox.style.cssText = 'width: 20px; height: 20px; cursor: pointer; flex-shrink: 0;';
                 checkbox.addEventListener('change', function() {
                     toggleCourseInPeriod(periodIndex, course.code, this.checked);
                 });
@@ -1231,25 +1269,45 @@
                 const label = document.createElement('label');
                 label.htmlFor = `course-${periodIndex}-${course.code}`;
                 label.textContent = `${course.name} (${course.code})`;
-                label.style.cssText = 'font-size: 0.9rem; cursor: pointer; user-select: none; flex: 1;';
+                label.style.cssText = 'font-size: 1rem; cursor: pointer; user-select: none; flex: 1; line-height: 1.4;';
                 
                 // 전체 div 클릭 시 체크박스 토글
                 checkboxDiv.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     if (e.target !== checkbox) {
                         checkbox.checked = !checkbox.checked;
-                        toggleCourseInPeriod(periodIndex, course.code, checkbox.checked);
+                        checkbox.dispatchEvent(new Event('change'));
                     }
                 });
                 
-                // 호버 효과
-                checkboxDiv.addEventListener('mouseenter', function() {
+                // 터치 피드백 개선
+                checkboxDiv.addEventListener('touchstart', function(e) {
                     this.style.backgroundColor = '#e9ecef';
                     this.style.borderColor = '#adb5bd';
+                    this.style.transform = 'scale(0.98)';
+                });
+                
+                checkboxDiv.addEventListener('touchend', function(e) {
+                    setTimeout(() => {
+                        this.style.backgroundColor = '#f8f9fa';
+                        this.style.borderColor = '#dee2e6';
+                        this.style.transform = 'scale(1)';
+                    }, 100);
+                });
+                
+                // 마우스 호버 효과
+                checkboxDiv.addEventListener('mouseenter', function() {
+                    if (!('ontouchstart' in window)) { // 마우스 전용
+                        this.style.backgroundColor = '#e9ecef';
+                        this.style.borderColor = '#adb5bd';
+                    }
                 });
                 
                 checkboxDiv.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = '#f8f9fa';
-                    this.style.borderColor = '#dee2e6';
+                    if (!('ontouchstart' in window)) { // 마우스 전용
+                        this.style.backgroundColor = '#f8f9fa';
+                        this.style.borderColor = '#dee2e6';
+                    }
                 });
                 
                 checkboxDiv.appendChild(checkbox);
@@ -1320,14 +1378,22 @@
             }
         }
 
-        // 초기화 시 자동 연결 시도
-        function tryAutoConnect() {
-            const savedPortInfo = localStorage.getItem('printerPortInfo');
-            if (savedPortInfo && !isPrinterConnected) {
-                console.log('🔄 저장된 포트로 자동 연결 시도');
-                setTimeout(() => {
-                    connectPrinter();
-                }, 2000); // 2초 후 자동 연결 시도
+        // 초기화 시 자동 연결 시도 (개선)
+        async function tryAutoConnect() {
+            if (isPrinterConnected) return;
+            
+            try {
+                // 권한이 있는 포트들 확인
+                const availablePorts = await navigator.serial.getPorts();
+                
+                if (availablePorts.length > 0) {
+                    console.log('🔄 기존 권한 포트로 자동 연결 시도');
+                    await connectPrinter();
+                } else {
+                    console.log('⚠️ 사용 가능한 포트 없음 - 수동 연결 필요');
+                }
+            } catch (error) {
+                console.error('자동 연결 실패:', error);
             }
         }
 
@@ -1396,7 +1462,7 @@
         }
 
         // 초기화
-        function initialize() {
+        async function initialize() {
             console.log('🚀 키오스크 초기화 시작');
             
             // 설정 로드
@@ -1418,8 +1484,12 @@
             // 미리보기 초기 생성
             updatePreview();
             
-            // 자동 연결 시도
-            tryAutoConnect();
+            // 자동 연결 시도 (비동기)
+            setTimeout(async () => {
+                if (isSerialSupported()) {
+                    await tryAutoConnect();
+                }
+            }, 2000);
             
             console.log('✅ 키오스크 초기화 완료');
         }
