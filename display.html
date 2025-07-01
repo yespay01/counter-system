@@ -583,13 +583,15 @@
             }
         }
 
-        // 로컬 스토리지에서 공유 데이터 읽기
+        // 로컬 스토리지에서 공유 데이터 읽기 - 개선된 버전
         function loadSharedData() {
             try {
                 const sharedDataStr = localStorage.getItem('counterSystemData');
                 
                 if (sharedDataStr) {
                     const sharedData = JSON.parse(sharedDataStr);
+                    
+                    console.log('📊 원본 데이터:', sharedData); // 디버그용
                     
                     // 데이터 구조 검증 및 변환
                     if (sharedData) {
@@ -620,9 +622,11 @@
                             }
                         }
                         
-                        // 대기 목록 업데이트
+                        // 대기 목록 업데이트 - 정확한 데이터 매핑
                         if (Array.isArray(sharedData.waiting)) {
-                            displayData.waiting = sharedData.waiting.map(item => {
+                            displayData.waiting = sharedData.waiting.map((item, index) => {
+                                console.log(`📋 대기번호 ${index}:`, item); // 디버그용
+                                
                                 if (typeof item === 'string') {
                                     // 문자열인 경우 객체로 변환
                                     return {
@@ -631,15 +635,17 @@
                                         time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
                                     };
                                 } else if (typeof item === 'object' && item !== null) {
-                                    // 객체인 경우 필요한 필드 확인
+                                    // 객체인 경우 필드 확인 및 정리
                                     return {
-                                        number: item.number || '-',
-                                        course: item.course || '일반 상담',
-                                        time: item.time || new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                                        number: item.number || item.num || '-',
+                                        course: item.course || item.courseName || '일반 상담',
+                                        time: item.time || item.timestamp || new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
                                     };
                                 }
                                 return null;
                             }).filter(item => item !== null);
+                            
+                            console.log('✅ 처리된 대기목록:', displayData.waiting); // 디버그용
                         }
                         
                         // 창구 정보 업데이트
@@ -657,6 +663,7 @@
                 } else {
                     // 로컬 스토리지에 데이터가 없는 경우
                     displayData.isConnected = false;
+                    console.log('❌ 로컬 스토리지에 데이터 없음');
                     
                     // 시뮬레이션 데이터 사용
                     if (!displayData.waiting.length) {
@@ -896,6 +903,15 @@
             if (e.key === 's' || e.key === 'S') {
                 playCallSound();
                 console.log('🔔 단순 호출음 재생');
+            }
+            
+            // D키: 데이터 동기화 디버그
+            if (e.key === 'd' || e.key === 'D') {
+                console.log('🔄 데이터 동기화 체크');
+                console.log('COUNTER 원본 데이터:', localStorage.getItem('counterSystemData'));
+                console.log('DISPLAY 처리된 데이터:', displayData);
+                loadSharedData();
+                updateDisplay();
             }
         });
 
