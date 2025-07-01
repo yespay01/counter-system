@@ -133,12 +133,12 @@
             color: #7f8c8d;
         }
         
-        /* 설정 패널 */
+        /* 설정 패널 - 해상도 대응 */
         .settings-panel {
             position: fixed;
             top: 0;
-            right: -600px;
-            width: 600px;
+            right: -500px;
+            width: 500px;
             height: 100%;
             background: white;
             transition: right 0.3s ease;
@@ -149,6 +149,38 @@
         
         .settings-panel.open { 
             right: 0; 
+        }
+        
+        /* 낮은 해상도 대응 */
+        @media (max-width: 1024px) {
+            .settings-panel {
+                width: 400px;
+                right: -400px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .settings-panel {
+                width: 350px;
+                right: -350px;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            .settings-header {
+                padding: 15px;
+                font-size: 1.2rem;
+            }
+            
+            .settings-content {
+                padding: 15px;
+                padding-bottom: 50px;
+            }
+            
+            .setting-group {
+                margin-bottom: 20px;
+                padding: 15px;
+            }
         }
         
         .settings-header {
@@ -514,7 +546,7 @@
             }
         ];
 
-        // ESC/POS 명령어
+        // ESC/POS 명령어 (단순화)
         const ESC = '\x1B';
         const GS = '\x1D';
         
@@ -522,16 +554,12 @@
             INIT: ESC + '@',
             ALIGN_CENTER: ESC + 'a1',
             ALIGN_LEFT: ESC + 'a0',
-            FONT_NORMAL: ESC + '!' + '\x00',
-            FONT_LARGE: ESC + '!' + '\x10',
-            FONT_XLARGE: ESC + '!' + '\x30',
-            FONT_HUGE: ESC + '!' + '\x38',
+            FONT_NORMAL: '',  // 기본 폰트만 사용
+            FONT_LARGE: ESC + 'E1',  // 볼드만 사용
+            FONT_XLARGE: ESC + 'E1' + GS + '!1',  // 볼드 + 더블폭
+            FONT_HUGE: ESC + 'E1' + GS + '!17',  // 볼드 + 더블사이즈
             BOLD_ON: ESC + 'E1',
             BOLD_OFF: ESC + 'E0',
-            DOUBLE_WIDTH: GS + '!1',
-            DOUBLE_HEIGHT: GS + '!16',
-            DOUBLE_BOTH: GS + '!17',
-            NORMAL_SIZE: GS + '!0',
             CUT_FULL: GS + 'V0',
             CUT_PARTIAL: GS + 'V1',
             LINE_FEED: '\n'
@@ -645,18 +673,18 @@
             return char.repeat(width);
         }
 
-        // 폰트 크기 명령어 가져오기
+        // 폰트 크기 명령어 가져오기 (단순화)
         function getFontSizeCommand(size) {
             switch(size) {
                 case 'normal': return ESCPOS.FONT_NORMAL;
-                case 'large': return ESCPOS.FONT_LARGE + ESCPOS.DOUBLE_WIDTH;
-                case 'xlarge': return ESCPOS.FONT_XLARGE + ESCPOS.DOUBLE_BOTH;
-                case 'huge': return ESCPOS.FONT_HUGE + ESCPOS.DOUBLE_BOTH;
+                case 'large': return ESCPOS.FONT_LARGE;
+                case 'xlarge': return ESCPOS.FONT_XLARGE;
+                case 'huge': return ESCPOS.FONT_HUGE;
                 default: return ESCPOS.FONT_NORMAL;
             }
         }
 
-        // 대기표 출력
+        // 대기표 출력 (대기번호만 출력)
         async function printTicket(ticketInfo) {
             if (!isPrinterConnected) {
                 console.log('⚠️ 프린터 미연결 - 출력 시뮬레이션');
@@ -665,49 +693,26 @@
             }
 
             try {
-                const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
                 const numberFontSize = document.getElementById('numberFontSize').value;
-                const textFontSize = document.getElementById('textFontSize').value;
                 const paperCut = document.getElementById('paperCut').value;
 
+                // 프린터 완전 초기화
                 await sendToPrinter(ESCPOS.INIT);
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
                 let printData = '';
                 
-                // 헤더
+                // 여백
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 대기번호만 출력 (중앙 정렬)
                 printData += ESCPOS.ALIGN_CENTER;
-                printData += getFontSizeCommand(textFontSize);
-                printData += ESCPOS.BOLD_ON;
-                printData += centerText('WAITING TICKET', paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.BOLD_OFF;
-                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
-                
-                // 대기번호 (큰 글씨)
                 printData += getFontSizeCommand(numberFontSize);
-                printData += ESCPOS.BOLD_ON;
-                const numberPadding = numberFontSize === 'huge' ? Math.floor(paperWidth/6) : 
-                                     numberFontSize === 'xlarge' ? Math.floor(paperWidth/4) : 
-                                     Math.floor(paperWidth/3);
-                printData += centerText(ticketInfo.number, numberPadding) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.BOLD_OFF;
-                printData += ESCPOS.NORMAL_SIZE;
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
-                
-                // 발급시간
-                printData += getFontSizeCommand(textFontSize);
-                printData += centerText('Issue Time: ' + ticketInfo.time, paperWidth) + ESCPOS.LINE_FEED;
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
-                
-                // 하단 메시지
-                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText('Please wait for your number', paperWidth) + ESCPOS.LINE_FEED;
-                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
-                printData += centerText('LANGUAGE CENTER', paperWidth) + ESCPOS.LINE_FEED;
-                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                printData += ticketInfo.number;
+                printData += ESCPOS.LINE_FEED;
                 
                 // 여백
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
                 // 용지 자르기
                 if (paperCut === 'full') {
@@ -716,6 +721,7 @@
                     printData += ESCPOS.CUT_PARTIAL;
                 }
 
+                // 데이터 전송
                 await sendToPrinter(printData);
                 showPrintSuccess(ticketInfo.number);
                 
@@ -725,23 +731,16 @@
             }
         }
 
-        // 테스트 출력
+        // 테스트 출력 (간소화)
         async function testPrint() {
             const testTicket = {
-                number: 'TEST01',
-                time: new Date().toLocaleString('en-US', { 
-                    year: 'numeric', 
-                    month: '2-digit', 
-                    day: '2-digit', 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                })
+                number: 'TEST01'
             };
             
             await printTicket(testTicket);
         }
 
-        // 대기표 발급
+        // 대기표 발급 (시간 정보 제거)
         function issueTicket(course) {
             try {
                 if (!currentNumbers[course.code]) {
@@ -753,15 +752,7 @@
                 const now = new Date();
                 
                 const ticketInfo = {
-                    number: number,
-                    course: course.name,
-                    time: now.toLocaleString('en-US', { 
-                        year: 'numeric', 
-                        month: '2-digit', 
-                        day: '2-digit', 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    })
+                    number: number
                 };
                 
                 // Firebase에 추가
@@ -799,40 +790,31 @@
             }
         }
 
-        // 출력 미리보기 생성
+        // 출력 미리보기 생성 (간소화)
         function generatePreview(ticketNumber = 'CH001') {
-            const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
             const numberFontSize = document.getElementById('numberFontSize').value;
             
             let preview = '';
-            preview += createLine('=', paperWidth) + '\n';
-            preview += centerText('WAITING TICKET', paperWidth) + '\n';
-            preview += createLine('=', paperWidth) + '\n';
-            preview += '\n\n';
+            preview += '\n\n\n';
             
             // 대기번호 크기별 표시
             if (numberFontSize === 'huge') {
-                preview += centerText('████████', paperWidth) + '\n';
-                preview += centerText(`█ ${ticketNumber} █`, paperWidth) + '\n';
-                preview += centerText('████████', paperWidth) + '\n';
+                preview += '         ████████████\n';
+                preview += '         ████████████\n';
+                preview += '         ██  ' + ticketNumber + '  ██\n';
+                preview += '         ████████████\n';
+                preview += '         ████████████\n';
             } else if (numberFontSize === 'xlarge') {
-                preview += centerText('██████', paperWidth) + '\n';
-                preview += centerText(`█${ticketNumber}█`, paperWidth) + '\n';
-                preview += centerText('██████', paperWidth) + '\n';
+                preview += '         ████████\n';
+                preview += '         █ ' + ticketNumber + ' █\n';
+                preview += '         ████████\n';
             } else if (numberFontSize === 'large') {
-                preview += centerText(`【${ticketNumber}】`, paperWidth) + '\n';
+                preview += '         【' + ticketNumber + '】\n';
             } else {
-                preview += centerText(ticketNumber, paperWidth) + '\n';
+                preview += '         ' + ticketNumber + '\n';
             }
             
-            preview += '\n\n';
-            preview += centerText('Issue Time: 2025-01-01 14:30', paperWidth) + '\n';
-            preview += '\n\n';
-            preview += createLine('-', paperWidth) + '\n';
-            preview += centerText('Please wait for your number', paperWidth) + '\n';
-            preview += createLine('-', paperWidth) + '\n';
-            preview += centerText('LANGUAGE CENTER', paperWidth) + '\n';
-            preview += createLine('=', paperWidth) + '\n';
+            preview += '\n\n\n';
             
             return preview;
         }
