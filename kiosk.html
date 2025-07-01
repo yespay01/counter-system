@@ -1059,47 +1059,102 @@
         }
 
         function issueTicket(course) {
-            if (!currentNumbers[course.code]) {
-                currentNumbers[course.code] = 0;
+            console.log('🎫 순번 발행 시작:', course);
+            
+            try {
+                // 안전한 데이터 검증
+                if (!course || !course.code) {
+                    console.error('❌ 유효하지 않은 과정 데이터:', course);
+                    alert('과정 정보가 올바르지 않습니다.');
+                    return;
+                }
+                
+                // 현재 번호 관리 (브라우저별 호환성)
+                if (!currentNumbers[course.code]) {
+                    currentNumbers[course.code] = 0;
+                }
+                currentNumbers[course.code]++;
+                
+                // 순번 생성
+                const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
+                console.log('🔢 생성된 순번:', number);
+                
+                // 현재 시간 (브라우저 호환성 고려)
+                let now = new Date();
+                let timeString;
+                
+                // toLocaleString 지원 확인
+                if (now.toLocaleString) {
+                    try {
+                        timeString = now.toLocaleString('ko-KR');
+                    } catch (localeError) {
+                        console.warn('⚠️ 로케일 문자열 변환 실패, 기본 형식 사용');
+                        timeString = now.toString();
+                    }
+                } else {
+                    // 구형 브라우저 대응
+                    timeString = now.getFullYear() + '-' + 
+                                (now.getMonth() + 1) + '-' + 
+                                now.getDate() + ' ' + 
+                                now.getHours() + ':' + 
+                                now.getMinutes();
+                }
+                
+                // 순번 정보 저장 (전역 변수)
+                window.currentTicketInfo = {
+                    number: number,
+                    course: course.name || '과정명 없음',
+                    description: course.description || '설명 없음',
+                    englishName: course.englishName || course.name || 'Course',
+                    englishDesc: course.englishDesc || course.description || 'Description',
+                    time: timeString,
+                    date: now.toDateString ? now.toDateString() : timeString.split(' ')[0],
+                    timeOnly: now.toTimeString ? now.toTimeString().split(' ')[0] : timeString.split(' ')[1]
+                };
+                
+                console.log('📋 순번 정보:', window.currentTicketInfo);
+                
+                // 로컬 스토리지에 저장
+                saveToLocalStorage(number, course.name, timeString);
+                
+                // 즉시 출력
+                printTicket();
+                
+                console.log('✅ 순번 발행 완료:', number);
+                
+            } catch (error) {
+                console.error('❌ 순번 발행 오류:', error);
+                alert('순번 발행 중 오류가 발생했습니다: ' + error.message);
             }
-            currentNumbers[course.code]++;
-            
-            const number = course.code + String(currentNumbers[course.code]).padStart(3, '0');
-            const now = new Date();
-            
-            // 순번 정보 저장 (영문명 포함)
-            window.currentTicketInfo = {
-                number: number,
-                course: course.name,
-                description: course.description,
-                englishName: course.englishName,
-                englishDesc: course.englishDesc,
-                time: now.toLocaleString('ko-KR'),
-                date: now.toLocaleDateString('ko-KR'),
-                timeOnly: now.toLocaleTimeString('ko-KR')
-            };
-            
-            // 로컬 스토리지에 저장
-            saveToLocalStorage(number, course.name, now.toLocaleString('ko-KR'));
-            
-            // 즉시 출력
-            printTicket();
         }
 
         function saveToLocalStorage(number, course, time) {
             try {
-                let sharedData = JSON.parse(localStorage.getItem('counterSystemData') || '{}');
+                console.log('💾 데이터 저장 시도:', { number, course, time });
                 
-                if (!sharedData.waiting) sharedData.waiting = [];
-                sharedData.waiting.push({
-                    number: number,
-                    course: course,
-                    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
-                });
+                // 기존 데이터 안전하게 로드
+                let sharedData;
+                const existingData = localStorage.getItem('counterSystemData');
                 
-                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                if (existingData && existingData !== 'null' && existingData !== 'undefined') {
+                    try {
+                        sharedData = JSON.parse(existingData);
+                        console.log('📥 기존 데이터 로드 성공:', sharedData);
+                    } catch (parseError) {
+                        console.warn('⚠️ 기존 데이터 파싱 실패, 새로 생성:', parseError);
+                        sharedData = {};
+                    }
+                } else {
+                    console.log('🆕 새 데이터 구조 생성');
+                    sharedData = {};
+                }
                 
-                if (!sharedData.counters) {
+                // 기본 구조 보장
+                if (!sharedData.waiting || !Array.isArray(sharedData.waiting)) {
+                    sharedData.waiting = [];
+                }
+                
+                if (!sharedData.counters || !Array.isArray(sharedData.counters)) {
                     sharedData.counters = [
                         { id: 1, current: null, course: null, count: 0 },
                         { id: 2, current: null, course: null, count: 0 },
@@ -1114,34 +1169,107 @@
                     sharedData.currentCall = { number: '-', counter: 0, course: '-' };
                 }
                 
-                localStorage.setItem('counterSystemData', JSON.stringify(sharedData));
-                console.log('데이터 저장 성공:', number);
+                // 새 대기번호 추가
+                const newWaitingItem = {
+                    number: number,
+                    course: course,
+                    time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                };
+                
+                sharedData.waiting.push(newWaitingItem);
+                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                sharedData.lastUpdated = new Date().toISOString();
+                
+                console.log('📊 최종 저장 데이터:', sharedData);
+                
+                // 안전한 저장
+                const dataString = JSON.stringify(sharedData);
+                localStorage.setItem('counterSystemData', dataString);
+                
+                // 저장 검증
+                const verification = localStorage.getItem('counterSystemData');
+                if (verification) {
+                    const parsed = JSON.parse(verification);
+                    console.log('✅ 저장 검증 성공:', parsed);
+                    
+                    // 브라우저별 storage 이벤트 강제 발생
+                    if (window.dispatchEvent && window.StorageEvent) {
+                        const storageEvent = new StorageEvent('storage', {
+                            key: 'counterSystemData',
+                            newValue: dataString,
+                            url: window.location.href
+                        });
+                        window.dispatchEvent(storageEvent);
+                    }
+                    
+                } else {
+                    throw new Error('저장 검증 실패');
+                }
+                
             } catch (error) {
-                console.error('데이터 저장 오류:', error);
+                console.error('❌ 데이터 저장 실패:', error);
+                alert('데이터 저장 중 오류가 발생했습니다: ' + error.message);
             }
         }
 
         // 초기화
         function initialize() {
-            // 저장된 설정 로드
-            const saved = localStorage.getItem('timeSettings');
-            if (saved) {
-                try {
-                    timeSettings = JSON.parse(saved);
-                } catch (e) {
-                    timeSettings = JSON.parse(JSON.stringify(defaultSettings));
-                }
-            } else {
-                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+            console.log('🚀 KIOSK 초기화 시작 - 브라우저:', navigator.userAgent);
+            
+            // 브라우저별 localStorage 지원 확인
+            if (typeof(Storage) === "undefined") {
+                console.error('❌ 이 브라우저는 localStorage를 지원하지 않습니다.');
+                alert('이 브라우저는 지원되지 않습니다. Chrome, Firefox, Safari, Edge를 사용해주세요.');
+                return;
             }
             
+            // 저장된 설정 로드 - 안전한 방법
+            try {
+                const savedSettings = localStorage.getItem('timeSettings');
+                console.log('💾 저장된 설정 확인:', savedSettings);
+                
+                if (savedSettings && savedSettings !== 'null' && savedSettings !== 'undefined') {
+                    timeSettings = JSON.parse(savedSettings);
+                    console.log('✅ 설정 로드 성공:', timeSettings);
+                } else {
+                    console.log('🔄 기본 설정 사용');
+                    timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                    // 기본 설정을 바로 저장
+                    localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+                }
+            } catch (error) {
+                console.error('❌ 설정 로드 오류:', error);
+                timeSettings = JSON.parse(JSON.stringify(defaultSettings));
+                try {
+                    localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+                } catch (saveError) {
+                    console.error('❌ 기본 설정 저장 실패:', saveError);
+                }
+            }
+            
+            // 시간 업데이트 시작
             updateTime();
-            setInterval(updateTime, 1000);
+            
+            // setInterval 안전성 확보
+            if (window.setInterval) {
+                setInterval(updateTime, 1000);
+            } else {
+                // 구형 브라우저 대응
+                setTimeout(function updateTimeLoop() {
+                    updateTime();
+                    setTimeout(updateTimeLoop, 1000);
+                }, 1000);
+            }
             
             // 로딩 애니메이션 트리거
-            setTimeout(() => {
-                document.querySelector('.container').classList.remove('loading');
+            setTimeout(function() {
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.classList.remove('loading');
+                }
             }, 100);
+            
+            console.log('✅ KIOSK 초기화 완료');
         }
 
         // 관리자 모드 (설정 버튼과 숨겨진 시간 클릭 두 방법 모두 지원)
@@ -1411,18 +1539,55 @@
             }, 5000);
         }
 
-        // 페이지 로드 시 초기화
-        document.addEventListener('DOMContentLoaded', initialize);
-        
-        // 자동 프린터 연결 시도 (백그라운드)
-        setTimeout(() => {
-            if (isSerialSupported()) {
-                // 사용자가 이전에 프린터를 연결한 적이 있다면 자동 연결 시도
-                // (실제로는 사용자 허가가 필요하므로 수동 연결만 가능)
+        // 페이지 로드 시 초기화 - 브라우저 호환성 고려
+        if (document.readyState === 'loading') {
+            if (document.addEventListener) {
+                document.addEventListener('DOMContentLoaded', initialize);
+            } else if (document.attachEvent) {
+                // IE8 이하
+                document.attachEvent('onreadystatechange', function() {
+                    if (document.readyState === 'complete') {
+                        initialize();
+                    }
+                });
+            } else {
+                // 최후 수단
+                window.onload = initialize;
             }
-        }, 2000);
+        } else {
+            // 이미 로드 완료된 경우
+            initialize();
+        }
+        
+        // 페이지 언로드 시 연결 정리 - 브라우저 호환성
+        if (window.addEventListener) {
+            window.addEventListener('beforeunload', function() {
+                if (isPrinterConnected) {
+                    disconnectPrinter();
+                }
+            });
+        } else if (window.attachEvent) {
+            window.attachEvent('onbeforeunload', function() {
+                if (isPrinterConnected) {
+                    disconnectPrinter();
+                }
+            });
+        }
 
-        initialize();
+        // 즉시 초기화 실행 (안전장치)
+        try {
+            initialize();
+        } catch (initError) {
+            console.error('❌ 초기화 중 오류:', initError);
+            // 1초 후 재시도
+            setTimeout(function() {
+                try {
+                    initialize();
+                } catch (retryError) {
+                    console.error('❌ 재시도 초기화 실패:', retryError);
+                }
+            }, 1000);
+        }
     </script>
 </body>
 </html>
