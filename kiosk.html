@@ -752,7 +752,7 @@
             }
         }
 
-        // 대기표 출력 (구분선 폰트 크기 고정)
+        // 대기표 출력 (하단 구분선 폰트 크기 완전 고정)
         async function printTicket(ticketInfo) {
             if (!isPrinterConnected) {
                 console.log('⚠️ 프린터 미연결 - 출력 시뮬레이션');
@@ -787,27 +787,34 @@
                 printData += getFontSizeCommand(numberFontSize);
                 printData += ticketInfo.number + ESCPOS.LINE_FEED;
                 
-                // 하단 여백 (3줄) - 폰트 크기 리셋 후
-                printData += ESCPOS.FONT_NORMAL; // 폰트 크기 리셋
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                // 폰트 크기 완전 리셋 (중요!)
+                printData += ESCPOS.INIT; // 프린터 전체 설정 리셋
+                await sendToPrinter(printData);
+                await new Promise(resolve => setTimeout(resolve, 50)); // 짧은 딜레이
                 
-                // 하단 구분선 (일반 폰트 크기로 고정)
-                printData += ESCPOS.ALIGN_CENTER;
-                printData += ESCPOS.FONT_NORMAL; // 구분선은 항상 일반 크기
-                printData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                // 하단 부분을 새로운 데이터로 전송
+                let bottomData = '';
                 
                 // 하단 여백 (3줄)
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 하단 구분선 (완전히 새로운 상태에서 일반 크기)
+                bottomData += ESCPOS.ALIGN_CENTER;
+                bottomData += ESCPOS.FONT_NORMAL; // 확실히 일반 크기 설정
+                bottomData += createLine('-', paperWidth) + ESCPOS.LINE_FEED;
+                
+                // 하단 여백 (3줄)
+                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
                 // 용지 자르기
                 if (paperCut === 'full') {
-                    printData += ESCPOS.CUT_FULL;
+                    bottomData += ESCPOS.CUT_FULL;
                 } else if (paperCut === 'partial') {
-                    printData += ESCPOS.CUT_PARTIAL;
+                    bottomData += ESCPOS.CUT_PARTIAL;
                 }
 
-                // 데이터 전송
-                await sendToPrinter(printData);
+                // 하단 데이터 전송
+                await sendToPrinter(bottomData);
                 showPrintSuccess(ticketInfo.number);
                 
             } catch (error) {
