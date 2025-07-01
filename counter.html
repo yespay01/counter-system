@@ -464,14 +464,33 @@
             const data = localStorage.getItem('counterSystemData');
             if (data) {
                 try {
-                    sharedData = JSON.parse(data);
+                    const loadedData = JSON.parse(data);
+                    console.log('📥 COUNTER 데이터 로드:', loadedData); // 디버그용
+                    
+                    // 데이터 구조 검증 후 병합
+                    if (loadedData.currentCall) {
+                        sharedData.currentCall = loadedData.currentCall;
+                    }
+                    if (Array.isArray(loadedData.waiting)) {
+                        sharedData.waiting = loadedData.waiting;
+                    }
+                    if (Array.isArray(loadedData.counters)) {
+                        sharedData.counters = loadedData.counters;
+                    }
+                    if (loadedData.totalToday !== undefined) {
+                        sharedData.totalToday = loadedData.totalToday;
+                    }
+                    
                     document.getElementById('statusIndicator').innerHTML = '🟢 실시간 연동';
                     document.getElementById('statusIndicator').className = 'status-indicator online';
+                    
+                    console.log('✅ COUNTER 병합된 데이터:', sharedData); // 디버그용
                 } catch (e) {
-                    console.log('데이터 로드 오류:', e);
+                    console.log('❌ 데이터 로드 오류:', e);
                 }
             } else {
                 // 기본 시뮬레이션 데이터
+                console.log('🔄 기본 데이터 생성');
                 sharedData.waiting = [
                     { number: 'A001', course: 'OA 과정', time: '09:30' },
                     { number: 'A002', course: 'OA 과정', time: '09:32' },
@@ -480,11 +499,59 @@
                     { number: 'C001', course: '영상편집', time: '09:40' }
                 ];
                 sharedData.totalToday = 12;
+                
+                // 기본 데이터 즉시 저장
+                saveSharedData();
             }
         }
 
         function saveSharedData() {
-            localStorage.setItem('counterSystemData', JSON.stringify(sharedData));
+            try {
+                // 저장 전 데이터 구조 확인 및 정리
+                const dataToSave = {
+                    currentCall: {
+                        number: sharedData.currentCall.number || '-',
+                        counter: sharedData.currentCall.counter || 0,
+                        course: sharedData.currentCall.course || '-'
+                    },
+                    waiting: sharedData.waiting.map(item => {
+                        // 객체 형태로 정규화
+                        if (typeof item === 'string') {
+                            return {
+                                number: item,
+                                course: '일반 상담',
+                                time: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                            };
+                        } else {
+                            return {
+                                number: item.number || '-',
+                                course: item.course || '일반 상담',
+                                time: item.time || new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                            };
+                        }
+                    }),
+                    counters: sharedData.counters || [
+                        { id: 1, current: null, course: null, count: 0 },
+                        { id: 2, current: null, course: null, count: 0 },
+                        { id: 3, current: null, course: null, count: 0 },
+                        { id: 4, current: null, course: null, count: 0 },
+                        { id: 5, current: null, course: null, count: 0 },
+                        { id: 6, current: null, course: null, count: 0 }
+                    ],
+                    totalToday: sharedData.totalToday || 0,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                console.log('💾 COUNTER 데이터 저장:', dataToSave); // 디버그용
+                localStorage.setItem('counterSystemData', JSON.stringify(dataToSave));
+                
+                // 저장된 데이터 즉시 확인
+                const saved = localStorage.getItem('counterSystemData');
+                console.log('✅ 저장 확인:', JSON.parse(saved)); // 디버그용
+                
+            } catch (error) {
+                console.error('❌ 데이터 저장 실패:', error);
+            }
         }
 
         function updateDisplay() {
