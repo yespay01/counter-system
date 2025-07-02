@@ -725,27 +725,52 @@
             }
         }
 
-        // 프린터 포트 열기 (공통 함수)
+        // 프린터 포트 열기 (공통 함수 + 점유 상태 체크)
         async function openPrinterPort(port, baudRate) {
-            await port.open({ 
-                baudRate: baudRate,
-                dataBits: 8,
-                stopBits: 1,
-                parity: 'none',
-                flowControl: 'none'
-            });
+            try {
+                await port.open({ 
+                    baudRate: baudRate,
+                    dataBits: 8,
+                    stopBits: 1,
+                    parity: 'none',
+                    flowControl: 'none'
+                });
 
-            const textEncoder = new TextEncoderStream();
-            const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
-            writer = textEncoder.writable.getWriter();
+                const textEncoder = new TextEncoderStream();
+                const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+                writer = textEncoder.writable.getWriter();
 
-            isPrinterConnected = true;
-            updatePrinterStatus();
-            
-            await sendToPrinter(ESCPOS.INIT);
-            
-            showMessage('printerMessage', '✅ 프린터가 성공적으로 연결되었습니다!', 'success');
-            console.log('🖨️ 프린터 연결 성공');
+                isPrinterConnected = true;
+                updatePrinterStatus();
+                
+                await sendToPrinter(ESCPOS.INIT);
+                
+                showMessage('printerMessage', '✅ 프린터가 성공적으로 연결되었습니다!', 'success');
+                console.log('🖨️ 프린터 연결 성공');
+                
+            } catch (error) {
+                console.error('포트 열기 오류:', error);
+                isPrinterConnected = false;
+                updatePrinterStatus();
+                
+                let errorMsg = '';
+                if (error.name === 'InvalidStateError' || error.message.includes('already open')) {
+                    errorMsg = '⚠️ 프린터가 다른 브라우저 탭에서 사용 중입니다.<br>' +
+                              '<strong>해결 방법:</strong><br>' +
+                              '1. 다른 키오스크 탭 모두 닫기<br>' +
+                              '2. 브라우저 완전 종료 후 재시작<br>' +
+                              '3. 프린터 USB 케이블 재연결<br><br>' +
+                              '<small>※ 한 번에 하나의 탭에서만 프린터 사용 가능</small>';
+                } else if (error.name === 'NetworkError') {
+                    errorMsg = '❌ 프린터 연결 실패<br>' +
+                              '프린터가 켜져 있고 USB가 연결되어 있는지 확인하세요.';
+                } else {
+                    errorMsg = `프린터 연결 오류: ${error.message}`;
+                }
+                
+                showMessage('printerMessage', errorMsg, 'error');
+                throw error;
+            }
         }
 
         // 프린터 연결 해제
@@ -1059,30 +1084,56 @@
             document.getElementById('printPreview').textContent = preview;
         }
 
-        // 설정 저장
+        // 설정 저장 (하이브리드 방식)
         function saveSettings() {
-            const settings = {
+            // 1. 개인 설정 - localStorage에 저장
+            const localSettings = {
                 baudRate: document.getElementById('baudRate').value,
                 paperWidth: document.getElementById('paperWidth').value,
                 numberFontSize: document.getElementById('numberFontSize').value,
                 timeFontSize: document.getElementById('timeFontSize').value,
                 timeFormat: document.getElementById('timeFormat').value,
-                paperCut: document.getElementById('paperCut').value,
-                courses: courses,
-                timeSettings: timeSettings
+                paperCut: document.getElementById('paperCut').value
             };
             
-            localStorage.setItem('kioskSettings', JSON.stringify(settings));
-            showMessage('printerMessage', '✅ 설정이 저장되었습니다!', 'success');
+            localStorage.setItem('kioskLocalSettings', JSON.stringify(localSettings));
+            
+            // 2. 공통 설정 - Firebase에 저장
+            const globalSettings = {
+                courses: courses,
+                timeSettings: timeSettings,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: 'kiosk-' + Date.now() // 어느 키오스크에서 변경했는지 추적
+            };
+            
+            if (window.firebaseDB) {
+                try {
+                    const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                    window.firebaseSet(settingsRef, globalSettings).then(() => {
+                        console.log('✅ 공통 설정 Firebase 저장 완료');
+                        showMessage('printerMessage', '✅ 설정이 저장되었습니다! (모든 키오스크에 적용됨)', 'success');
+                    }).catch((error) => {
+                        console.error('❌ Firebase 저장 실패:', error);
+                        showMessage('printerMessage', '⚠️ 서버 저장 실패, 로컬에만 저장됨', 'error');
+                    });
+                } catch (error) {
+                    console.error('❌ Firebase 저장 오류:', error);
+                    showMessage('printerMessage', '⚠️ 서버 저장 실패, 로컬에만 저장됨', 'error');
+                }
+            } else {
+                showMessage('printerMessage', '⚠️ Firebase 미연결, 로컬에만 저장됨', 'error');
+            }
+            
             updatePreview();
         }
 
-        // 설정 로드
+        // 설정 로드 (하이브리드 방식)
         function loadSettings() {
+            // 1. 개인 설정 - localStorage에서 로드
             try {
-                const savedSettings = localStorage.getItem('kioskSettings');
-                if (savedSettings) {
-                    const settings = JSON.parse(savedSettings);
+                const localSettings = localStorage.getItem('kioskLocalSettings');
+                if (localSettings) {
+                    const settings = JSON.parse(localSettings);
                     
                     document.getElementById('baudRate').value = settings.baudRate || '115200';
                     document.getElementById('paperWidth').value = settings.paperWidth || '42';
@@ -1091,23 +1142,94 @@
                     document.getElementById('timeFormat').value = settings.timeFormat || 'time';
                     document.getElementById('paperCut').value = settings.paperCut || 'full';
                     
-                    if (settings.courses) {
-                        courses = settings.courses;
-                    }
-                    
-                    if (settings.timeSettings) {
-                        timeSettings = settings.timeSettings;
-                    } else {
-                        timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
-                    }
-                    
-                    console.log('✅ 설정 로드 완료');
-                } else {
-                    timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+                    console.log('✅ 개인 설정 로드 완료');
                 }
             } catch (error) {
-                console.error('설정 로드 오류:', error);
-                timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+                console.error('개인 설정 로드 오류:', error);
+            }
+            
+            // 2. 공통 설정 - Firebase에서 로드 (우선순위)
+            loadGlobalSettings();
+        }
+
+        // 공통 설정 Firebase에서 로드
+        function loadGlobalSettings() {
+            if (!window.firebaseDB) {
+                console.log('Firebase 미연결 - 기본 설정 사용');
+                useDefaultSettings();
+                return;
+            }
+            
+            try {
+                const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                window.firebaseOnValue(settingsRef, (snapshot) => {
+                    const globalSettings = snapshot.val();
+                    
+                    if (globalSettings) {
+                        console.log('🔥 공통 설정 Firebase에서 로드:', globalSettings);
+                        
+                        // 공통 설정 적용
+                        if (globalSettings.courses) {
+                            courses = globalSettings.courses;
+                        }
+                        
+                        if (globalSettings.timeSettings) {
+                            timeSettings = globalSettings.timeSettings;
+                        }
+                        
+                        // UI 업데이트
+                        createCourseButtons();
+                        
+                        console.log('✅ 공통 설정 동기화 완료');
+                        
+                        // 설정 패널이 열려있으면 업데이트
+                        if (document.getElementById('settingsPanel').classList.contains('open')) {
+                            renderCourseSettings();
+                            renderTimePeriodsEditor();
+                        }
+                        
+                    } else {
+                        console.log('📭 서버에 공통 설정 없음 - 기본값 사용');
+                        useDefaultSettings();
+                        saveGlobalSettingsToServer(); // 기본값을 서버에 저장
+                    }
+                });
+            } catch (error) {
+                console.error('공통 설정 로드 오류:', error);
+                useDefaultSettings();
+            }
+        }
+
+        // 기본 설정 사용
+        function useDefaultSettings() {
+            courses = [
+                { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
+                { code: 'EN', name: '영어 과정', englishName: 'English Course' },
+                { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
+                { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+            ];
+            
+            timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+            console.log('✅ 기본 설정 적용');
+        }
+
+        // 기본값을 서버에 저장 (최초 1회)
+        function saveGlobalSettingsToServer() {
+            if (!window.firebaseDB) return;
+            
+            const globalSettings = {
+                courses: courses,
+                timeSettings: timeSettings,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: 'default-init'
+            };
+            
+            try {
+                const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                window.firebaseSet(settingsRef, globalSettings);
+                console.log('✅ 기본 설정을 서버에 저장');
+            } catch (error) {
+                console.error('기본 설정 서버 저장 실패:', error);
             }
         }
 
@@ -1479,20 +1601,49 @@
             createCourseButtons();
         }
 
-        // 시간 설정 저장
+        // 시간 설정 저장 (공통 설정이므로 Firebase에)
         function saveTimeSettings() {
-            localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
-            showMessage('timeSettingsMessage', '✅ 시간 설정이 저장되었습니다!', 'success');
-            createCourseButtons();
+            const globalSettings = {
+                courses: courses,
+                timeSettings: timeSettings,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: 'time-settings-' + Date.now()
+            };
+            
+            if (window.firebaseDB) {
+                try {
+                    const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                    window.firebaseSet(settingsRef, globalSettings).then(() => {
+                        console.log('✅ 시간 설정 Firebase 저장 완료');
+                        showMessage('timeSettingsMessage', '✅ 시간 설정이 저장되었습니다! (모든 키오스크에 적용됨)', 'success');
+                        createCourseButtons();
+                    }).catch((error) => {
+                        console.error('❌ 시간 설정 Firebase 저장 실패:', error);
+                        showMessage('timeSettingsMessage', '⚠️ 서버 저장 실패', 'error');
+                    });
+                } catch (error) {
+                    console.error('❌ 시간 설정 저장 오류:', error);
+                    showMessage('timeSettingsMessage', '⚠️ 서버 저장 실패', 'error');
+                }
+            } else {
+                // Firebase 미연결 시 로컬에만 저장
+                localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+                showMessage('timeSettingsMessage', '⚠️ 서버 미연결, 로컬에만 저장됨', 'error');
+                createCourseButtons();
+            }
         }
 
-        // 기본 시간 설정 복원
+        // 기본 시간 설정 복원 (서버에도 적용)
         function loadDefaultTimeSettings() {
-            if (confirm('기본 시간 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+            if (confirm('기본 시간 설정으로 복원하시겠습니까?\n현재 설정이 모두 사라지며 모든 키오스크에 적용됩니다.')) {
                 timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
                 renderTimePeriodsEditor();
                 createCourseButtons();
-                showMessage('timeSettingsMessage', '✅ 기본 설정으로 복원되었습니다!', 'success');
+                
+                // 서버에도 저장
+                saveTimeSettings();
+                
+                showMessage('timeSettingsMessage', '✅ 기본 설정으로 복원되었습니다! (모든 키오스크에 적용됨)', 'success');
             }
         }
 
@@ -1606,7 +1757,7 @@
         async function initialize() {
             console.log('🚀 키오스크 초기화 시작');
             
-            // 설정 로드
+            // 설정 로드 (하이브리드 방식)
             loadSettings();
             
             // UI 생성
@@ -1617,9 +1768,10 @@
             // 시간 업데이트
             setInterval(updateTime, 1000);
             
-            // Firebase 연결
+            // Firebase 연결 (공통 설정 실시간 동기화)
             setTimeout(() => {
                 setupFirebaseListener();
+                loadGlobalSettings(); // 공통 설정 로드
             }, 1000);
             
             // 미리보기 초기 생성
