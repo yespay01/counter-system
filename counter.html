@@ -746,6 +746,7 @@
             document.getElementById('currentWaiting').textContent = waitingLength;
         }
 
+        // 다음번호 호출 (수정됨)
         function callNext() {
             if (!sharedData.waiting || sharedData.waiting.length === 0) {
                 alert('대기 중인 번호가 없습니다.');
@@ -758,16 +759,17 @@
             counter.current = nextCustomer.number;
             counter.course = nextCustomer.course;
             
-            // 현재 호출 업데이트
+            // 현재 호출 업데이트 (수정된 부분)
             sharedData.currentCall = {
-    number: customer.number,
-    counter: currentCounter,
-    course: customer.course,
-    isRecall: false,           // 추가 필요
-    callType: 'direct',
-    callTime: new Date().toISOString(),
-    immediateCall: true
-};
+                number: nextCustomer.number,
+                counter: currentCounter,
+                course: nextCustomer.course,
+                isRecall: false,
+                callTime: new Date().toISOString(),
+                callType: 'normal',
+                recallCount: 0,
+                immediateCall: true
+            };
             
             saveToFirebase();
             playCallSound();
@@ -778,286 +780,6 @@
             console.log(`📢 호출 실행: ${nextCustomer.number} (${currentCounter}번 창구)`);
         }
 
-        // 재호출 기능
+        // 재호출 기능 (수정됨)
         function recallCurrent() {
             const counter = sharedData.counters[currentCounter - 1];
-            
-            if (!counter.current || counter.current === '-') {
-                alert('현재 상담 중인 번호가 없습니다.');
-                return;
-            }
-            
-            // 연속 호출 방지 (3초 이내 재호출 불가)
-            const now = Date.now();
-            if (now - lastRecallTime < 3000) {
-                showMessage('잠시 후 다시 시도해 주세요.');
-                return;
-            }
-            lastRecallTime = now;
-            
-            // 현재 호출 정보 업데이트 (재호출 표시)
-            sharedData.currentCall = {
-                number: counter.current,
-                counter: currentCounter,
-                course: counter.course,
-                isRecall: true,
-                recallTime: new Date().toISOString()
-            };
-            
-            saveToFirebase();
-            playCallSound(true);
-            
-            // 재호출 효과 표시
-            showRecallEffect(counter.current);
-            
-            // 성공 메시지
-            showMessage(`🔔 ${counter.current} 재호출 완료!`);
-            
-            console.log(`🔔 재호출 실행: ${counter.current} (${currentCounter}번 창구)`);
-        }
-
-        // 재호출 효과 표시
-        function showRecallEffect(number) {
-            const currentStatus = document.querySelector('.current-status');
-            
-            // 기존 효과 제거
-            const existingEffect = document.querySelector('.recall-effect');
-            if (existingEffect) {
-                existingEffect.remove();
-            }
-            
-            // 새 효과 생성
-            const effect = document.createElement('div');
-            effect.className = 'recall-effect';
-            effect.textContent = `🔔 ${number} 재호출`;
-            
-            currentStatus.appendChild(effect);
-            
-            // 2초 후 제거
-            setTimeout(() => {
-                if (effect.parentNode) {
-                    effect.parentNode.removeChild(effect);
-                }
-            }, 2000);
-        }
-
-        function completeService() {
-            const counter = sharedData.counters[currentCounter - 1];
-            
-            if (!counter.current) {
-                alert('현재 상담 중인 고객이 없습니다.');
-                return;
-            }
-            
-            const completedNumber = counter.current;
-            
-            counter.current = null;
-            counter.course = null;
-            counter.count = (counter.count || 0) + 1;
-            
-            // 현재 호출 정보도 초기화
-            sharedData.currentCall = {
-                number: '-',
-                counter: 0,
-                course: '-'
-            };
-            
-            saveToFirebase();
-            
-            // 성공 메시지
-            showMessage(`${completedNumber} 상담 완료!`);
-        }
-
-        function callSpecific(number) {
-            if (!sharedData.waiting) return;
-            
-            const customerIndex = sharedData.waiting.findIndex(item => item.number === number);
-            if (customerIndex === -1) return;
-            
-            const customer = sharedData.waiting.splice(customerIndex, 1)[0];
-            const counter = sharedData.counters[currentCounter - 1];
-            
-            counter.current = customer.number;
-            counter.course = customer.course;
-            
-            // 현재 호출 업데이트
-            sharedData.currentCall = {
-                number: customer.number,
-                counter: currentCounter,
-                course: customer.course
-            };
-            
-            saveToFirebase();
-            playCallSound();
-            
-            showMessage(`${customer.number} 호출 완료!`);
-        }
-
-        // 초기화 관련 함수들
-        function showResetModal(type) {
-            currentResetType = type;
-            const modal = document.getElementById('resetModal');
-            const message = document.getElementById('resetMessage');
-            
-            let messageText = '';
-            switch(type) {
-                case 'waiting':
-                    messageText = '현재 대기 중인 모든 번호를 삭제합니다.<br><strong>진행 중인 상담은 유지됩니다.</strong><br><strong>번호 카운터는 유지됩니다.</strong>';
-                    break;
-                case 'partial':
-                    messageText = '오늘 총 접수 수와 모든 창구의 상담 완료 수를 0으로 초기화합니다.<br><strong>현재 대기열과 진행 중인 상담은 유지됩니다.</strong>';
-                    break;
-                case 'all':
-                    messageText = '<strong style="color: #e74c3c;">모든 데이터를 완전히 초기화합니다!</strong><br>• 모든 대기번호 삭제<br>• 번호 카운터 초기화 (001부터 재시작)<br>• 진행 중인 상담 종료<br>• 모든 통계 초기화<br><br><strong>이 작업은 되돌릴 수 없습니다.</strong>';
-                    break;
-            }
-            
-            message.innerHTML = messageText;
-            modal.style.display = 'block';
-        }
-
-        function closeResetModal() {
-            document.getElementById('resetModal').style.display = 'none';
-            currentResetType = '';
-        }
-
-        async function confirmReset() {
-            let successMsg = '';
-            
-            try {
-                switch(currentResetType) {
-                    case 'waiting':
-                        // 대기열만 초기화 (강화된 저장)
-                        console.log('🗑️ 대기열 초기화 시작');
-                        console.log('삭제 전 대기열:', sharedData.waiting.length, '개');
-                        
-                        sharedData.waiting = [];
-                        console.log('삭제 후 대기열:', sharedData.waiting.length, '개');
-                        
-                        successMsg = '대기열이 초기화되었습니다. (번호 카운터는 유지됨)';
-                        break;
-                        
-                    case 'partial':
-                        // 통계만 초기화
-                        sharedData.totalToday = 0;
-                        sharedData.counters.forEach(counter => {
-                            counter.count = 0;
-                        });
-                        successMsg = '통계가 초기화되었습니다.';
-                        break;
-                        
-                    case 'all':
-                        // 전체 초기화
-                        sharedData = {
-                            currentCall: { number: '-', counter: 0, course: '-' },
-                            waiting: [],
-                            counters: [
-                                { id: 1, current: null, course: null, count: 0 },
-                                { id: 2, current: null, course: null, count: 0 },
-                                { id: 3, current: null, course: null, count: 0 },
-                                { id: 4, current: null, course: null, count: 0 },
-                                { id: 5, current: null, course: null, count: 0 },
-                                { id: 6, current: null, course: null, count: 0 }
-                            ],
-                            totalToday: 0,
-                            lastUpdated: null,
-                            currentNumbers: {},
-                            lastDate: new Date().toISOString().split('T')[0]
-                        };
-                        successMsg = '모든 데이터가 초기화되었습니다.';
-                        break;
-                }
-                
-                // Firebase에 강제 저장 (await 사용)
-                await saveToFirebase();
-                
-                // 모달 닫기
-                closeResetModal();
-                
-                // 성공 메시지 표시
-                showMessage(successMsg);
-                
-                // 즉시 화면 업데이트
-                updateDisplay();
-                
-            } catch (error) {
-                console.error('❌ 초기화 실패:', error);
-                showMessage('초기화 중 오류가 발생했습니다: ' + error.message);
-            }
-        }
-
-        // 향상된 호출음 - 창구에서는 제거됨
-        function playCallSound(isRecall = false) {
-            // 창구에서는 호출음 제거 - 디스플레이에서만 재생
-            console.log(`🔇 창구 호출음 비활성화 ${isRecall ? '(재호출)' : '(일반)'}`);
-            return;
-        }
-
-        function showMessage(text) {
-            const messageEl = document.getElementById('successMessage');
-            messageEl.textContent = text;
-            messageEl.classList.add('show');
-            
-            setTimeout(() => {
-                messageEl.classList.remove('show');
-            }, 3000);
-        }
-
-        // 키보드 단축키 추가 (재호출 기능 포함)
-        document.addEventListener('keydown', function(e) {
-            // Ctrl + R: 재호출
-            if (e.ctrlKey && e.key === 'r') {
-                e.preventDefault();
-                recallCurrent();
-            }
-            
-            // Ctrl + N: 다음 호출  
-            if (e.ctrlKey && e.key === 'n') {
-                e.preventDefault();
-                callNext();
-            }
-            
-            // Ctrl + E: 상담 완료
-            if (e.ctrlKey && e.key === 'e') {
-                e.preventDefault();
-                completeService();
-            }
-            
-            // R 키만으로도 재호출 (단순화)
-            if (e.key === 'r' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-                // 입력 필드에 포커스가 없을 때만
-                if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
-                    e.preventDefault();
-                    recallCurrent();
-                }
-            }
-        });
-
-        // 모달 외부 클릭 시 닫기
-        window.onclick = function(event) {
-            const modal = document.getElementById('resetModal');
-            if (event.target === modal) {
-                closeResetModal();
-            }
-        }
-
-        // 초기화
-        function initialize() {
-            console.log('🚀 상담창구 시스템 초기화 시작');
-            
-            currentCounter = getCounterFromUrl();
-            selectCounter(currentCounter);
-            
-            // Firebase 리스너 설정
-            setTimeout(() => {
-                setupFirebaseListeners();
-            }, 1000);
-            
-            console.log('✅ 상담창구 시스템 초기화 완료');
-        }
-
-        // 페이지 로드 시 초기화
-        document.addEventListener('DOMContentLoaded', initialize);
-    </script>
-</body>
-</html>
