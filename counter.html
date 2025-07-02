@@ -896,7 +896,7 @@
             let messageText = '';
             switch(type) {
                 case 'waiting':
-                    messageText = '현재 대기 중인 모든 번호를 삭제합니다.<br><strong>진행 중인 상담은 유지됩니다.</strong><br><strong>번호 카운터는 유지됩니다.</strong><br><br><strong>⚠️ 삭제된 번호들은 다시 나타나지 않습니다.</strong>';
+                    messageText = '현재 대기 중인 모든 번호를 삭제합니다.<br><strong>진행 중인 상담은 유지됩니다.</strong><br><strong>번호 카운터는 유지됩니다.</strong>';
                     break;
                 case 'partial':
                     messageText = '오늘 총 접수 수와 모든 창구의 상담 완료 수를 0으로 초기화합니다.<br><strong>현재 대기열과 진행 중인 상담은 유지됩니다.</strong>';
@@ -920,21 +920,7 @@
             
             switch(currentResetType) {
                 case 'waiting':
-                    // 현재 대기번호들을 블랙리스트에 추가
-                    if (!sharedData.deletedNumbers) {
-                        sharedData.deletedNumbers = [];
-                    }
-                    
-                    // 현재 대기 중인 번호들을 삭제 목록에 추가
-                    if (sharedData.waiting && sharedData.waiting.length > 0) {
-                        sharedData.waiting.forEach(item => {
-                            if (!sharedData.deletedNumbers.includes(item.number)) {
-                                sharedData.deletedNumbers.push(item.number);
-                            }
-                        });
-                    }
-                    
-                    // 대기열만 초기화 (번호 카운터는 유지)
+                    // 대기열만 초기화 (간단하게)
                     sharedData.waiting = [];
                     successMsg = '대기열이 초기화되었습니다. (번호 카운터는 유지됨)';
                     break;
@@ -964,14 +950,13 @@
                         totalToday: 0,
                         lastUpdated: null,
                         currentNumbers: {}, // 번호 카운터도 초기화
-                        lastDate: new Date().toISOString().split('T')[0], // 오늘 날짜
-                        deletedNumbers: [] // 삭제된 번호 목록도 초기화
+                        lastDate: new Date().toISOString().split('T')[0] // 오늘 날짜
                     };
                     successMsg = '모든 데이터가 초기화되었습니다.';
                     break;
             }
             
-            // Firebase에 저장
+            // Firebase에 즉시 저장
             saveToFirebase();
             
             // 모달 닫기
