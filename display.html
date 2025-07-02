@@ -78,6 +78,7 @@
             background: linear-gradient(90deg, #f1c40f, #e74c3c, #9b59b6, #3498db, #2ecc71);
             background-size: 300% 100%;
             animation: rainbow 3s linear infinite;
+            border-radius: 25px 25px 0 0;
         }
         
         @keyframes rainbow {
@@ -196,6 +197,7 @@
             background: linear-gradient(90deg, #3498db, #2ecc71, #f1c40f, #e74c3c, #9b59b6);
             background-size: 300% 100%;
             animation: rainbow 3s linear infinite reverse;
+            border-radius: 25px 25px 0 0;
         }
         
         .waiting-title {
@@ -307,6 +309,7 @@
             background: linear-gradient(90deg, #e74c3c, #f1c40f, #2ecc71, #3498db, #9b59b6);
             background-size: 300% 100%;
             animation: rainbow 3s linear infinite;
+            border-radius: 25px 25px 0 0;
         }
         
         .counter-title {
@@ -391,21 +394,25 @@
         }
         
         .firebase-status {
-            font-size: 1rem;
-            font-weight: 500;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.1);
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            z-index: 1000;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .firebase-status:hover {
+            opacity: 1;
         }
         
         .firebase-status.connected {
             color: #00FF88;
-            background: rgba(0,255,136,0.1);
         }
         
         .firebase-status.disconnected {
             color: #FF6B6B;
-            background: rgba(255,107,107,0.1);
         }
         
         .no-waiting {
@@ -535,11 +542,13 @@
             const statusEl = document.querySelector('.firebase-status');
             if (statusEl) {
                 if (connected) {
-                    statusEl.textContent = '🔥 Firebase 연결됨';
+                    statusEl.textContent = '●';
                     statusEl.className = 'firebase-status connected';
+                    statusEl.title = 'Firebase 연결됨';
                 } else {
-                    statusEl.textContent = '❌ Firebase 연결 끊김';
+                    statusEl.textContent = '●';
                     statusEl.className = 'firebase-status disconnected';
+                    statusEl.title = 'Firebase 연결 끊김';
                 }
             }
         });
@@ -580,13 +589,13 @@
         <div class="total-waiting">
             총 대기: <span id="totalWaiting">0</span>명
         </div>
-        <div class="firebase-status" id="firebaseStatus">
-            🔄 Firebase 연결 중...
-        </div>
         <div class="last-update">
             마지막 업데이트: <span id="lastUpdate">-</span>
         </div>
     </div>
+
+    <!-- Firebase 연결 상태 (오른쪽 아래) -->
+    <div class="firebase-status" id="firebaseStatus">●</div>
 
     <script>
         let displayData = {
