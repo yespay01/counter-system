@@ -627,24 +627,29 @@
             });
         }
 
-        // Firebase에 데이터 저장
+        // Firebase에 데이터 저장 (강화된 버전)
         function saveToFirebase() {
             if (!window.firebaseDB) {
                 console.error('Firebase가 초기화되지 않았습니다.');
-                return;
+                return Promise.reject('Firebase 미연결');
             }
 
             try {
                 sharedData.lastUpdated = new Date().toISOString();
                 const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
                 
-                window.firebaseSet(systemRef, sharedData).then(() => {
+                console.log('💾 Firebase 저장 시작:', sharedData);
+                
+                return window.firebaseSet(systemRef, sharedData).then(() => {
                     console.log('✅ Firebase 저장 완료');
+                    console.log('📊 저장된 대기열 크기:', sharedData.waiting.length);
                 }).catch((error) => {
                     console.error('❌ Firebase 저장 실패:', error);
+                    throw error;
                 });
             } catch (error) {
                 console.error('❌ Firebase 저장 오류:', error);
+                return Promise.reject(error);
             }
         }
 
@@ -915,55 +920,69 @@
             currentResetType = '';
         }
 
-        function confirmReset() {
+        async function confirmReset() {
             let successMsg = '';
             
-            switch(currentResetType) {
-                case 'waiting':
-                    // 대기열만 초기화 (간단하게)
-                    sharedData.waiting = [];
-                    successMsg = '대기열이 초기화되었습니다. (번호 카운터는 유지됨)';
-                    break;
-                    
-                case 'partial':
-                    // 통계만 초기화 (대기열과 현재 상담은 유지)
-                    sharedData.totalToday = 0;
-                    sharedData.counters.forEach(counter => {
-                        counter.count = 0;
-                    });
-                    successMsg = '통계가 초기화되었습니다.';
-                    break;
-                    
-                case 'all':
-                    // 전체 초기화
-                    sharedData = {
-                        currentCall: { number: '-', counter: 0, course: '-' },
-                        waiting: [],
-                        counters: [
-                            { id: 1, current: null, course: null, count: 0 },
-                            { id: 2, current: null, course: null, count: 0 },
-                            { id: 3, current: null, course: null, count: 0 },
-                            { id: 4, current: null, course: null, count: 0 },
-                            { id: 5, current: null, course: null, count: 0 },
-                            { id: 6, current: null, course: null, count: 0 }
-                        ],
-                        totalToday: 0,
-                        lastUpdated: null,
-                        currentNumbers: {}, // 번호 카운터도 초기화
-                        lastDate: new Date().toISOString().split('T')[0] // 오늘 날짜
-                    };
-                    successMsg = '모든 데이터가 초기화되었습니다.';
-                    break;
+            try {
+                switch(currentResetType) {
+                    case 'waiting':
+                        // 대기열만 초기화 (강화된 저장)
+                        console.log('🗑️ 대기열 초기화 시작');
+                        console.log('삭제 전 대기열:', sharedData.waiting.length, '개');
+                        
+                        sharedData.waiting = [];
+                        console.log('삭제 후 대기열:', sharedData.waiting.length, '개');
+                        
+                        successMsg = '대기열이 초기화되었습니다. (번호 카운터는 유지됨)';
+                        break;
+                        
+                    case 'partial':
+                        // 통계만 초기화
+                        sharedData.totalToday = 0;
+                        sharedData.counters.forEach(counter => {
+                            counter.count = 0;
+                        });
+                        successMsg = '통계가 초기화되었습니다.';
+                        break;
+                        
+                    case 'all':
+                        // 전체 초기화
+                        sharedData = {
+                            currentCall: { number: '-', counter: 0, course: '-' },
+                            waiting: [],
+                            counters: [
+                                { id: 1, current: null, course: null, count: 0 },
+                                { id: 2, current: null, course: null, count: 0 },
+                                { id: 3, current: null, course: null, count: 0 },
+                                { id: 4, current: null, course: null, count: 0 },
+                                { id: 5, current: null, course: null, count: 0 },
+                                { id: 6, current: null, course: null, count: 0 }
+                            ],
+                            totalToday: 0,
+                            lastUpdated: null,
+                            currentNumbers: {},
+                            lastDate: new Date().toISOString().split('T')[0]
+                        };
+                        successMsg = '모든 데이터가 초기화되었습니다.';
+                        break;
+                }
+                
+                // Firebase에 강제 저장 (await 사용)
+                await saveToFirebase();
+                
+                // 모달 닫기
+                closeResetModal();
+                
+                // 성공 메시지 표시
+                showMessage(successMsg);
+                
+                // 즉시 화면 업데이트
+                updateDisplay();
+                
+            } catch (error) {
+                console.error('❌ 초기화 실패:', error);
+                showMessage('초기화 중 오류가 발생했습니다: ' + error.message);
             }
-            
-            // Firebase에 즉시 저장
-            saveToFirebase();
-            
-            // 모달 닫기
-            closeResetModal();
-            
-            // 성공 메시지 표시
-            showMessage(successMsg);
         }
 
         // 향상된 호출음 - 창구에서는 제거됨
