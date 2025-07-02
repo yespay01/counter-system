@@ -964,53 +964,11 @@
             showMessage(successMsg);
         }
 
-        // 향상된 호출음 (재호출 시 2번 울림)
+        // 향상된 호출음 - 창구에서는 제거됨
         function playCallSound(isRecall = false) {
-            try {
-                // Web Audio API를 사용한 더 나은 호출음
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                function createBeep(frequency, startTime, duration) {
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.setValueAtTime(frequency, startTime);
-                    oscillator.type = 'sine';
-                    
-                    gainNode.gain.setValueAtTime(0.3, startTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-                    
-                    oscillator.start(startTime);
-                    oscillator.stop(startTime + duration);
-                }
-                
-                const now = audioContext.currentTime;
-                
-                if (isRecall) {
-                    // 재호출 시: 더 긴 음 2번
-                    createBeep(800, now, 0.8);
-                    createBeep(600, now + 0.9, 0.8);
-                } else {
-                    // 일반 호출: 짧은 음 2번
-                    createBeep(800, now, 0.5);
-                    createBeep(600, now + 0.6, 0.5);
-                }
-                
-                console.log(`🔊 호출음 재생 ${isRecall ? '(재호출)' : '(일반)'}`);
-                
-            } catch (error) {
-                console.error('호출음 재생 오류:', error);
-                // 폴백: 기본 오디오
-                try {
-                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS1/LNeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBjiS1/LNeSsF');
-                    audio.play().catch(() => {});
-                } catch (e) {
-                    console.error('폴백 오디오도 실패:', e);
-                }
-            }
+            // 창구에서는 호출음 제거 - 디스플레이에서만 재생
+            console.log(`🔇 창구 호출음 비활성화 ${isRecall ? '(재호출)' : '(일반)'}`);
+            return;
         }
 
         function showMessage(text) {
