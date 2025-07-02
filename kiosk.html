@@ -620,7 +620,8 @@
             totalToday: 0,
             lastUpdated: null,
             currentNumbers: {}, // Firebase에서 관리되는 번호 카운터
-            lastDate: null      // 마지막 업데이트 날짜
+            lastDate: null,     // 마지막 업데이트 날짜
+            deletedNumbers: []  // 삭제된 번호 목록 (관리자가 삭제한 번호들)
         };
         let timeSettings = [];
         
@@ -1819,7 +1820,7 @@
             }, 3000);
         }
 
-        // Firebase 리스너 설정 (번호 카운터 동기화 포함)
+        // Firebase 리스너 설정 (삭제된 번호 목록 동기화 포함)
         function setupFirebaseListener() {
             if (!window.firebaseDB) return;
             
@@ -1832,9 +1833,12 @@
                     // 기존 데이터 업데이트
                     sharedData = { ...sharedData, ...data };
                     
-                    // 번호 카운터가 없으면 초기화
+                    // 필수 필드 초기화
                     if (!sharedData.currentNumbers) {
                         sharedData.currentNumbers = {};
+                    }
+                    if (!sharedData.deletedNumbers) {
+                        sharedData.deletedNumbers = [];
                     }
                     
                     // 날짜 체크 (다른 키오스크에서 날짜가 바뀌었을 수 있음)
@@ -1843,6 +1847,7 @@
                     }
                     
                     console.log('📊 현재 번호 카운터:', sharedData.currentNumbers);
+                    console.log('🗑️ 삭제된 번호 목록:', sharedData.deletedNumbers);
                 }
             });
         }
