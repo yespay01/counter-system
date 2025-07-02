@@ -760,14 +760,13 @@
             
             // 현재 호출 업데이트
             sharedData.currentCall = {
-    number: nextCustomer.number,
+    number: customer.number,
     counter: currentCounter,
-    course: nextCustomer.course,
-    isRecall: false,
+    course: customer.course,
+    isRecall: false,           // 추가 필요
+    callType: 'direct',
     callTime: new Date().toISOString(),
-    callType: 'normal',        // 추가
-    recallCount: 0,
-    immediateCall: true        // 추가
+    immediateCall: true
 };
             
             saveToFirebase();
