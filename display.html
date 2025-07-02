@@ -588,18 +588,18 @@
             }
         }
 
-        // 즉시 호출 감지 및 처리 (딜레이 최소화)
+        // 즉시 호출 감지 및 처리 (재호출 감지 강화)
         function handleImmediateCall(data) {
             const currentCall = data.currentCall;
             
             if (!currentCall || currentCall.number === '-') return;
             
-            // 즉시 호출 플래그 확인
+            // 즉시 호출 플래그 확인 (일반 호출 + 재호출)
             if (currentCall.immediateCall) {
-                console.log('⚡ 즉시 호출 감지:', currentCall.number);
+                console.log('⚡ 즉시 호출 감지:', currentCall.number, currentCall.isRecall ? '(재호출)' : '(일반호출)');
                 
-                // 이전 호출과 다른 경우에만 호출음 재생
-                const callKey = `${currentCall.number}-${currentCall.callTime || currentCall.recallTime}`;
+                // 호출 키 생성 (재호출 시간도 포함)
+                const callKey = `${currentCall.number}-${currentCall.callTime || currentCall.recallTime || Date.now()}`;
                 const lastCallKey = lastCallData ? `${lastCallData.number}-${lastCallData.callTime || lastCallData.recallTime}` : null;
                 
                 if (callKey !== lastCallKey) {
@@ -618,12 +618,35 @@
                     // 이전 호출 데이터 업데이트
                     lastCallData = { ...currentCall };
                     
-                    console.log(`🔔 즉시 호출음 재생: ${currentCall.number} ${currentCall.isRecall ? '(재호출)' : ''}`);
+                    console.log(`🔔 DISPLAY 호출음 재생: ${currentCall.number} ${currentCall.isRecall ? '(재호출)' : '(일반호출)'}`);
+                }
+            }
+            
+            // 재호출 시간 기반 감지 (백업 로직)
+            if (currentCall.isRecall && currentCall.recallTime) {
+                const recallKey = `recall-${currentCall.number}-${currentCall.recallTime}`;
+                const lastRecallKey = lastCallData ? `recall-${lastCallData.number}-${lastCallData.recallTime}` : null;
+                
+                if (recallKey !== lastRecallKey) {
+                    console.log('🔔 재호출 백업 감지:', currentCall.number);
+                    playCallSound(true);
+                    
+                    // 화면 강조 효과
+                    const numberEl = document.getElementById('currentNumber');
+                    if (numberEl) {
+                        numberEl.classList.add('calling');
+                        setTimeout(() => {
+                            numberEl.classList.remove('calling');
+                        }, 3000);
+                    }
+                    
+                    lastCallData = { ...currentCall };
+                    console.log(`🔔 DISPLAY 재호출 백업음 재생: ${currentCall.number}`);
                 }
             }
         }
 
-        // Firebase에서 실시간 데이터 수신 (딜레이 최소화)
+        // Firebase에서 실시간 데이터 수신 (강화된 동기화)
         function setupFirebaseListeners() {
             if (!window.firebaseDB) {
                 console.error('Firebase가 초기화되지 않았습니다.');
@@ -634,17 +657,39 @@
             
             window.firebaseOnValue(systemRef, (snapshot) => {
                 const data = snapshot.val();
-                console.log('🔥 Firebase 데이터 수신:', data);
+                console.log('🔥 DISPLAY - Firebase 데이터 수신:', data);
                 
                 if (data) {
                     // 즉시 호출 처리 (우선순위)
                     handleImmediateCall(data);
                     
+                    // 이전 대기열 크기 기록
+                    const previousWaitingCount = displayData.waiting ? displayData.waiting.length : 0;
+                    
+                    // 데이터 업데이트
+                    displayData.currentCall = data.currentCall || displayData.currentCall;
+                    displayData.waiting = data.waiting || []; // 강제로 빈 배열도 적용
+                    displayData.counters = data.counters || displayData.counters;
+                    displayData.lastUpdateTime = new Date();
+                    displayData.isConnected = true;
+                    
+                    // 대기열 변화 로깅
+                    const currentWaitingCount = displayData.waiting.length;
+                    if (previousWaitingCount !== currentWaitingCount) {
+                        console.log(`📊 DISPLAY - 대기열 변화: ${previousWaitingCount}개 → ${currentWaitingCount}개`);
+                        
+                        if (currentWaitingCount === 0) {
+                            console.log('🗑️ DISPLAY - 대기열 완전 초기화됨');
+                        }
+                    }
+                    
+                    // 즉시 화면 업데이트
+                    updateDisplay();
+                    
                     // 기존 호출 감지 로직 (백업용)
                     const newCallNumber = data.currentCall?.number || '-';
-                    const oldCallNumber = displayData.currentCall.number;
+                    const oldCallNumber = displayData.currentCall?.number || '-';
                     
-                    // 새로운 번호가 호출되었는지 확인 (즉시 호출이 아닌 경우 백업)
                     if (newCallNumber !== '-' && 
                         newCallNumber !== oldCallNumber && 
                         newCallNumber !== displayData.lastCalledNumber &&
@@ -652,7 +697,6 @@
                         
                         displayData.lastCalledNumber = newCallNumber;
                         
-                        // 백업 호출음 재생 (500ms 지연)
                         setTimeout(() => {
                             playCallSound(data.currentCall?.isRecall);
                         }, 500);
@@ -660,17 +704,13 @@
                         console.log(`🔔 백업 호출음: ${newCallNumber}`);
                     }
                     
-                    // 데이터 업데이트
-                    displayData.currentCall = data.currentCall || displayData.currentCall;
-                    displayData.waiting = data.waiting || [];
-                    displayData.counters = data.counters || displayData.counters;
-                    displayData.lastUpdateTime = new Date();
-                    displayData.isConnected = true;
-                    
-                    updateDisplay();
                 } else {
-                    console.log('📭 Firebase 데이터 없음');
+                    console.log('📭 DISPLAY - Firebase 데이터 없음');
                     displayData.isConnected = false;
+                    
+                    // 데이터가 없으면 대기열 초기화
+                    displayData.waiting = [];
+                    updateDisplay();
                 }
             });
         }
@@ -678,6 +718,7 @@
         function updateDisplay() {
             try {
                 console.log('🖥️ DISPLAY 화면 업데이트');
+                console.log('📋 현재 대기열 크기:', displayData.waiting ? displayData.waiting.length : 0);
                 
                 // 현재 호출번호 업데이트
                 const currentNumber = displayData.currentCall.number || '-';
@@ -693,12 +734,14 @@
                     document.getElementById('counterInfo').textContent = '대기 중';
                 }
 
-                // 대기번호 목록 업데이트
+                // 대기번호 목록 업데이트 (강화)
                 const waitingContainer = document.getElementById('waitingNumbers');
+                
+                // 기존 내용 완전 삭제
                 waitingContainer.innerHTML = '';
                 
                 if (displayData.waiting && displayData.waiting.length > 0) {
-                    console.log(`📋 ${displayData.waiting.length}개의 대기번호 표시`);
+                    console.log(`📋 ${displayData.waiting.length}개의 대기번호 표시:`, displayData.waiting.map(item => item.number));
                     
                     displayData.waiting.forEach((item, index) => {
                         const div = document.createElement('div');
@@ -714,6 +757,7 @@
                         waitingContainer.appendChild(div);
                     });
                 } else {
+                    console.log('📭 대기번호 없음 - 빈 화면 표시');
                     waitingContainer.innerHTML = '<div class="no-waiting">대기 중인 번호가 없습니다</div>';
                 }
 
@@ -738,7 +782,8 @@
                 });
 
                 // 총 대기인원 및 업데이트 시간
-                document.getElementById('totalWaiting').textContent = displayData.waiting.length;
+                const waitingLength = displayData.waiting ? displayData.waiting.length : 0;
+                document.getElementById('totalWaiting').textContent = waitingLength;
                 
                 if (displayData.lastUpdateTime) {
                     document.getElementById('lastUpdate').textContent = 
@@ -747,7 +792,7 @@
                     document.getElementById('lastUpdate').textContent = '-';
                 }
                 
-                console.log('✅ DISPLAY 화면 업데이트 완료');
+                console.log('✅ DISPLAY 화면 업데이트 완료 - 대기인원:', waitingLength);
                 
             } catch (error) {
                 console.error('❌ 화면 업데이트 오류:', error);
