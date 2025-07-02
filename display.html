@@ -53,6 +53,7 @@
             z-index: 1;
         }
         
+        /* 왼쪽: 현재 호출 */
         .current-section {
             background: rgba(255,255,255,0.1);
             border-radius: 25px;
@@ -113,12 +114,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease; /* 즉시 업데이트를 위한 트랜지션 */
+            transition: all 0.3s ease;
         }
         
         /* 호출 시 강조 효과 */
         .current-number.calling {
-            animation: callPulse 1s ease-in-out 3; /* 3번 깜빡임 */
+            animation: callPulse 1s ease-in-out 3;
             transform: scale(1.1);
         }
         
@@ -163,21 +164,29 @@
             text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
         
-        .waiting-list {
+        /* 오른쪽: 대기번호 + 창구현황 */
+        .right-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* 대기번호 섹션 */
+        .waiting-section {
             background: rgba(255,255,255,0.1);
             border-radius: 25px;
-            padding: 35px;
+            padding: 25px;
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.2);
             box-shadow: 0 20px 60px rgba(0,0,0,0.1);
             position: relative;
             overflow: visible;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            min-height: 400px;
         }
         
-        .waiting-list::before {
+        .waiting-section::before {
             content: '';
             position: absolute;
             top: 0;
@@ -189,24 +198,27 @@
             animation: rainbow 3s linear infinite reverse;
         }
         
+        .waiting-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #FFD700;
+            text-shadow: 0 2px 15px rgba(255,215,0,0.4);
+        }
+        
         .waiting-numbers {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-            max-height: 320px;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            max-height: 300px;
             overflow-y: auto;
-            padding-right: 10px;
+            padding-right: 5px;
             flex: 1;
-            min-height: 200px;
-            border: 2px dashed rgba(255,255,255,0.2);
-            border-radius: 10px;
-            padding: 15px;
         }
         
         /* 스크롤바 커스터마이징 */
         .waiting-numbers::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         
         .waiting-numbers::-webkit-scrollbar-track {
@@ -225,13 +237,13 @@
         
         .waiting-number {
             background: rgba(255,255,255,0.15);
-            border-radius: 15px;
-            padding: 18px;
+            border-radius: 12px;
+            padding: 12px;
             text-align: center;
             border: 2px solid rgba(255,255,255,0.2);
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             backdrop-filter: blur(10px);
         }
@@ -241,7 +253,7 @@
             background: rgba(255,215,0,0.2);
             animation: pulse 2s infinite;
             transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(255,215,0,0.3);
+            box-shadow: 0 8px 25px rgba(255,215,0,0.3);
         }
         
         @keyframes pulse {
@@ -251,34 +263,64 @@
         }
         
         .number-text {
-            font-size: 1.6rem;
+            font-size: 1.3rem;
             font-weight: 900;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         
         .course-text {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             opacity: 0.8;
             font-weight: 500;
         }
         
         .time-text {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             opacity: 0.7;
             font-weight: 400;
+        }
+        
+        /* 창구현황 섹션 */
+        .counter-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            padding: 25px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .counter-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #e74c3c, #f1c40f, #2ecc71, #3498db, #9b59b6);
+            background-size: 300% 100%;
+            animation: rainbow 3s linear infinite;
+        }
+        
+        .counter-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #FFD700;
+            text-shadow: 0 2px 15px rgba(255,215,0,0.4);
         }
         
         .counter-status {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 25px;
+            gap: 12px;
         }
         
         .counter-item {
             background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 18px;
+            border-radius: 12px;
+            padding: 12px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
             transition: all 0.3s ease;
@@ -288,28 +330,28 @@
         .counter-item.active {
             border-color: #00FF88;
             background: rgba(0,255,136,0.15);
-            box-shadow: 0 10px 30px rgba(0,255,136,0.2);
+            box-shadow: 0 8px 25px rgba(0,255,136,0.2);
             transform: scale(1.05);
         }
         
         .counter-name {
-            font-size: 1.1rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             opacity: 0.9;
         }
         
         .counter-number {
-            font-size: 2.2rem;
+            font-size: 1.6rem;
             font-weight: 900;
             color: #FFD700;
-            text-shadow: 0 2px 15px rgba(255,215,0,0.4);
+            text-shadow: 0 2px 12px rgba(255,215,0,0.4);
         }
         
         .counter-course {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             opacity: 0.8;
-            margin-top: 8px;
+            margin-top: 4px;
             font-weight: 400;
         }
         
@@ -361,9 +403,9 @@
         
         .no-waiting {
             text-align: center;
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             opacity: 0.7;
-            padding: 60px;
+            padding: 40px;
             font-weight: 300;
         }
         
@@ -378,8 +420,8 @@
                 font-size: 6rem;
             }
             
-            .section-title {
-                font-size: 2rem;
+            .section-title, .waiting-title, .counter-title {
+                font-size: 1.6rem;
             }
         }
         
@@ -396,23 +438,23 @@
                 font-size: 5rem;
             }
             
-            .section-title {
-                font-size: 1.8rem;
+            .section-title, .waiting-title, .counter-title {
+                font-size: 1.5rem;
             }
             
             .counter-status {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
+                gap: 10px;
             }
             
             .waiting-numbers {
-                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-                gap: 12px;
-                max-height: 250px;
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+                gap: 10px;
+                max-height: 200px;
             }
             
             .number-text {
-                font-size: 1.4rem;
+                font-size: 1.2rem;
             }
             
             .status-bar {
@@ -437,8 +479,8 @@
                 font-size: 4rem;
             }
             
-            .section-title {
-                font-size: 1.6rem;
+            .section-title, .waiting-title, .counter-title {
+                font-size: 1.4rem;
             }
             
             .counter-status {
@@ -446,8 +488,9 @@
             }
             
             .current-section,
-            .waiting-list {
-                padding: 25px;
+            .waiting-section,
+            .counter-section {
+                padding: 20px;
             }
         }
     </style>
@@ -497,22 +540,31 @@
 </head>
 <body>
     <div class="main-content">
+        <!-- 왼쪽: 현재 호출 -->
         <div class="current-section">
             <div class="section-title" id="audioToggle" onclick="toggleAudio()" style="cursor: pointer; user-select: none;">
                 <span id="audioIcon">🔇</span> 현재 호출
             </div>
             <div class="current-number" id="currentNumber">-</div>
             <div class="counter-info" id="counterInfo">대기 중</div>
-            
-            <div class="counter-status" id="counterStatus">
-                <!-- 창구별 현황 -->
-            </div>
         </div>
 
-        <div class="waiting-list">
-            <div class="section-title">⏳ 대기번호</div>
-            <div class="waiting-numbers" id="waitingNumbers">
-                <!-- 대기번호들 -->
+        <!-- 오른쪽: 대기번호 + 창구현황 -->
+        <div class="right-section">
+            <!-- 대기번호 섹션 -->
+            <div class="waiting-section">
+                <div class="waiting-title">⏳ 대기번호</div>
+                <div class="waiting-numbers" id="waitingNumbers">
+                    <!-- 대기번호들 (최대 10개) -->
+                </div>
+            </div>
+            
+            <!-- 창구현황 섹션 -->
+            <div class="counter-section">
+                <div class="counter-title">🏢 창구현황</div>
+                <div class="counter-status" id="counterStatus">
+                    <!-- 창구별 현황 -->
+                </div>
             </div>
         </div>
     </div>
@@ -547,17 +599,15 @@
         };
 
         let isDebugMode = false;
-        let lastCallData = null; // 이전 호출 데이터 저장
-        let audioContext = null; // AudioContext 저장
-        let isAudioEnabled = false; // 오디오 활성화 상태
+        let lastCallData = null;
+        let audioContext = null;
+        let isAudioEnabled = false;
 
         // 오디오 토글 함수
         function toggleAudio() {
             if (!isAudioEnabled) {
-                // 오디오 활성화 시도
                 enableAudio();
             } else {
-                // 오디오 비활성화
                 disableAudio();
             }
         }
@@ -577,8 +627,6 @@
                 document.getElementById('audioIcon').textContent = '🔊';
                 
                 console.log('✅ 오디오 활성화 완료');
-                
-                // 테스트 호출음 재생
                 playCallSound(false);
                 
             } catch (error) {
@@ -595,19 +643,17 @@
             console.log('🔇 오디오 비활성화');
         }
 
-        // 개선된 호출음 재생 함수 (딜레이 최소화)
+        // 개선된 호출음 재생 함수
         function playCallSound(isRecall = false) {
-            // 오디오가 비활성화되어 있으면 재생하지 않음
             if (!isAudioEnabled || !audioContext) {
                 console.log('🔇 오디오 비활성화됨 - 호출음 건너뜀');
                 return;
             }
             
             try {
-                // 기존 AudioContext 사용
                 const context = audioContext;
                 
-                // 첫 번째 음 (띵) - 즉시 재생
+                // 첫 번째 음 (띵)
                 const oscillator1 = context.createOscillator();
                 const gainNode1 = context.createGain();
                 
@@ -617,7 +663,7 @@
                 oscillator1.frequency.setValueAtTime(800, context.currentTime);
                 oscillator1.type = 'sine';
                 
-                gainNode1.gain.setValueAtTime(0.4, context.currentTime); // 볼륨 증가
+                gainNode1.gain.setValueAtTime(0.4, context.currentTime);
                 gainNode1.gain.exponentialRampToValueAtTime(0.01, context.currentTime + (isRecall ? 0.8 : 0.5));
                 
                 oscillator1.start(context.currentTime);
@@ -648,20 +694,20 @@
             }
         }
 
-        // 즉시 호출 감지 및 처리 (일반 호출 감지 강화)
+        // 즉시 호출 감지 및 처리
         function handleImmediateCall(data) {
             const currentCall = data.currentCall;
             
             if (!currentCall || currentCall.number === '-') return;
             
-            // 즉시 호출 플래그 확인 (일반 호출 + 재호출 + 직접 호출)
+            // 즉시 호출 플래그 확인
             if (currentCall.immediateCall) {
                 const callType = currentCall.isRecall ? '재호출' : 
                                currentCall.callType === 'direct' ? '직접호출' : '일반호출';
                 
                 console.log('⚡ 즉시 호출 감지:', currentCall.number, `(${callType})`);
                 
-                // 호출 키 생성 (모든 호출 타입 지원)
+                // 호출 키 생성
                 const callKey = `${currentCall.number}-${currentCall.callTime || currentCall.recallTime || Date.now()}-${currentCall.callType || 'unknown'}`;
                 const lastCallKey = lastCallData ? 
                     `${lastCallData.number}-${lastCallData.callTime || lastCallData.recallTime}-${lastCallData.callType || 'unknown'}` : null;
@@ -685,55 +731,9 @@
                     console.log(`🔔 DISPLAY 호출음 재생: ${currentCall.number} (${callType})`);
                 }
             }
-            
-            // 추가: callTime 기반 일반 호출 감지 (백업 로직)
-            if (!currentCall.isRecall && currentCall.callTime && currentCall.callType === 'normal') {
-                const normalCallKey = `normal-${currentCall.number}-${currentCall.callTime}`;
-                const lastNormalKey = lastCallData ? `normal-${lastCallData.number}-${lastCallData.callTime}` : null;
-                
-                if (normalCallKey !== lastNormalKey) {
-                    console.log('📢 일반 호출 백업 감지:', currentCall.number);
-                    playCallSound(false);
-                    
-                    // 화면 강조 효과
-                    const numberEl = document.getElementById('currentNumber');
-                    if (numberEl) {
-                        numberEl.classList.add('calling');
-                        setTimeout(() => {
-                            numberEl.classList.remove('calling');
-                        }, 3000);
-                    }
-                    
-                    lastCallData = { ...currentCall };
-                    console.log(`🔔 DISPLAY 일반 호출 백업음 재생: ${currentCall.number}`);
-                }
-            }
-            
-            // 재호출 시간 기반 감지 (기존 백업 로직 유지)
-            if (currentCall.isRecall && currentCall.recallTime) {
-                const recallKey = `recall-${currentCall.number}-${currentCall.recallTime}`;
-                const lastRecallKey = lastCallData ? `recall-${lastCallData.number}-${lastCallData.recallTime}` : null;
-                
-                if (recallKey !== lastRecallKey) {
-                    console.log('🔔 재호출 백업 감지:', currentCall.number);
-                    playCallSound(true);
-                    
-                    // 화면 강조 효과
-                    const numberEl = document.getElementById('currentNumber');
-                    if (numberEl) {
-                        numberEl.classList.add('calling');
-                        setTimeout(() => {
-                            numberEl.classList.remove('calling');
-                        }, 3000);
-                    }
-                    
-                    lastCallData = { ...currentCall };
-                    console.log(`🔔 DISPLAY 재호출 백업음 재생: ${currentCall.number}`);
-                }
-            }
         }
 
-        // Firebase에서 실시간 데이터 수신 (강화된 동기화)
+        // Firebase에서 실시간 데이터 수신
         function setupFirebaseListeners() {
             if (!window.firebaseDB) {
                 console.error('Firebase가 초기화되지 않았습니다.');
@@ -750,52 +750,19 @@
                     // 즉시 호출 처리 (우선순위)
                     handleImmediateCall(data);
                     
-                    // 이전 대기열 크기 기록
-                    const previousWaitingCount = displayData.waiting ? displayData.waiting.length : 0;
-                    
                     // 데이터 업데이트
                     displayData.currentCall = data.currentCall || displayData.currentCall;
-                    displayData.waiting = data.waiting || []; // 강제로 빈 배열도 적용
+                    displayData.waiting = data.waiting || [];
                     displayData.counters = data.counters || displayData.counters;
                     displayData.lastUpdateTime = new Date();
                     displayData.isConnected = true;
                     
-                    // 대기열 변화 로깅
-                    const currentWaitingCount = displayData.waiting.length;
-                    if (previousWaitingCount !== currentWaitingCount) {
-                        console.log(`📊 DISPLAY - 대기열 변화: ${previousWaitingCount}개 → ${currentWaitingCount}개`);
-                        
-                        if (currentWaitingCount === 0) {
-                            console.log('🗑️ DISPLAY - 대기열 완전 초기화됨');
-                        }
-                    }
-                    
                     // 즉시 화면 업데이트
                     updateDisplay();
-                    
-                    // 기존 호출 감지 로직 (백업용)
-                    const newCallNumber = data.currentCall?.number || '-';
-                    const oldCallNumber = displayData.currentCall?.number || '-';
-                    
-                    if (newCallNumber !== '-' && 
-                        newCallNumber !== oldCallNumber && 
-                        newCallNumber !== displayData.lastCalledNumber &&
-                        !data.currentCall?.immediateCall) {
-                        
-                        displayData.lastCalledNumber = newCallNumber;
-                        
-                        setTimeout(() => {
-                            playCallSound(data.currentCall?.isRecall);
-                        }, 500);
-                        
-                        console.log(`🔔 백업 호출음: ${newCallNumber}`);
-                    }
                     
                 } else {
                     console.log('📭 DISPLAY - Firebase 데이터 없음');
                     displayData.isConnected = false;
-                    
-                    // 데이터가 없으면 대기열 초기화
                     displayData.waiting = [];
                     updateDisplay();
                 }
@@ -821,16 +788,16 @@
                     document.getElementById('counterInfo').textContent = '대기 중';
                 }
 
-                // 대기번호 목록 업데이트 (강화)
+                // 대기번호 목록 업데이트 (최대 10개)
                 const waitingContainer = document.getElementById('waitingNumbers');
-                
-                // 기존 내용 완전 삭제
                 waitingContainer.innerHTML = '';
                 
                 if (displayData.waiting && displayData.waiting.length > 0) {
-                    console.log(`📋 ${displayData.waiting.length}개의 대기번호 표시:`, displayData.waiting.map(item => item.number));
+                    // 최대 10개만 표시
+                    const displayWaiting = displayData.waiting.slice(0, 10);
+                    console.log(`📋 ${displayWaiting.length}개의 대기번호 표시 (최대 10개):`, displayWaiting.map(item => item.number));
                     
-                    displayData.waiting.forEach((item, index) => {
+                    displayWaiting.forEach((item, index) => {
                         const div = document.createElement('div');
                         div.className = 'waiting-number';
                         if (index === 0) div.classList.add('next');
@@ -921,7 +888,7 @@
                 }
             }
             
-            // S키: 오디오 토글 (새로 추가)
+            // S키: 오디오 토글
             if (e.key === 's' || e.key === 'S') {
                 toggleAudio();
                 console.log('🔊 S키로 오디오 토글');
@@ -955,10 +922,12 @@
                         console.log('  F11: 전체화면 토글');
                         console.log('🔍 성능 정보:');
                         console.log('  즉시 호출 감지: 활성화');
-                        console.log('  백업 호출음: 500ms 지연');
                         console.log('  오디오 상태:', isAudioEnabled ? '🔊 활성화' : '🔇 비활성화');
                         console.log('  현재 데이터:', displayData);
                         console.log('  마지막 호출:', lastCallData);
+                        console.log('📋 레이아웃 정보:');
+                        console.log('  대기번호: 최대 10개 표시');
+                        console.log('  창구현황: 6개 창구 표시');
                     }
                     
                     adminClicks = 0;
@@ -969,23 +938,16 @@
 
         // 초기화 함수
         function initialize() {
-            console.log('🖥️ DISPLAY 화면 초기화 시작');
-            console.log('⚡ 딜레이 최소화 모드 활성화');
+            console.log('🖥️ DISPLAY 화면 초기화 시작 (새 레이아웃)');
+            console.log('📋 레이아웃: 현재 호출 | (대기번호 + 창구현황)');
+            console.log('🔢 대기번호: 최대 10개 표시');
+            console.log('🏢 창구현황: 6개 창구 표시');
             console.log('🔇 오디오 비활성화 상태로 시작 - 🔇 버튼 클릭하여 활성화');
             
             // Firebase 리스너 설정 (즉시)
             setupFirebaseListeners();
             
             console.log('✅ DISPLAY 화면 초기화 완료');
-            console.log('🎯 호출음 정보:');
-            console.log('  - 창구: 호출음 비활성화');
-            console.log('  - 디스플레이: 🔇 클릭하여 활성화 필요');
-            console.log('  - 즉시 호출 감지: ON');
-            console.log('  - 백업 호출음: ON (500ms 지연)');
-            console.log('📋 사용법:');
-            console.log('  1. "🔇 현재 호출" 클릭하여 오디오 활성화');
-            console.log('  2. 🔊로 바뀌면서 테스트음 재생');
-            console.log('  3. 이후 모든 호출음 자동 재생');
         }
 
         // 페이지 로드 완료 시 초기화
@@ -1018,7 +980,7 @@
                 console.log('  오디오 상태:', isAudioEnabled ? '🔊 활성화' : '🔇 비활성화');
                 console.log('  마지막 호출 데이터:', lastCallData?.number || 'None');
             }
-        }, 10000); // 10초마다
+        }, 10000);
     </script>
 </body>
 </html>
