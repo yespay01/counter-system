@@ -679,7 +679,7 @@
             return 'serial' in navigator;
         }
 
-        // 프린터 연결
+        // 프린터 연결 (수동 - 포트 선택창 표시)
         async function connectPrinter() {
             if (!isSerialSupported()) {
                 showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
@@ -693,26 +693,9 @@
                     await disconnectPrinter();
                 }
                 
+                // 수동 연결 - 사용자가 포트 선택
                 serialPort = await navigator.serial.requestPort();
-                await serialPort.open({ 
-                    baudRate: baudRate,
-                    dataBits: 8,
-                    stopBits: 1,
-                    parity: 'none',
-                    flowControl: 'none'
-                });
-
-                const textEncoder = new TextEncoderStream();
-                const writableStreamClosed = textEncoder.readable.pipeTo(serialPort.writable);
-                writer = textEncoder.writable.getWriter();
-
-                isPrinterConnected = true;
-                updatePrinterStatus();
-                
-                await sendToPrinter(ESCPOS.INIT);
-                
-                showMessage('printerMessage', '✅ 프린터가 성공적으로 연결되었습니다!', 'success');
-                console.log('🖨️ 프린터 연결 성공');
+                await openPrinterPort(serialPort, baudRate);
 
             } catch (error) {
                 console.error('프린터 연결 오류:', error);
@@ -732,6 +715,29 @@
                 
                 showMessage('printerMessage', errorMsg, 'error');
             }
+        }
+
+        // 프린터 포트 열기 (공통 함수)
+        async function openPrinterPort(port, baudRate) {
+            await port.open({ 
+                baudRate: baudRate,
+                dataBits: 8,
+                stopBits: 1,
+                parity: 'none',
+                flowControl: 'none'
+            });
+
+            const textEncoder = new TextEncoderStream();
+            const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+            writer = textEncoder.writable.getWriter();
+
+            isPrinterConnected = true;
+            updatePrinterStatus();
+            
+            await sendToPrinter(ESCPOS.INIT);
+            
+            showMessage('printerMessage', '✅ 프린터가 성공적으로 연결되었습니다!', 'success');
+            console.log('🖨️ 프린터 연결 성공');
         }
 
         // 프린터 연결 해제
