@@ -896,13 +896,13 @@
             let messageText = '';
             switch(type) {
                 case 'waiting':
-                    messageText = '현재 대기 중인 모든 번호를 삭제합니다.<br><strong>진행 중인 상담은 유지됩니다.</strong>';
+                    messageText = '현재 대기 중인 모든 번호를 삭제하고 번호 카운터를 초기화합니다.<br><strong>진행 중인 상담은 유지됩니다.</strong><br><br><strong>⚠️ 다음 발급 번호가 001부터 시작됩니다.</strong>';
                     break;
                 case 'partial':
                     messageText = '오늘 총 접수 수와 모든 창구의 상담 완료 수를 0으로 초기화합니다.<br><strong>현재 대기열과 진행 중인 상담은 유지됩니다.</strong>';
                     break;
                 case 'all':
-                    messageText = '<strong style="color: #e74c3c;">모든 데이터를 완전히 초기화합니다!</strong><br>• 모든 대기번호 삭제<br>• 진행 중인 상담 종료<br>• 모든 통계 초기화<br><br><strong>이 작업은 되돌릴 수 없습니다.</strong>';
+                    messageText = '<strong style="color: #e74c3c;">모든 데이터를 완전히 초기화합니다!</strong><br>• 모든 대기번호 삭제<br>• 번호 카운터 초기화 (001부터 재시작)<br>• 진행 중인 상담 종료<br>• 모든 통계 초기화<br><br><strong>이 작업은 되돌릴 수 없습니다.</strong>';
                     break;
             }
             
@@ -920,9 +920,10 @@
             
             switch(currentResetType) {
                 case 'waiting':
-                    // 대기열만 초기화
+                    // 대기열 + 번호 카운터 모두 초기화
                     sharedData.waiting = [];
-                    successMsg = '대기열이 초기화되었습니다.';
+                    sharedData.currentNumbers = {}; // 번호 카운터도 초기화!
+                    successMsg = '대기열 및 번호 카운터가 초기화되었습니다.';
                     break;
                     
                 case 'partial':
@@ -948,7 +949,9 @@
                             { id: 6, current: null, course: null, count: 0 }
                         ],
                         totalToday: 0,
-                        lastUpdated: null
+                        lastUpdated: null,
+                        currentNumbers: {}, // 번호 카운터도 초기화
+                        lastDate: new Date().toISOString().split('T')[0] // 오늘 날짜
                     };
                     successMsg = '모든 데이터가 초기화되었습니다.';
                     break;
