@@ -1012,14 +1012,33 @@
             counter.current = nextCustomer.number;
             counter.course = nextCustomer.course;
             
-            // 현재 호출 업데이트 (일반 호출)
+            // 현재 호출 업데이트 (일반 호출) - 디스플레이 연동 강화
             sharedData.currentCall = {
                 number: nextCustomer.number,
                 counter: currentCounter,
                 course: nextCustomer.course,
                 isRecall: false,
-                callTime: new Date().toISOString()
+                callTime: new Date().toISOString(),
+                recallCount: 0 // 재호출 횟수 초기화
             };
+            
+            // 호출 로그 추가
+            if (!sharedData.callLog) {
+                sharedData.callLog = [];
+            }
+            
+            sharedData.callLog.push({
+                number: nextCustomer.number,
+                counter: currentCounter,
+                course: nextCustomer.course,
+                time: new Date().toISOString(),
+                type: 'call'
+            });
+            
+            // 최근 100개만 유지
+            if (sharedData.callLog.length > 100) {
+                sharedData.callLog = sharedData.callLog.slice(-100);
+            }
             
             saveToFirebase();
             playCallSound(false); // 일반 호출음
@@ -1040,20 +1059,87 @@
             counter.current = customer.number;
             counter.course = customer.course;
             
-            // 현재 호출 업데이트 (직접 호출)
+            // 현재 호출 업데이트 (직접 호출) - 디스플레이 연동
             sharedData.currentCall = {
                 number: customer.number,
                 counter: currentCounter,
                 course: customer.course,
                 isRecall: false,
                 isDirectCall: true,
-                callTime: new Date().toISOString()
+                callTime: new Date().toISOString(),
+                recallCount: 0 // 재호출 횟수 초기화
             };
+            
+            // 직접 호출 로그 추가
+            if (!sharedData.callLog) {
+                sharedData.callLog = [];
+            }
+            
+            sharedData.callLog.push({
+                number: customer.number,
+                counter: currentCounter,
+                course: customer.course,
+                time: new Date().toISOString(),
+                type: 'direct_call',
+                fromWaiting: true
+            });
             
             saveToFirebase();
             playCallSound(false); // 일반 호출음
             
             showMessage(`📢 ${customer.number} 호출 완료!`);
+        }
+
+        function completeService() {
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            if (!counter.current) {
+                alert('현재 상담 중인 고객이 없습니다.');
+                return;
+            }
+            
+            const completedNumber = counter.current;
+            const completedCourse = counter.course;
+            
+            counter.current = null;
+            counter.course = null;
+            counter.count = (counter.count || 0) + 1;
+            
+            // 현재 호출 정보 초기화 - 디스플레이에서 인식 가능
+            sharedData.currentCall = {
+                number: '-',
+                counter: 0,
+                course: '-',
+                lastCompleted: {
+                    number: completedNumber,
+                    course: completedCourse,
+                    counter: currentCounter,
+                    time: new Date().toISOString()
+                }
+            };
+            
+            // 완료 로그 추가
+            if (!sharedData.completeLog) {
+                sharedData.completeLog = [];
+            }
+            
+            sharedData.completeLog.push({
+                number: completedNumber,
+                course: completedCourse,
+                counter: currentCounter,
+                time: new Date().toISOString(),
+                type: 'complete'
+            });
+            
+            // 최근 100개만 유지
+            if (sharedData.completeLog.length > 100) {
+                sharedData.completeLog = sharedData.completeLog.slice(-100);
+            }
+            
+            saveToFirebase();
+            
+            // 성공 메시지
+            showMessage(`${completedNumber} 상담 완료!`);
         }
 
         // 초기화
