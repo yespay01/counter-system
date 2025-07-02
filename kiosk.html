@@ -679,7 +679,7 @@
             return 'serial' in navigator;
         }
 
-        // 프린터 연결 (수동 - 포트 선택창 표시)
+        // 프린터 연결 (수동 - 포트 선택창 표시 + 점유 확인)
         async function connectPrinter() {
             if (!isSerialSupported()) {
                 showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
@@ -706,9 +706,17 @@
                 if (error.name === 'NotFoundError') {
                     errorMsg += '사용자가 포트 선택을 취소했습니다.';
                 } else if (error.name === 'InvalidStateError') {
-                    errorMsg += '포트가 이미 사용 중입니다.';
+                    errorMsg = '⚠️ 프린터가 다른 브라우저 탭에서 사용 중입니다.<br>' +
+                              '<strong>해결 방법:</strong><br>' +
+                              '1. 다른 키오스크 탭 모두 닫기<br>' +
+                              '2. 이 페이지 새로고침 (F5)<br>' +
+                              '3. 다시 연결 시도<br><br>' +
+                              '<small>※ 시리얼 포트는 한 번에 하나의 탭에서만 사용 가능합니다.</small>';
                 } else if (error.name === 'NetworkError') {
-                    errorMsg += '포트를 열 수 없습니다.';
+                    errorMsg += '포트를 열 수 없습니다. 프린터가 연결되어 있는지 확인하세요.';
+                } else if (error.message && error.message.includes('already open')) {
+                    errorMsg = '⚠️ 선택한 포트가 다른 곳에서 사용 중입니다.<br>' +
+                              '다른 키오스크 프로그램을 종료하고 다시 시도하세요.';
                 } else {
                     errorMsg += error.message;
                 }
