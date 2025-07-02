@@ -100,7 +100,7 @@
         }
         
         .current-number {
-            font-size: 7rem;
+            font-size: 9rem;
             font-weight: 900;
             color: #00FF88;
             text-shadow: 
@@ -216,6 +216,11 @@
             flex: 1;
         }
         
+        /* 대기번호 동적 크기 조절 */
+        .waiting-numbers.few .waiting-number .number-text { font-size: 1.6rem; }
+        .waiting-numbers.medium .waiting-number .number-text { font-size: 1.4rem; }
+        .waiting-numbers.many .waiting-number .number-text { font-size: 1.2rem; }
+        
         /* 스크롤바 커스터마이징 */
         .waiting-numbers::-webkit-scrollbar {
             width: 6px;
@@ -266,6 +271,7 @@
             font-size: 1.3rem;
             font-weight: 900;
             text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: font-size 0.3s ease;
         }
         
         .course-text {
@@ -348,11 +354,12 @@
             text-shadow: 0 2px 12px rgba(255,215,0,0.4);
         }
         
-        .counter-course {
-            font-size: 0.7rem;
-            opacity: 0.8;
+        .counter-status-text {
+            font-size: 0.8rem;
+            opacity: 0.9;
             margin-top: 4px;
-            font-weight: 400;
+            font-weight: 500;
+            color: #FFD700;
         }
         
         .status-bar {
@@ -417,7 +424,7 @@
             }
             
             .current-number {
-                font-size: 6rem;
+                font-size: 8rem;
             }
             
             .section-title, .waiting-title, .counter-title {
@@ -435,7 +442,7 @@
             }
             
             .current-number {
-                font-size: 5rem;
+                font-size: 6rem;
             }
             
             .section-title, .waiting-title, .counter-title {
@@ -793,9 +800,19 @@
                 waitingContainer.innerHTML = '';
                 
                 if (displayData.waiting && displayData.waiting.length > 0) {
-                    // 최대 8개만 표시
-                    const displayWaiting = displayData.waiting.slice(0, 8);
-                    console.log(`📋 ${displayWaiting.length}개의 대기번호 표시 (최대 8개):`, displayWaiting.map(item => item.number));
+                    // 최대 10개만 표시
+                    const displayWaiting = displayData.waiting.slice(0, 10);
+                    console.log(`📋 ${displayWaiting.length}개의 대기번호 표시 (최대 10개):`, displayWaiting.map(item => item.number));
+                    
+                    // 대기번호 개수에 따른 크기 조절
+                    waitingContainer.className = 'waiting-numbers';
+                    if (displayWaiting.length <= 4) {
+                        waitingContainer.classList.add('few');
+                    } else if (displayWaiting.length <= 7) {
+                        waitingContainer.classList.add('medium');
+                    } else {
+                        waitingContainer.classList.add('many');
+                    }
                     
                     displayWaiting.forEach((item, index) => {
                         const div = document.createElement('div');
@@ -823,14 +840,18 @@
                     const div = document.createElement('div');
                     div.className = 'counter-item';
                     
-                    if (counter.current && counter.current !== '-') {
+                    const hasCustomer = counter.current && counter.current !== '-';
+                    if (hasCustomer) {
                         div.classList.add('active');
                     }
+                    
+                    // 상태 텍스트 결정
+                    const statusText = hasCustomer ? '상담중' : '대기중';
                     
                     div.innerHTML = `
                         <div class="counter-name">${counter.id}번 창구</div>
                         <div class="counter-number">${counter.current || '-'}</div>
-                        <div class="counter-course">${counter.course || ''}</div>
+                        <div class="counter-status-text">${statusText}</div>
                     `;
                     counterContainer.appendChild(div);
                 });
@@ -926,7 +947,7 @@
                         console.log('  현재 데이터:', displayData);
                         console.log('  마지막 호출:', lastCallData);
                         console.log('📋 레이아웃 정보:');
-                        console.log('  대기번호: 최대 8개 표시');
+                        console.log('  대기번호: 최대 10개 표시 (동적 크기)');
                         console.log('  창구현황: 6개 창구 표시');
                     }
                     
@@ -940,7 +961,7 @@
         function initialize() {
             console.log('🖥️ DISPLAY 화면 초기화 시작 (새 레이아웃)');
             console.log('📋 레이아웃: 현재 호출 | (대기번호 + 창구현황)');
-            console.log('🔢 대기번호: 최대 8개 표시');
+            console.log('🔢 대기번호: 최대 10개 표시 (동적 크기 조절)');
             console.log('🏢 창구현황: 6개 창구 표시');
             console.log('🔇 오디오 비활성화 상태로 시작 - 🔇 버튼 클릭하여 활성화');
             
