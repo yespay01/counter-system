@@ -245,11 +245,17 @@
             font-size: 1.2rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            user-select: none; /* 텍스트 선택 방지 */
+            position: relative; /* 클릭 영역 확실히 */
         }
         .waiting-item:hover {
             border-color: #667eea;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .waiting-item:active {
+            transform: translateY(0px); /* 클릭 시 즉시 반응 */
+            transition: none; /* 빠른 반응 */
         }
         .waiting-item.next {
             border-color: #00b894;
@@ -699,13 +705,28 @@
                     div.className = 'waiting-item';
                     if (index === 0) div.classList.add('next');
                     
+                    // 클릭 이벤트를 더 확실하게 설정
+                    div.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`클릭된 번호: ${item.number}`);
+                        callSpecific(item.number);
+                    });
+                    
+                    // 터치 이벤트도 추가 (모바일 대응)
+                    div.addEventListener('touchend', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`터치된 번호: ${item.number}`);
+                        callSpecific(item.number);
+                    });
+                    
                     div.innerHTML = `
-                        <div style="font-weight: 900; font-size: 1.2rem;">${item.number}</div>
-                        <div style="font-size: 0.8rem; color: #666;">${item.course}</div>
-                        <div style="font-size: 0.7rem; color: #999;">${item.time}</div>
+                        <div style="font-weight: 900; font-size: 1.2rem; pointer-events: none;">${item.number}</div>
+                        <div style="font-size: 0.8rem; color: #666; pointer-events: none;">${item.course}</div>
+                        <div style="font-size: 0.7rem; color: #999; pointer-events: none;">${item.time}</div>
                     `;
                     
-                    div.onclick = () => callSpecific(item.number);
                     waitingContainer.appendChild(div);
                 });
             } else {
