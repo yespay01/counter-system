@@ -793,9 +793,9 @@
                 waitingContainer.innerHTML = '';
                 
                 if (displayData.waiting && displayData.waiting.length > 0) {
-                    // 최대 10개만 표시
-                    const displayWaiting = displayData.waiting.slice(0, 10);
-                    console.log(`📋 ${displayWaiting.length}개의 대기번호 표시 (최대 10개):`, displayWaiting.map(item => item.number));
+                    // 최대 8개만 표시
+                    const displayWaiting = displayData.waiting.slice(0, 8);
+                    console.log(`📋 ${displayWaiting.length}개의 대기번호 표시 (최대 8개):`, displayWaiting.map(item => item.number));
                     
                     displayWaiting.forEach((item, index) => {
                         const div = document.createElement('div');
@@ -926,7 +926,7 @@
                         console.log('  현재 데이터:', displayData);
                         console.log('  마지막 호출:', lastCallData);
                         console.log('📋 레이아웃 정보:');
-                        console.log('  대기번호: 최대 10개 표시');
+                        console.log('  대기번호: 최대 8개 표시');
                         console.log('  창구현황: 6개 창구 표시');
                     }
                     
@@ -940,7 +940,7 @@
         function initialize() {
             console.log('🖥️ DISPLAY 화면 초기화 시작 (새 레이아웃)');
             console.log('📋 레이아웃: 현재 호출 | (대기번호 + 창구현황)');
-            console.log('🔢 대기번호: 최대 10개 표시');
+            console.log('🔢 대기번호: 최대 8개 표시');
             console.log('🏢 창구현황: 6개 창구 표시');
             console.log('🔇 오디오 비활성화 상태로 시작 - 🔇 버튼 클릭하여 활성화');
             
