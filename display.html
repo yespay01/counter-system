@@ -588,19 +588,23 @@
             }
         }
 
-        // 즉시 호출 감지 및 처리 (재호출 감지 강화)
+        // 즉시 호출 감지 및 처리 (일반 호출 감지 강화)
         function handleImmediateCall(data) {
             const currentCall = data.currentCall;
             
             if (!currentCall || currentCall.number === '-') return;
             
-            // 즉시 호출 플래그 확인 (일반 호출 + 재호출)
+            // 즉시 호출 플래그 확인 (일반 호출 + 재호출 + 직접 호출)
             if (currentCall.immediateCall) {
-                console.log('⚡ 즉시 호출 감지:', currentCall.number, currentCall.isRecall ? '(재호출)' : '(일반호출)');
+                const callType = currentCall.isRecall ? '재호출' : 
+                               currentCall.isDirectCall ? '직접호출' : '일반호출';
                 
-                // 호출 키 생성 (재호출 시간도 포함)
-                const callKey = `${currentCall.number}-${currentCall.callTime || currentCall.recallTime || Date.now()}`;
-                const lastCallKey = lastCallData ? `${lastCallData.number}-${lastCallData.callTime || lastCallData.recallTime}` : null;
+                console.log('⚡ 즉시 호출 감지:', currentCall.number, `(${callType})`);
+                
+                // 호출 키 생성 (모든 호출 타입 지원)
+                const callKey = `${currentCall.number}-${currentCall.callTime || currentCall.recallTime || Date.now()}-${currentCall.callType || 'unknown'}`;
+                const lastCallKey = lastCallData ? 
+                    `${lastCallData.number}-${lastCallData.callTime || lastCallData.recallTime}-${lastCallData.callType || 'unknown'}` : null;
                 
                 if (callKey !== lastCallKey) {
                     // 호출음 즉시 재생
@@ -618,11 +622,34 @@
                     // 이전 호출 데이터 업데이트
                     lastCallData = { ...currentCall };
                     
-                    console.log(`🔔 DISPLAY 호출음 재생: ${currentCall.number} ${currentCall.isRecall ? '(재호출)' : '(일반호출)'}`);
+                    console.log(`🔔 DISPLAY 호출음 재생: ${currentCall.number} (${callType})`);
                 }
             }
             
-            // 재호출 시간 기반 감지 (백업 로직)
+            // 추가: callTime 기반 일반 호출 감지 (백업 로직)
+            if (!currentCall.isRecall && currentCall.callTime && currentCall.callType === 'normal') {
+                const normalCallKey = `normal-${currentCall.number}-${currentCall.callTime}`;
+                const lastNormalKey = lastCallData ? `normal-${lastCallData.number}-${lastCallData.callTime}` : null;
+                
+                if (normalCallKey !== lastNormalKey) {
+                    console.log('📢 일반 호출 백업 감지:', currentCall.number);
+                    playCallSound(false);
+                    
+                    // 화면 강조 효과
+                    const numberEl = document.getElementById('currentNumber');
+                    if (numberEl) {
+                        numberEl.classList.add('calling');
+                        setTimeout(() => {
+                            numberEl.classList.remove('calling');
+                        }, 3000);
+                    }
+                    
+                    lastCallData = { ...currentCall };
+                    console.log(`🔔 DISPLAY 일반 호출 백업음 재생: ${currentCall.number}`);
+                }
+            }
+            
+            // 재호출 시간 기반 감지 (기존 백업 로직 유지)
             if (currentCall.isRecall && currentCall.recallTime) {
                 const recallKey = `recall-${currentCall.number}-${currentCall.recallTime}`;
                 const lastRecallKey = lastCallData ? `recall-${lastCallData.number}-${lastCallData.recallTime}` : null;
