@@ -685,6 +685,37 @@
         let isPrinterConnected = false;
         let serialPort = null;
         let writer = null;
+        let timeSettings = [];
+        let courses = [
+            { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
+            { code: 'EN', name: '영어 과정', englishName: 'English Course' },
+            { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
+            { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+        ];
+
+        // 기본 시간대 설정
+        const defaultTimeSettings = [
+            {
+                startTime: '09:00',
+                endTime: '12:00',
+                courses: ['CH', 'EN']
+            },
+            {
+                startTime: '12:00',
+                endTime: '15:00',
+                courses: ['EN', 'HSK']
+            },
+            {
+                startTime: '15:00',
+                endTime: '18:00',
+                courses: ['HSK', 'TO']
+            },
+            {
+                startTime: '18:00',
+                endTime: '21:00',
+                courses: ['TO', 'CH']
+            }
+        ];
 
         // 설정 패널 토글 함수
         function toggleSettingsPanel() {
@@ -727,10 +758,348 @@
             showMessage('테스트 출력을 실행했습니다.', 'success');
         }
 
-        // 프린터 상태 확인
-        async function checkPrinterStatus() {
-            console.log('🔍 프린터 상태 확인');
-            showMessage('프린터 상태를 확인했습니다.', 'success');
+        // 날짜 옵션 선택
+        function selectDateOption(option) {
+            console.log('📅 날짜 옵션 선택:', option);
+            
+            document.querySelectorAll('.date-option').forEach(el => el.classList.remove('selected'));
+            const selectedEl = document.getElementById(`dateOption-${option}`);
+            if (selectedEl) {
+                selectedEl.classList.add('selected');
+            }
+            
+            const customInput = document.getElementById('customDateFormat');
+            const dateFormatSelect = document.getElementById('dateFormat');
+            
+            if (option === 'none') {
+                if (dateFormatSelect) dateFormatSelect.disabled = true;
+                if (customInput) customInput.style.display = 'none';
+            } else {
+                if (dateFormatSelect) dateFormatSelect.disabled = false;
+                if (dateFormatSelect && dateFormatSelect.value === 'custom' && customInput) {
+                    customInput.style.display = 'block';
+                }
+            }
+            
+            updatePreview();
+        }
+
+        // 미리보기 업데이트
+        function updatePreview() {
+            console.log('👁️ 미리보기 업데이트');
+            const previewEl = document.getElementById('printPreview');
+            if (!previewEl) return;
+            
+            const paperWidth = parseInt(document.getElementById('paperWidth')?.value || '42');
+            const numberFontSize = document.getElementById('numberFontSize')?.value || 'xlarge';
+            
+            let preview = '\n\n\n';
+            preview += '='.repeat(paperWidth) + '\n\n\n\n';
+            
+            if (numberFontSize === 'huge') {
+                preview += '         ████████████\n';
+                preview += '         ██  CH001  ██\n';
+                preview += '         ████████████\n';
+            } else if (numberFontSize === 'xlarge') {
+                preview += '         ████████\n';
+                preview += '         █ CH001 █\n';
+                preview += '         ████████\n';
+            } else if (numberFontSize === 'large') {
+                preview += '         【CH001】\n';
+            } else {
+                preview += '         CH001\n';
+            }
+            
+            preview += '\n\n\n';
+            preview += '='.repeat(paperWidth) + '\n\n\n\n';
+            
+            previewEl.textContent = preview;
+        }
+
+        // 시간대 추가
+        function addTimePeriod() {
+            console.log('⏰ 시간대 추가');
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: []
+            });
+            renderTimePeriodsEditor();
+        }
+
+        // 시간대 삭제
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+            }
+        }
+
+        // 시간대별 설정 렌더링
+        function renderTimePeriodsEditor() {
+            console.log('🎨 시간대 설정 렌더링');
+            const container = document.getElementById('timePeriodsContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.className = 'time-period';
+                
+                // 헤더
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'time-period-header';
+                
+                const titleSpan = document.createElement('strong');
+                titleSpan.textContent = `시간대 ${index + 1}`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'setting-btn danger';
+                deleteBtn.textContent = '삭제';
+                deleteBtn.onclick = function(e) {
+                    e.preventDefault();
+                    removeTimePeriod(index);
+                };
+                
+                headerDiv.appendChild(titleSpan);
+                headerDiv.appendChild(deleteBtn);
+                
+                // 시간 입력
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'time-inputs';
+                
+                const startInput = document.createElement('input');
+                startInput.type = 'time';
+                startInput.className = 'time-input';
+                startInput.value = period.startTime;
+                startInput.addEventListener('change', function() {
+                    updateTimeField(index, 'startTime', this.value);
+                });
+                
+                const separator = document.createElement('span');
+                separator.textContent = '~';
+                separator.style.fontWeight = 'bold';
+                
+                const endInput = document.createElement('input');
+                endInput.type = 'time';
+                endInput.className = 'time-input';
+                endInput.value = period.endTime;
+                endInput.addEventListener('change', function() {
+                    updateTimeField(index, 'endTime', this.value);
+                });
+                
+                timeDiv.appendChild(startInput);
+                timeDiv.appendChild(separator);
+                timeDiv.appendChild(endInput);
+                
+                // 과목 선택 라벨
+                const courseLabel = document.createElement('div');
+                courseLabel.innerHTML = '<label style="font-weight: 600; margin-bottom: 10px; display: block;">활성화할 과목 선택:</label>';
+                
+                // 체크박스 컨테이너
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'checkbox-container';
+                
+                // 과목별 체크박스 생성
+                courses.forEach(course => {
+                    const isChecked = period.courses.includes(course.code);
+                    
+                    const checkboxItem = document.createElement('div');
+                    checkboxItem.className = 'checkbox-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = isChecked;
+                    checkbox.addEventListener('change', function() {
+                        toggleCourseInPeriod(index, course.code, this.checked);
+                    });
+                    
+                    const label = document.createElement('label');
+                    label.textContent = `${course.name} (${course.code})`;
+                    
+                    checkboxItem.appendChild(checkbox);
+                    checkboxItem.appendChild(label);
+                    checkboxContainer.appendChild(checkboxItem);
+                });
+                
+                periodDiv.appendChild(headerDiv);
+                periodDiv.appendChild(timeDiv);
+                periodDiv.appendChild(courseLabel);
+                periodDiv.appendChild(checkboxContainer);
+                
+                container.appendChild(periodDiv);
+            });
+        }
+
+        // 시간대에서 과목 토글
+        function toggleCourseInPeriod(periodIndex, courseCode, isChecked) {
+            if (isChecked) {
+                if (!timeSettings[periodIndex].courses.includes(courseCode)) {
+                    timeSettings[periodIndex].courses.push(courseCode);
+                }
+            } else {
+                timeSettings[periodIndex].courses = timeSettings[periodIndex].courses.filter(code => code !== courseCode);
+            }
+            console.log(`과목 ${courseCode} ${isChecked ? '추가' : '제거'}:`, timeSettings[periodIndex].courses);
+        }
+
+        // 시간 필드 업데이트
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+            console.log(`시간대 ${periodIndex + 1} ${field} 변경:`, value);
+        }
+
+        // 시간 설정 저장
+        function saveTimeSettings() {
+            try {
+                localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+                showMessage('✅ 시간 설정이 저장되었습니다!', 'success');
+                console.log('⏰ 시간 설정 저장:', timeSettings);
+            } catch (error) {
+                console.error('❌ 시간 설정 저장 실패:', error);
+                showMessage('❌ 시간 설정 저장 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 기본 시간 설정 복원
+        function loadDefaultTimeSettings() {
+            if (confirm('기본 시간 설정으로 복원하시겠습니까? 현재 설정이 모두 사라집니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+                renderTimePeriodsEditor();
+                showMessage('✅ 기본 설정으로 복원되었습니다!', 'success');
+                console.log('🔄 기본 시간 설정 복원');
+            }
+        }
+
+        // 과목 추가
+        function addCourse() {
+            console.log('📚 과목 추가');
+            const newCourse = {
+                code: 'NEW',
+                name: '새 과목',
+                englishName: 'New Course'
+            };
+            courses.push(newCourse);
+            renderCourseSettings();
+            renderTimePeriodsEditor(); // 시간대 설정도 업데이트
+        }
+
+        // 과목 삭제
+        function removeCourse(index) {
+            if (confirm('이 과목을 삭제하시겠습니까?')) {
+                const removedCourse = courses[index];
+                courses.splice(index, 1);
+                
+                // 시간대 설정에서도 해당 과목 제거
+                timeSettings.forEach(period => {
+                    period.courses = period.courses.filter(code => code !== removedCourse.code);
+                });
+                
+                renderCourseSettings();
+                renderTimePeriodsEditor();
+                console.log('🗑️ 과목 삭제:', removedCourse.name);
+            }
+        }
+
+        // 과목 설정 렌더링
+        function renderCourseSettings() {
+            console.log('🎨 과목 설정 렌더링');
+            const container = document.getElementById('courseSettings');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            courses.forEach((course, index) => {
+                const courseDiv = document.createElement('div');
+                courseDiv.className = 'course-item';
+                
+                const inputContainer = document.createElement('div');
+                inputContainer.className = 'course-inputs';
+                
+                // 코드 입력
+                const codeInput = document.createElement('input');
+                codeInput.type = 'text';
+                codeInput.placeholder = '코드';
+                codeInput.value = course.code;
+                codeInput.className = 'course-input';
+                codeInput.style.width = '80px';
+                codeInput.addEventListener('change', function() {
+                    updateCourse(index, 'code', this.value);
+                });
+                
+                // 한글명 입력
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = '한글명';
+                nameInput.value = course.name;
+                nameInput.className = 'course-input';
+                nameInput.style.width = '150px';
+                nameInput.addEventListener('change', function() {
+                    updateCourse(index, 'name', this.value);
+                });
+                
+                // 영문명 입력
+                const englishInput = document.createElement('input');
+                englishInput.type = 'text';
+                englishInput.placeholder = '영문명';
+                englishInput.value = course.englishName;
+                englishInput.className = 'course-input';
+                englishInput.style.width = '150px';
+                englishInput.addEventListener('change', function() {
+                    updateCourse(index, 'englishName', this.value);
+                });
+                
+                // 삭제 버튼
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'setting-btn danger';
+                deleteBtn.textContent = '삭제';
+                deleteBtn.style.padding = '8px 15px';
+                deleteBtn.style.fontSize = '0.9rem';
+                deleteBtn.onclick = function(e) {
+                    e.preventDefault();
+                    removeCourse(index);
+                };
+                
+                inputContainer.appendChild(codeInput);
+                inputContainer.appendChild(nameInput);
+                inputContainer.appendChild(englishInput);
+                inputContainer.appendChild(deleteBtn);
+                
+                courseDiv.appendChild(inputContainer);
+                container.appendChild(courseDiv);
+            });
+        }
+
+        // 과목 정보 업데이트
+        function updateCourse(index, field, value) {
+            const oldValue = courses[index][field];
+            courses[index][field] = value;
+            console.log(`과목 ${index + 1} ${field} 변경: ${oldValue} → ${value}`);
+            
+            // 코드가 변경된 경우 시간대 설정도 업데이트
+            if (field === 'code') {
+                timeSettings.forEach(period => {
+                    const courseIndex = period.courses.indexOf(oldValue);
+                    if (courseIndex !== -1) {
+                        period.courses[courseIndex] = value;
+                    }
+                });
+                renderTimePeriodsEditor();
+            }
+        }
+
+        // 모든 포트 권한 삭제
+        function forgetAllPorts() {
+            if (!confirm('저장된 모든 프린터 포트 권한을 삭제하시겠습니까?')) {
+                return;
+            }
+            
+            showMessage(
+                '🔧 브라우저 설정에서 포트 권한을 삭제해야 합니다:\n' +
+                '1. Chrome 주소창에 입력: chrome://settings/content/serialPorts\n' +
+                '2. 또는: 설정 → 개인정보 및 보안 → 사이트 설정 → 추가 권한 → 시리얼 포트\n' +
+                '3. 저장된 포트 권한 모두 삭제', 'error');
         }
 
         // 메시지 표시
