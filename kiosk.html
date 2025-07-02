@@ -1819,7 +1819,7 @@
             }, 3000);
         }
 
-        // Firebase 리스너 설정 (단순화)
+        // Firebase 리스너 설정 (서버 우선 동기화)
         function setupFirebaseListener() {
             if (!window.firebaseDB) return;
             
@@ -1827,22 +1827,26 @@
             window.firebaseOnValue(systemRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    console.log('🔥 Firebase 데이터 동기화:', data);
+                    console.log('🔥 KIOSK - Firebase 데이터 동기화:', data);
                     
-                    // 기존 데이터 업데이트
-                    sharedData = { ...sharedData, ...data };
+                    // 서버 데이터로 완전 덮어쓰기 (로컬 데이터 무시)
+                    sharedData = { 
+                        waiting: data.waiting || [],  // 서버의 대기열이 우선
+                        counters: data.counters || sharedData.counters,
+                        totalToday: data.totalToday || 0,
+                        currentNumbers: data.currentNumbers || {},
+                        lastDate: data.lastDate || null,
+                        lastUpdated: data.lastUpdated || null,
+                        currentCall: data.currentCall || sharedData.currentCall
+                    };
                     
-                    // 번호 카운터가 없으면 초기화
-                    if (!sharedData.currentNumbers) {
-                        sharedData.currentNumbers = {};
-                    }
+                    console.log('📊 KIOSK - 동기화된 대기열 크기:', sharedData.waiting.length);
+                    console.log('🔢 KIOSK - 동기화된 번호 카운터:', sharedData.currentNumbers);
                     
                     // 날짜 체크 (다른 키오스크에서 날짜가 바뀌었을 수 있음)
                     if (checkDateAndResetCounters()) {
-                        console.log('📅 다른 키오스크에서 날짜 변경됨 - 동기화 완료');
+                        console.log('📅 KIOSK - 다른 키오스크에서 날짜 변경됨 - 동기화 완료');
                     }
-                    
-                    console.log('📊 현재 번호 카운터:', sharedData.currentNumbers);
                 }
             });
         }
