@@ -107,6 +107,31 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s ease; /* 즉시 업데이트를 위한 트랜지션 */
+        }
+        
+        /* 호출 시 강조 효과 */
+        .current-number.calling {
+            animation: callPulse 1s ease-in-out 3; /* 3번 깜빡임 */
+            transform: scale(1.1);
+        }
+        
+        @keyframes callPulse {
+            0%, 100% { 
+                transform: scale(1.1);
+                text-shadow: 
+                    0 0 30px rgba(0,255,136,0.6),
+                    0 0 60px rgba(0,255,136,0.4),
+                    0 0 90px rgba(0,255,136,0.2);
+            }
+            50% { 
+                transform: scale(1.2);
+                text-shadow: 
+                    0 0 60px rgba(255,215,0,0.8),
+                    0 0 100px rgba(255,215,0,0.6),
+                    0 0 140px rgba(255,215,0,0.4);
+                color: #FFD700;
+            }
         }
         
         @keyframes glow {
@@ -514,14 +539,15 @@
         };
 
         let isDebugMode = false;
+        let lastCallData = null; // 이전 호출 데이터 저장
 
-        // 호출음 재생 함수
-        function playCallSound() {
+        // 개선된 호출음 재생 함수 (딜레이 최소화)
+        function playCallSound(isRecall = false) {
             try {
                 // Web Audio API를 사용한 띵동 소리 생성
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 
-                // 첫 번째 음 (띵)
+                // 첫 번째 음 (띵) - 즉시 재생
                 const oscillator1 = audioContext.createOscillator();
                 const gainNode1 = audioContext.createGain();
                 
@@ -531,13 +557,13 @@
                 oscillator1.frequency.setValueAtTime(800, audioContext.currentTime);
                 oscillator1.type = 'sine';
                 
-                gainNode1.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                gainNode1.gain.setValueAtTime(0.4, audioContext.currentTime); // 볼륨 증가
+                gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + (isRecall ? 0.8 : 0.5));
                 
                 oscillator1.start(audioContext.currentTime);
-                oscillator1.stop(audioContext.currentTime + 0.5);
+                oscillator1.stop(audioContext.currentTime + (isRecall ? 0.8 : 0.5));
                 
-                // 두 번째 음 (동) - 0.6초 후
+                // 두 번째 음 (동)
                 setTimeout(() => {
                     const oscillator2 = audioContext.createOscillator();
                     const gainNode2 = audioContext.createGain();
@@ -548,21 +574,56 @@
                     oscillator2.frequency.setValueAtTime(600, audioContext.currentTime);
                     oscillator2.type = 'sine';
                     
-                    gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.7);
+                    gainNode2.gain.setValueAtTime(0.4, audioContext.currentTime);
+                    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + (isRecall ? 0.8 : 0.7));
                     
                     oscillator2.start(audioContext.currentTime);
-                    oscillator2.stop(audioContext.currentTime + 0.7);
-                }, 600);
+                    oscillator2.stop(audioContext.currentTime + (isRecall ? 0.8 : 0.7));
+                }, isRecall ? 900 : 600);
                 
-                console.log('🔔 호출음 재생');
+                console.log(`🔊 디스플레이 호출음 재생 ${isRecall ? '(재호출)' : '(일반)'}`);
                 
             } catch (error) {
                 console.error('호출음 재생 오류:', error);
             }
         }
 
-        // Firebase에서 실시간 데이터 수신
+        // 즉시 호출 감지 및 처리 (딜레이 최소화)
+        function handleImmediateCall(data) {
+            const currentCall = data.currentCall;
+            
+            if (!currentCall || currentCall.number === '-') return;
+            
+            // 즉시 호출 플래그 확인
+            if (currentCall.immediateCall) {
+                console.log('⚡ 즉시 호출 감지:', currentCall.number);
+                
+                // 이전 호출과 다른 경우에만 호출음 재생
+                const callKey = `${currentCall.number}-${currentCall.callTime || currentCall.recallTime}`;
+                const lastCallKey = lastCallData ? `${lastCallData.number}-${lastCallData.callTime || lastCallData.recallTime}` : null;
+                
+                if (callKey !== lastCallKey) {
+                    // 호출음 즉시 재생
+                    playCallSound(currentCall.isRecall);
+                    
+                    // 화면 강조 효과
+                    const numberEl = document.getElementById('currentNumber');
+                    if (numberEl) {
+                        numberEl.classList.add('calling');
+                        setTimeout(() => {
+                            numberEl.classList.remove('calling');
+                        }, 3000);
+                    }
+                    
+                    // 이전 호출 데이터 업데이트
+                    lastCallData = { ...currentCall };
+                    
+                    console.log(`🔔 즉시 호출음 재생: ${currentCall.number} ${currentCall.isRecall ? '(재호출)' : ''}`);
+                }
+            }
+        }
+
+        // Firebase에서 실시간 데이터 수신 (딜레이 최소화)
         function setupFirebaseListeners() {
             if (!window.firebaseDB) {
                 console.error('Firebase가 초기화되지 않았습니다.');
@@ -576,23 +637,27 @@
                 console.log('🔥 Firebase 데이터 수신:', data);
                 
                 if (data) {
-                    // 현재 호출 정보 체크 (호출음 재생용)
+                    // 즉시 호출 처리 (우선순위)
+                    handleImmediateCall(data);
+                    
+                    // 기존 호출 감지 로직 (백업용)
                     const newCallNumber = data.currentCall?.number || '-';
                     const oldCallNumber = displayData.currentCall.number;
                     
-                    // 새로운 번호가 호출되었는지 확인
+                    // 새로운 번호가 호출되었는지 확인 (즉시 호출이 아닌 경우 백업)
                     if (newCallNumber !== '-' && 
                         newCallNumber !== oldCallNumber && 
-                        newCallNumber !== displayData.lastCalledNumber) {
+                        newCallNumber !== displayData.lastCalledNumber &&
+                        !data.currentCall?.immediateCall) {
                         
                         displayData.lastCalledNumber = newCallNumber;
                         
-                        // 호출음 재생 (1초 지연)
+                        // 백업 호출음 재생 (500ms 지연)
                         setTimeout(() => {
-                            playCallSound();
-                        }, 1000);
+                            playCallSound(data.currentCall?.isRecall);
+                        }, 500);
                         
-                        console.log(`🔔 새 번호 호출: ${newCallNumber}`);
+                        console.log(`🔔 백업 호출음: ${newCallNumber}`);
                     }
                     
                     // 데이터 업데이트
@@ -710,11 +775,18 @@
                 console.log('🎵 테스트 호출음 재생');
             }
             
+            // R키: 재호출 테스트
+            if (e.key === 'r' || e.key === 'R') {
+                playCallSound(true);
+                console.log('🎵 재호출 테스트 음 재생');
+            }
+            
             // D키: 디버그 모드 토글
             if (e.key === 'd' || e.key === 'D') {
                 isDebugMode = !isDebugMode;
                 console.log('디버그 모드:', isDebugMode ? '활성화' : '비활성화');
                 console.log('현재 데이터:', displayData);
+                console.log('마지막 호출 데이터:', lastCallData);
             }
         });
 
@@ -729,9 +801,15 @@
                     
                     if (isDebugMode) {
                         console.log('🎵 키보드 단축키:');
-                        console.log('  T 키: 호출음 테스트');
+                        console.log('  T 키: 일반 호출음 테스트');
+                        console.log('  R 키: 재호출음 테스트');
                         console.log('  D 키: 디버그 정보 표시');
                         console.log('  F11: 전체화면 토글');
+                        console.log('🔍 성능 정보:');
+                        console.log('  즉시 호출 감지: 활성화');
+                        console.log('  백업 호출음: 500ms 지연');
+                        console.log('  현재 데이터:', displayData);
+                        console.log('  마지막 호출:', lastCallData);
                     }
                     
                     adminClicks = 0;
@@ -743,13 +821,17 @@
         // 초기화 함수
         function initialize() {
             console.log('🖥️ DISPLAY 화면 초기화 시작');
+            console.log('⚡ 딜레이 최소화 모드 활성화');
             
-            // Firebase 리스너 설정
-            setTimeout(() => {
-                setupFirebaseListeners();
-            }, 1000);
+            // Firebase 리스너 설정 (즉시)
+            setupFirebaseListeners();
             
             console.log('✅ DISPLAY 화면 초기화 완료');
+            console.log('🎯 호출음 정보:');
+            console.log('  - 창구: 호출음 비활성화');
+            console.log('  - 디스플레이: 호출음 활성화 (즉시 재생)');
+            console.log('  - 즉시 호출 감지: ON');
+            console.log('  - 백업 호출음: ON (500ms 지연)');
         }
 
         // 페이지 로드 완료 시 초기화
@@ -771,6 +853,17 @@
                 location.reload();
             }
         }, 30 * 60 * 1000);
+
+        // 성능 모니터링 (디버그 모드에서만)
+        setInterval(() => {
+            if (isDebugMode) {
+                console.log('📊 성능 정보:');
+                console.log('  Firebase 연결:', displayData.isConnected ? '✅' : '❌');
+                console.log('  대기 인원:', displayData.waiting.length);
+                console.log('  현재 호출:', displayData.currentCall.number);
+                console.log('  마지막 호출 데이터:', lastCallData?.number || 'None');
+            }
+        }, 10000); // 10초마다
     </script>
 </body>
 </html>
