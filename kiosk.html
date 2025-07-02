@@ -24,6 +24,9 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
+        }
+        
+        .header > div {
             position: relative;
         }
         
@@ -32,12 +35,13 @@
             font-size: 3rem;
             font-weight: 900;
             text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin: 0;
         }
         
         .settings-button {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 0;
+            right: 0;
             width: 40px;
             height: 40px;
             background: rgba(255,255,255,0.1);
@@ -655,8 +659,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <button class="settings-button" onclick="toggleSettingsPanel()" title="설정">⚙️</button>
-            <h1>🎫 순번대기표 발급</h1>
+            <div style="position: relative;">
+                <button class="settings-button" id="settingsButton" title="설정">⚙️</button>
+                <h1>🎫 순번대기표 발급</h1>
+            </div>
         </div>
 
         <div class="status-bar">
@@ -682,7 +688,7 @@
     <div class="settings-panel" id="settingsPanel">
         <div class="settings-header">
             🔧 시스템 설정
-            <button class="close-settings" onclick="toggleSettingsPanel()">×</button>
+            <button class="close-settings" id="closeButton">×</button>
         </div>
         <div class="settings-content">
             
@@ -886,6 +892,96 @@
     <script>
         console.log('🚀 스크립트 로드 시작');
 
+        // 전역 함수들을 최상단에 정의
+        window.toggleSettingsPanel = function toggleSettingsPanel() {
+            console.log('⚙️ 설정 패널 토글 시작');
+            const panel = document.getElementById('settingsPanel');
+            
+            if (!panel) {
+                console.error('❌ 설정 패널 요소를 찾을 수 없습니다');
+                return;
+            }
+            
+            const isOpen = panel.classList.contains('open');
+            console.log('현재 패널 상태:', isOpen ? '열림' : '닫힘');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
+                console.log('❌ 설정 패널 닫힘');
+            } else {
+                panel.classList.add('open');
+                console.log('✅ 설정 패널 열림');
+                
+                // 설정 패널 열릴 때 내용 렌더링
+                setTimeout(() => {
+                    try {
+                        console.log('📝 설정 패널 내용 렌더링 시작');
+                        if (typeof updateSystemInfo === 'function') updateSystemInfo();
+                        if (typeof renderCourseSettings === 'function') renderCourseSettings();
+                        if (typeof renderTimePeriodsEditor === 'function') renderTimePeriodsEditor();
+                        if (typeof updatePreview === 'function') updatePreview();
+                        if (typeof checkPrinterStatus === 'function') checkPrinterStatus();
+                        console.log('✅ 설정 패널 내용 렌더링 완료');
+                    } catch (error) {
+                        console.error('설정 패널 렌더링 오류:', error);
+                    }
+                }, 100);
+            }
+        };
+        
+        // 간단한 토글 함수 별칭
+        function toggleSettingsPanel() {
+            return window.toggleSettingsPanel();
+        }
+
+        function connectPrinter() {
+            console.log('🔌 프린터 연결 시작 (스텁)');
+        }
+
+        function forceDisconnect() {
+            console.log('🔌 강제 연결 해제 (스텁)');
+        }
+
+        function testPrint() {
+            console.log('🖨️ 테스트 출력 (스텁)');
+        }
+
+        function checkPrinterStatus() {
+            console.log('🔍 프린터 상태 확인 (스텁)');
+        }
+
+        function forgetAllPorts() {
+            console.log('🗑️ 포트 권한 삭제 (스텁)');
+        }
+
+        function selectDateOption(option) {
+            console.log('📅 날짜 옵션 선택:', option);
+        }
+
+        function updatePreview() {
+            console.log('👁️ 미리보기 업데이트 (스텁)');
+        }
+
+        function saveSettings() {
+            console.log('💾 설정 저장 (스텁)');
+        }
+
+        function addTimePeriod() {
+            console.log('⏰ 시간대 추가 (스텁)');
+        }
+
+        function saveTimeSettings() {
+            console.log('💾 시간 설정 저장 (스텁)');
+        }
+
+        function loadDefaultTimeSettings() {
+            console.log('🔄 기본 설정 복원 (스텁)');
+        }
+
+        function addCourse() {
+            console.log('📚 과목 추가 (스텁)');
+        }
+
         // 전역 변수 - 상태 관리 개선
         let serialPort = null;
         let writer = null;
@@ -956,8 +1052,8 @@
             return 'serial' in navigator;
         }
 
-        // 프린터 상태 실제 확인 - 개선된 버전
-        async function checkPrinterStatus() {
+        // 프린터 상태 실제 확인 - 개선된 버전 (실제 구현)
+        checkPrinterStatus = async function() {
             console.log('🔍 프린터 상태 실제 확인 시작...');
             
             const statusEl = document.getElementById('connectionStatus');
@@ -1132,8 +1228,8 @@
             }
         }
 
-        // 강제 연결 해제 - 개선된 버전
-        async function forceDisconnect() {
+        // 강제 연결 해제 - 개선된 버전 (실제 구현)
+        forceDisconnect = async function() {
             console.log('🔌 강제 연결 해제 시작...');
             
             try {
@@ -1266,8 +1362,8 @@
             console.log(`🔄 UI 상태 업데이트: ${isPrinterConnected ? '연결됨' : '연결 안됨'}`);
         }
 
-        // 프린터 연결 - 완전히 새로운 연결
-        async function connectPrinter() {
+        // 프린터 연결 - 완전히 새로운 연결 (실제 구현)
+        connectPrinter = async function() {
             if (!isSerialSupported()) {
                 showMessage('printerMessage', 
                     '❌ 이 브라우저는 Web Serial API를 지원하지 않습니다.\n' +
@@ -2145,8 +2241,20 @@
             }
         }
 
-        // 설정 패널 토글
-        function toggleSettingsPanel() {
+        // 프린터 관련 함수들을 전역으로 정의
+        window.connectPrinter = connectPrinter;
+        window.forceDisconnect = forceDisconnect;
+        window.testPrint = testPrint;
+        window.checkPrinterStatus = checkPrinterStatus;
+        window.forgetAllPorts = forgetAllPorts;
+        window.selectDateOption = selectDateOption;
+        window.updatePreview = updatePreview;
+        window.saveSettings = saveSettings;
+        window.addTimePeriod = addTimePeriod;
+        window.saveTimeSettings = saveTimeSettings;
+        window.loadDefaultTimeSettings = loadDefaultTimeSettings;
+        window.addCourse = addCourse;
+        window.toggleSettingsPanel = function() {
             console.log('⚙️ 설정 패널 토글 시작');
             const panel = document.getElementById('settingsPanel');
             
@@ -2176,7 +2284,7 @@
                     console.error('설정 패널 렌더링 오류:', error);
                 }
             }
-        }
+        };
 
         // 시스템 정보 업데이트 (해상도 정보 추가)
         function updateSystemInfo() {
@@ -2260,6 +2368,45 @@
             console.log('🚀 키오스크 초기화 시작');
             
             try {
+                // 설정 버튼 이벤트 리스너 추가 (여러 방법으로 시도)
+                const settingsBtn = document.getElementById('settingsButton');
+                if (settingsBtn) {
+                    // 방법 1: addEventListener
+                    settingsBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('설정 버튼 클릭됨 (addEventListener)');
+                        toggleSettingsPanel();
+                    });
+                    
+                    // 방법 2: onclick 직접 할당
+                    settingsBtn.onclick = function(e) {
+                        e.preventDefault();
+                        console.log('설정 버튼 클릭됨 (onclick)');
+                        toggleSettingsPanel();
+                    };
+                    
+                    console.log('✅ 설정 버튼 이벤트 리스너 추가됨');
+                } else {
+                    console.error('❌ 설정 버튼을 찾을 수 없습니다');
+                }
+                
+                // 설정 패널 닫기 버튼 이벤트 리스너
+                const closeBtn = document.getElementById('closeButton');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        console.log('닫기 버튼 클릭됨');
+                        toggleSettingsPanel();
+                    });
+                    console.log('✅ 닫기 버튼 이벤트 리스너 추가됨');
+                }
+                
+                // 테스트: 설정 패널 직접 열기 (3초 후)
+                setTimeout(() => {
+                    console.log('🧪 3초 후 설정 패널 테스트 열기');
+                    toggleSettingsPanel();
+                }, 3000);
+                
                 // 설정 로드
                 loadSettings();
                 
