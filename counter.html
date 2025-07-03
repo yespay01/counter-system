@@ -779,12 +779,7 @@
         let currentResetType = '';
         let lastRecallTime = 0;
         let counterSettings = {}; // 창구별 설정
-        let courses = [
-            { code: 'CH', name: '중국어 과정' },
-            { code: 'EN', name: '영어 과정' },
-            { code: 'HSK', name: 'HSK 시험반' },
-            { code: 'TO', name: 'TOEIC 집중반' }
-        ];
+        let courses = []; // 키오스크에서 동기화될 과정들 (초기값 비움)
         let sharedData = {
             currentCall: { number: '-', counter: 0, course: '-' },
             waiting: [],
@@ -861,19 +856,19 @@
             });
         }
 
-        // Firebase 실시간 데이터 감지
+        // Firebase 실시간 데이터 감지 (키오스크 설정 포함)
         function setupFirebaseListeners() {
             if (!window.firebaseDB) {
                 console.error('Firebase가 초기화되지 않았습니다.');
                 return;
             }
 
+            // 1. 카운터 시스템 데이터 구독
             const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
-            
             window.firebaseOnValue(systemRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    console.log('🔥 Firebase 데이터 수신:', data);
+                    console.log('🔥 카운터 시스템 데이터 수신:', data);
                     sharedData = { ...sharedData, ...data };
                     
                     // 창구별 설정 동기화
@@ -884,10 +879,73 @@
                     updateDisplay();
                     updateCounterAssignment();
                 } else {
-                    console.log('📭 Firebase 데이터 없음 - 초기 데이터 생성');
+                    console.log('📭 카운터 시스템 데이터 없음 - 초기 데이터 생성');
                     saveToFirebase();
                 }
             });
+
+            // 2. 키오스크 글로벌 설정 구독 (과정 정보)
+            const kioskSettingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+            window.firebaseOnValue(kioskSettingsRef, (snapshot) => {
+                const kioskSettings = snapshot.val();
+                if (kioskSettings && kioskSettings.courses) {
+                    console.log('🎫 키오스크 과정 설정 수신:', kioskSettings.courses);
+                    
+                    const oldCourses = [...courses];
+                    courses = kioskSettings.courses;
+                    
+                    // 과정 변경 감지 및 설정 검증
+                    validateCounterSettings(oldCourses, courses);
+                    
+                    // 설정 모달이 열려있으면 과정 옵션 업데이트
+                    if (document.getElementById('settingsModal').style.display === 'block') {
+                        renderCourseOptions();
+                    }
+                    
+                    console.log('✅ 과정 정보 동기화 완료:', courses.length, '개 과정');
+                } else {
+                    console.log('📭 키오스크 과정 설정 없음 - 기본값 사용');
+                    setDefaultCourses();
+                }
+            });
+        }
+
+        // 기본 과정 설정 (키오스크 설정이 없을 때)
+        function setDefaultCourses() {
+            if (courses.length === 0) {
+                courses = [
+                    { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
+                    { code: 'EN', name: '영어 과정', englishName: 'English Course' },
+                    { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
+                    { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+                ];
+                console.log('📚 기본 과정 설정 완료');
+            }
+        }
+
+        // 창구별 설정 검증 (과정 변경 시)
+        function validateCounterSettings(oldCourses, newCourses) {
+            let hasChanges = false;
+            const newCourseCodes = newCourses.map(c => c.code);
+            
+            // 각 창구의 설정 검증
+            for (let counterId = 1; counterId <= 6; counterId++) {
+                const assignment = counterSettings[counterId];
+                
+                // 설정된 과정이 있고, 'ALL'이 아니며, 새 과정 목록에 없는 경우
+                if (assignment && assignment !== 'ALL' && !newCourseCodes.includes(assignment)) {
+                    console.log(`⚠️ ${counterId}번 창구: ${assignment} 과정이 삭제되어 "모든 과정"으로 변경`);
+                    counterSettings[counterId] = 'ALL';
+                    hasChanges = true;
+                }
+            }
+            
+            // 변경사항이 있으면 저장
+            if (hasChanges) {
+                saveToFirebase();
+                showMessage('일부 창구 설정이 자동으로 "모든 과정"으로 변경되었습니다.');
+                updateCounterAssignment();
+            }
         }
 
         // Firebase에 데이터 저장
@@ -1219,6 +1277,18 @@
             
             container.innerHTML = '';
             
+            // 과정이 없으면 메시지 표시
+            if (!courses || courses.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 3rem; margin-bottom: 15px;">📭</div>
+                        <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 10px;">과정 정보를 불러오는 중...</div>
+                        <div style="font-size: 0.9rem;">키오스크에서 과정을 설정해 주세요.</div>
+                    </div>
+                `;
+                return;
+            }
+            
             // 모든 과정 처리 옵션
             const allOption = document.createElement('div');
             allOption.className = 'course-option all-courses';
@@ -1227,12 +1297,12 @@
             }
             allOption.innerHTML = `
                 <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">🏢 모든 과정</div>
-                <div style="font-size: 0.9rem; opacity: 0.8;">모든 상담 과정 처리</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">모든 상담 과정 처리 (${courses.length}개 과정)</div>
             `;
             allOption.onclick = () => selectCourse('ALL');
             container.appendChild(allOption);
             
-            // 개별 과정 옵션들
+            // 개별 과정 옵션들 (키오스크에서 동기화)
             courses.forEach(course => {
                 const option = document.createElement('div');
                 option.className = 'course-option';
@@ -1242,10 +1312,13 @@
                 option.innerHTML = `
                     <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">${course.name}</div>
                     <div style="font-size: 0.9rem; opacity: 0.8;">코드: ${course.code}</div>
+                    ${course.englishName ? `<div style="font-size: 0.8rem; opacity: 0.7; margin-top: 4px;">${course.englishName}</div>` : ''}
                 `;
                 option.onclick = () => selectCourse(course.code);
                 container.appendChild(option);
             });
+            
+            console.log(`📋 과정 옵션 렌더링 완료: ${courses.length}개 과정 + 모든 과정`);
         }
 
         function selectCourse(courseCode) {
@@ -1405,17 +1478,20 @@
 
         // 초기화
         function initialize() {
-            console.log('🚀 상담창구 시스템 초기화 시작 (창구별 전담 과정 기능 추가)');
+            console.log('🚀 상담창구 시스템 초기화 시작 (키오스크 과정 동기화)');
             
             currentCounter = getCounterFromUrl();
             selectCounter(currentCounter);
             
-            // Firebase 리스너 설정
+            // 기본 과정 설정
+            setDefaultCourses();
+            
+            // Firebase 리스너 설정 (카운터 시스템 + 키오스크 설정)
             setTimeout(() => {
                 setupFirebaseListeners();
             }, 1000);
             
-            console.log('✅ 상담창구 시스템 초기화 완료');
+            console.log('✅ 상담창구 시스템 초기화 완료 (과정 정보 키오스크 동기화)');
         }
 
         // 페이지 로드 시 초기화
