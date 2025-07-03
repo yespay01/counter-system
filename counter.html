@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>상담창구 시스템 - Firebase 연동</title>
+    <title>상담창구 시스템 - 창구별 전담 과정</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -85,6 +85,13 @@
         .admin-btn.danger:hover {
             background: rgba(255,107,107,0.3);
         }
+        .admin-btn.settings {
+            border-color: rgba(255,215,0,0.5);
+            background: rgba(255,215,0,0.2);
+        }
+        .admin-btn.settings:hover {
+            background: rgba(255,215,0,0.3);
+        }
         .main-content {
             padding: 40px;
         }
@@ -106,6 +113,23 @@
             font-size: 1.5rem;
             color: #666;
             margin-bottom: 20px;
+        }
+        
+        /* 창구 전담 과정 표시 */
+        .counter-assignment {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            box-shadow: 0 5px 15px rgba(0,184,148,0.3);
+        }
+        
+        .counter-assignment.all-courses {
+            background: linear-gradient(135deg, #fdcb6e, #e17055);
         }
         
         /* 재호출 버튼 */
@@ -245,8 +269,8 @@
             font-size: 1.2rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            user-select: none; /* 텍스트 선택 방지 */
-            position: relative; /* 클릭 영역 확실히 */
+            user-select: none;
+            position: relative;
         }
         .waiting-item:hover {
             border-color: #667eea;
@@ -254,13 +278,19 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .waiting-item:active {
-            transform: translateY(0px); /* 클릭 시 즉시 반응 */
-            transition: none; /* 빠른 반응 */
+            transform: translateY(0px);
+            transition: none;
         }
         .waiting-item.next {
             border-color: #00b894;
             background: #d1f2eb;
             color: #00b894;
+        }
+        .waiting-item.other-course {
+            opacity: 0.4;
+            border-color: #ccc;
+            background: #f5f5f5;
+            cursor: not-allowed;
         }
         .stats {
             display: grid;
@@ -299,6 +329,133 @@
         .online { border-left: 4px solid #00b894; }
         .offline { border-left: 4px solid #e74c3c; }
         .firebase { border-left: 4px solid #ff6b35; }
+
+        /* 설정 모달 */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+        .settings-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f2f6;
+        }
+        .settings-header h2 {
+            color: #667eea;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .close-settings {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-settings:hover {
+            background: #c0392b;
+        }
+        .setting-group {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .setting-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3436;
+            display: block;
+        }
+        .course-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .course-option {
+            background: white;
+            border: 3px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .course-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .course-option.selected {
+            border-color: #00b894;
+            background: #d1f2eb;
+            color: #00b894;
+        }
+        .course-option.all-courses {
+            border-color: #fdcb6e;
+            background: #fff9e6;
+            color: #e17055;
+        }
+        .course-option.all-courses.selected {
+            border-color: #e17055;
+            background: #fff2e6;
+        }
+        .save-settings-btn {
+            background: #00b894;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .save-settings-btn:hover {
+            background: #00a085;
+            transform: translateY(-2px);
+        }
+        .current-setting {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: #1976d2;
+        }
 
         /* 재호출 효과 */
         .recall-effect {
@@ -435,6 +592,9 @@
                 padding: 10px 12px;
                 font-size: 1rem;
             }
+            .course-options {
+                grid-template-columns: 1fr;
+            }
         }
         
         @media (max-width: 480px) {
@@ -496,6 +656,7 @@
     <div class="container">
         <div class="header">
             <div class="admin-controls">
+                <button class="admin-btn settings" onclick="showSettings()">⚙️ 창구설정</button>
                 <button class="admin-btn" onclick="showResetModal('partial')">📊 통계 초기화</button>
                 <button class="admin-btn danger" onclick="showResetModal('all')">🗑️ 전체 초기화</button>
             </div>
@@ -512,6 +673,11 @@
         </div>
 
         <div class="main-content">
+            <!-- 창구 전담 과정 표시 -->
+            <div class="counter-assignment" id="counterAssignment">
+                1번 창구 - 모든 과정 처리
+            </div>
+
             <div class="current-status">
                 <!-- 재호출 버튼 -->
                 <button class="recall-btn" id="recallBtn" onclick="recallCurrent()" title="현재 번호 재호출">
@@ -571,6 +737,28 @@
         </div>
     </div>
 
+    <!-- 창구 설정 모달 -->
+    <div id="settingsModal" class="settings-modal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>⚙️ 창구별 전담 과정 설정</h2>
+                <button class="close-settings" onclick="hideSettings()">×</button>
+            </div>
+            
+            <div class="current-setting" id="currentSetting">
+                현재 설정: 모든 과정 처리
+            </div>
+            
+            <div class="setting-group">
+                <label class="setting-label">이 창구에서 담당할 과정을 선택하세요:</label>
+                <div class="course-options" id="courseOptions">
+                    <!-- 과정 선택 옵션들 -->
+                </div>
+                <button class="save-settings-btn" onclick="saveCounterSettings()">설정 저장</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 초기화 확인 모달 -->
     <div id="resetModal" class="modal">
         <div class="modal-content">
@@ -590,6 +778,13 @@
         let currentCounter = 1;
         let currentResetType = '';
         let lastRecallTime = 0;
+        let counterSettings = {}; // 창구별 설정
+        let courses = [
+            { code: 'CH', name: '중국어 과정' },
+            { code: 'EN', name: '영어 과정' },
+            { code: 'HSK', name: 'HSK 시험반' },
+            { code: 'TO', name: 'TOEIC 집중반' }
+        ];
         let sharedData = {
             currentCall: { number: '-', counter: 0, course: '-' },
             waiting: [],
@@ -602,8 +797,69 @@
                 { id: 6, current: null, course: null, count: 0 }
             ],
             totalToday: 0,
-            lastUpdated: null
+            lastUpdated: null,
+            counterSettings: {} // 창구별 설정도 공유 데이터에 포함
         };
+
+        // URL에서 창구 번호 자동 감지
+        function getCounterFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const counterId = urlParams.get('id');
+            if (counterId && counterId >= 1 && counterId <= 6) {
+                return parseInt(counterId);
+            }
+            return 1;
+        }
+
+        // 창구 선택
+        function selectCounter(counterNum) {
+            currentCounter = counterNum;
+            
+            // 버튼 활성화 상태 변경
+            document.querySelectorAll('.counter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.counter-btn')[counterNum - 1].classList.add('active');
+            
+            updateDisplay();
+            updateCounterAssignment();
+        }
+
+        // 창구별 전담 과정 표시 업데이트
+        function updateCounterAssignment() {
+            const assignment = counterSettings[currentCounter];
+            const assignmentEl = document.getElementById('counterAssignment');
+            
+            if (assignment && assignment !== 'ALL') {
+                const course = courses.find(c => c.code === assignment);
+                if (course) {
+                    assignmentEl.textContent = `${currentCounter}번 창구 - ${course.name} 전담`;
+                    assignmentEl.className = 'counter-assignment';
+                } else {
+                    assignmentEl.textContent = `${currentCounter}번 창구 - 모든 과정 처리`;
+                    assignmentEl.className = 'counter-assignment all-courses';
+                }
+            } else {
+                assignmentEl.textContent = `${currentCounter}번 창구 - 모든 과정 처리`;
+                assignmentEl.className = 'counter-assignment all-courses';
+            }
+        }
+
+        // 창구가 처리할 수 있는 대기번호 필터링
+        function getFilteredWaiting() {
+            if (!sharedData.waiting) return [];
+            
+            const assignment = counterSettings[currentCounter];
+            
+            // 모든 과정 처리 또는 설정이 없는 경우
+            if (!assignment || assignment === 'ALL') {
+                return sharedData.waiting;
+            }
+            
+            // 특정 과정만 처리하는 경우
+            return sharedData.waiting.filter(item => {
+                const itemCourse = item.number.substring(0, item.number.length - 3); // 뒤의 3자리 숫자 제거
+                return itemCourse === assignment;
+            });
+        }
 
         // Firebase 실시간 데이터 감지
         function setupFirebaseListeners() {
@@ -619,7 +875,14 @@
                 if (data) {
                     console.log('🔥 Firebase 데이터 수신:', data);
                     sharedData = { ...sharedData, ...data };
+                    
+                    // 창구별 설정 동기화
+                    if (data.counterSettings) {
+                        counterSettings = data.counterSettings;
+                    }
+                    
                     updateDisplay();
+                    updateCounterAssignment();
                 } else {
                     console.log('📭 Firebase 데이터 없음 - 초기 데이터 생성');
                     saveToFirebase();
@@ -636,6 +899,7 @@
 
             try {
                 sharedData.lastUpdated = new Date().toISOString();
+                sharedData.counterSettings = counterSettings; // 창고별 설정도 저장
                 const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
                 
                 window.firebaseSet(systemRef, sharedData).then(() => {
@@ -648,26 +912,6 @@
             }
         }
 
-        // URL에서 창구 번호 자동 감지
-        function getCounterFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const counterId = urlParams.get('id');
-            if (counterId && counterId >= 1 && counterId <= 6) {
-                return parseInt(counterId);
-            }
-            return 1;
-        }
-
-        function selectCounter(counterNum) {
-            currentCounter = counterNum;
-            
-            // 버튼 활성화 상태 변경
-            document.querySelectorAll('.counter-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.counter-btn')[counterNum - 1].classList.add('active');
-            
-            updateDisplay();
-        }
-
         function updateDisplay() {
             const counter = sharedData.counters[currentCounter - 1];
             
@@ -675,13 +919,17 @@
             document.getElementById('currentNumber').textContent = counter.current || '-';
             document.getElementById('currentCourse').textContent = counter.course || '대기 중';
             
+            // 필터링된 대기번호 가져오기
+            const filteredWaiting = getFilteredWaiting();
+            const allWaiting = sharedData.waiting || [];
+            
             // 버튼 상태 업데이트
             const callBtn = document.getElementById('callBtn');
             const completeBtn = document.getElementById('completeBtn');
             const recallBtn = document.getElementById('recallBtn');
             const recallActionBtn = document.getElementById('recallActionBtn');
             
-            const hasWaiting = sharedData.waiting && sharedData.waiting.length > 0;
+            const hasWaiting = filteredWaiting.length > 0;
             const hasCurrent = counter.current && counter.current !== '-';
             
             callBtn.disabled = !hasWaiting;
@@ -699,27 +947,39 @@
             const waitingContainer = document.getElementById('waitingList');
             waitingContainer.innerHTML = '';
             
-            if (sharedData.waiting && sharedData.waiting.length > 0) {
-                sharedData.waiting.forEach((item, index) => {
+            if (allWaiting.length > 0) {
+                allWaiting.forEach((item, index) => {
                     const div = document.createElement('div');
                     div.className = 'waiting-item';
-                    if (index === 0) div.classList.add('next');
                     
-                    // 클릭 이벤트를 더 확실하게 설정
-                    div.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(`클릭된 번호: ${item.number}`);
-                        callSpecific(item.number);
-                    });
+                    // 이 창구에서 처리할 수 있는 번호인지 확인
+                    const itemCourse = item.number.substring(0, item.number.length - 3);
+                    const assignment = counterSettings[currentCounter];
+                    const canHandle = !assignment || assignment === 'ALL' || itemCourse === assignment;
                     
-                    // 터치 이벤트도 추가 (모바일 대응)
-                    div.addEventListener('touchend', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log(`터치된 번호: ${item.number}`);
-                        callSpecific(item.number);
-                    });
+                    if (canHandle) {
+                        // 처리 가능한 번호 중 첫 번째는 next 표시
+                        const filteredIndex = filteredWaiting.findIndex(f => f.number === item.number);
+                        if (filteredIndex === 0) {
+                            div.classList.add('next');
+                        }
+                        
+                        // 클릭 이벤트 설정
+                        div.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            callSpecific(item.number);
+                        });
+                        
+                        div.addEventListener('touchend', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            callSpecific(item.number);
+                        });
+                    } else {
+                        // 처리할 수 없는 번호는 비활성화 표시
+                        div.classList.add('other-course');
+                    }
                     
                     div.innerHTML = `
                         <div style="font-weight: 900; font-size: 1.2rem; pointer-events: none;">${item.number}</div>
@@ -734,31 +994,51 @@
             }
             
             // 통계 업데이트
-            const waitingLength = sharedData.waiting ? sharedData.waiting.length : 0;
-            document.getElementById('waitingCount').textContent = `${waitingLength}명 대기`;
+            const filteredLength = filteredWaiting.length;
+            const totalLength = allWaiting.length;
+            
+            document.getElementById('waitingCount').textContent = 
+                counterSettings[currentCounter] && counterSettings[currentCounter] !== 'ALL' 
+                ? `${filteredLength}명 대기 (전체 ${totalLength}명)` 
+                : `${totalLength}명 대기`;
+                
             document.getElementById('todayCount').textContent = sharedData.totalToday || 0;
             document.getElementById('myCount').textContent = counter.count || 0;
-            document.getElementById('currentWaiting').textContent = waitingLength;
+            document.getElementById('currentWaiting').textContent = filteredLength;
         }
 
         function callNext() {
-            if (!sharedData.waiting || sharedData.waiting.length === 0) {
-                alert('대기 중인 번호가 없습니다.');
+            const filteredWaiting = getFilteredWaiting();
+            
+            if (filteredWaiting.length === 0) {
+                const assignment = counterSettings[currentCounter];
+                if (assignment && assignment !== 'ALL') {
+                    const course = courses.find(c => c.code === assignment);
+                    alert(`${course ? course.name : '설정된 과정'}의 대기 번호가 없습니다.`);
+                } else {
+                    alert('대기 중인 번호가 없습니다.');
+                }
                 return;
             }
             
-            const nextCustomer = sharedData.waiting.shift();
-            const counter = sharedData.counters[currentCounter - 1];
+            const nextCustomer = filteredWaiting[0];
             
+            // 전체 대기열에서 해당 고객 제거
+            const customerIndex = sharedData.waiting.findIndex(item => item.number === nextCustomer.number);
+            if (customerIndex !== -1) {
+                sharedData.waiting.splice(customerIndex, 1);
+            }
+            
+            const counter = sharedData.counters[currentCounter - 1];
             counter.current = nextCustomer.number;
             counter.course = nextCustomer.course;
             
-            // 현재 호출 업데이트 - 디스플레이 소리 연동 수정
+            // 현재 호출 업데이트
             sharedData.currentCall = {
                 number: nextCustomer.number,
                 counter: currentCounter,
                 course: nextCustomer.course,
-                immediateCall: true,  // 디스플레이 즉시 호출음 재생
+                immediateCall: true,
                 isRecall: false,
                 callTime: new Date().toISOString(),
                 callType: 'normal',
@@ -774,7 +1054,7 @@
             console.log(`📢 호출 실행: ${nextCustomer.number} (${currentCounter}번 창구)`);
         }
 
-        // 재호출 기능 - 디스플레이 소리 연동 수정
+        // 재호출 기능
         function recallCurrent() {
             const counter = sharedData.counters[currentCounter - 1];
             
@@ -791,12 +1071,12 @@
             }
             lastRecallTime = now;
             
-            // 현재 호출 정보 업데이트 - 디스플레이 소리 연동 수정
+            // 현재 호출 정보 업데이트
             sharedData.currentCall = {
                 number: counter.current,
                 counter: currentCounter,
                 course: counter.course,
-                immediateCall: true,  // 디스플레이 즉시 호출음 재생
+                immediateCall: true,
                 isRecall: true,
                 recallTime: new Date().toISOString(),
                 callType: 'recall'
@@ -867,32 +1147,132 @@
         }
 
         function callSpecific(number) {
-            if (!sharedData.waiting) return;
+            const filteredWaiting = getFilteredWaiting();
+            const customer = filteredWaiting.find(item => item.number === number);
             
+            if (!customer) {
+                alert('이 창구에서 처리할 수 없는 번호입니다.');
+                return;
+            }
+            
+            // 전체 대기열에서 해당 고객 제거
             const customerIndex = sharedData.waiting.findIndex(item => item.number === number);
-            if (customerIndex === -1) return;
+            if (customerIndex !== -1) {
+                sharedData.waiting.splice(customerIndex, 1);
+            }
             
-            const customer = sharedData.waiting.splice(customerIndex, 1)[0];
             const counter = sharedData.counters[currentCounter - 1];
-            
             counter.current = customer.number;
             counter.course = customer.course;
             
-            // 현재 호출 업데이트 - 디스플레이 소리 연동 수정
+            // 현재 호출 업데이트
             sharedData.currentCall = {
                 number: customer.number,
                 counter: currentCounter,
                 course: customer.course,
-                immediateCall: true,  // 디스플레이 즉시 호출음 재생
+                immediateCall: true,
                 isRecall: false,
                 callTime: new Date().toISOString(),
-                callType: 'direct'  // 직접 호출
+                callType: 'direct'
             };
             
             saveToFirebase();
             playCallSound();
             
             showMessage(`${customer.number} 호출 완료!`);
+        }
+
+        // 창구 설정 관련 함수들
+        function showSettings() {
+            // 현재 설정 표시
+            updateCurrentSettingDisplay();
+            
+            // 과정 옵션 렌더링
+            renderCourseOptions();
+            
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function hideSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function updateCurrentSettingDisplay() {
+            const assignment = counterSettings[currentCounter];
+            const currentSettingEl = document.getElementById('currentSetting');
+            
+            if (assignment && assignment !== 'ALL') {
+                const course = courses.find(c => c.code === assignment);
+                if (course) {
+                    currentSettingEl.textContent = `현재 설정: ${course.name} 전담`;
+                } else {
+                    currentSettingEl.textContent = '현재 설정: 모든 과정 처리';
+                }
+            } else {
+                currentSettingEl.textContent = '현재 설정: 모든 과정 처리';
+            }
+        }
+
+        function renderCourseOptions() {
+            const container = document.getElementById('courseOptions');
+            const currentAssignment = counterSettings[currentCounter];
+            
+            container.innerHTML = '';
+            
+            // 모든 과정 처리 옵션
+            const allOption = document.createElement('div');
+            allOption.className = 'course-option all-courses';
+            if (!currentAssignment || currentAssignment === 'ALL') {
+                allOption.classList.add('selected');
+            }
+            allOption.innerHTML = `
+                <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">🏢 모든 과정</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">모든 상담 과정 처리</div>
+            `;
+            allOption.onclick = () => selectCourse('ALL');
+            container.appendChild(allOption);
+            
+            // 개별 과정 옵션들
+            courses.forEach(course => {
+                const option = document.createElement('div');
+                option.className = 'course-option';
+                if (currentAssignment === course.code) {
+                    option.classList.add('selected');
+                }
+                option.innerHTML = `
+                    <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 8px;">${course.name}</div>
+                    <div style="font-size: 0.9rem; opacity: 0.8;">코드: ${course.code}</div>
+                `;
+                option.onclick = () => selectCourse(course.code);
+                container.appendChild(option);
+            });
+        }
+
+        function selectCourse(courseCode) {
+            // 모든 옵션에서 selected 제거
+            document.querySelectorAll('.course-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // 선택된 옵션에 selected 추가
+            event.target.closest('.course-option').classList.add('selected');
+            
+            // 임시 저장 (실제 저장은 저장 버튼 클릭 시)
+            window.tempCourseSelection = courseCode;
+        }
+
+        function saveCounterSettings() {
+            const selectedCourse = window.tempCourseSelection;
+            
+            if (selectedCourse !== undefined) {
+                counterSettings[currentCounter] = selectedCourse;
+                saveToFirebase();
+                updateCounterAssignment();
+                showMessage(`${currentCounter}번 창구 설정이 저장되었습니다!`);
+                hideSettings();
+            } else {
+                alert('과정을 선택해 주세요.');
+            }
         }
 
         // 초기화 관련 함수들
@@ -910,7 +1290,7 @@
                     messageText = '오늘 총 접수 수와 모든 창구의 상담 완료 수를 0으로 초기화합니다.<br><strong>현재 대기열과 진행 중인 상담은 유지됩니다.</strong>';
                     break;
                 case 'all':
-                    messageText = '<strong style="color: #e74c3c;">모든 데이터를 완전히 초기화합니다!</strong><br>• 모든 대기번호 삭제<br>• 번호 카운터 초기화 (001부터 재시작)<br>• 진행 중인 상담 종료<br>• 모든 통계 초기화<br><br><strong>이 작업은 되돌릴 수 없습니다.</strong>';
+                    messageText = '<strong style="color: #e74c3c;">모든 데이터를 완전히 초기화합니다!</strong><br>• 모든 대기번호 삭제<br>• 번호 카운터 초기화 (001부터 재시작)<br>• 진행 중인 상담 종료<br>• 모든 통계 초기화<br>• 창구별 설정 유지<br><br><strong>이 작업은 되돌릴 수 없습니다.</strong>';
                     break;
             }
             
@@ -928,13 +1308,11 @@
             
             switch(currentResetType) {
                 case 'waiting':
-                    // 대기열만 초기화 (간단하게)
                     sharedData.waiting = [];
                     successMsg = '대기열이 초기화되었습니다. (번호 카운터는 유지됨)';
                     break;
                     
                 case 'partial':
-                    // 통계만 초기화 (대기열과 현재 상담은 유지)
                     sharedData.totalToday = 0;
                     sharedData.counters.forEach(counter => {
                         counter.count = 0;
@@ -943,7 +1321,7 @@
                     break;
                     
                 case 'all':
-                    // 전체 초기화
+                    const savedCounterSettings = counterSettings; // 창구별 설정 백업
                     sharedData = {
                         currentCall: { number: '-', counter: 0, course: '-' },
                         waiting: [],
@@ -957,26 +1335,22 @@
                         ],
                         totalToday: 0,
                         lastUpdated: null,
-                        currentNumbers: {}, // 번호 카운터도 초기화
-                        lastDate: new Date().toISOString().split('T')[0] // 오늘 날짜
+                        currentNumbers: {},
+                        lastDate: new Date().toISOString().split('T')[0],
+                        counterSettings: savedCounterSettings // 창구별 설정 복원
                     };
-                    successMsg = '모든 데이터가 초기화되었습니다.';
+                    counterSettings = savedCounterSettings; // 로컬에도 복원
+                    successMsg = '모든 데이터가 초기화되었습니다. (창구별 설정은 유지됨)';
                     break;
             }
             
-            // Firebase에 즉시 저장
             saveToFirebase();
-            
-            // 모달 닫기
             closeResetModal();
-            
-            // 성공 메시지 표시
             showMessage(successMsg);
         }
 
-        // 향상된 호출음 - 창구에서는 제거됨
+        // 호출음 (창구에서는 제거됨)
         function playCallSound(isRecall = false) {
-            // 창구에서는 호출음 제거 - 디스플레이에서만 재생
             console.log(`🔇 창구 호출음 비활성화 ${isRecall ? '(재호출)' : '(일반)'}`);
             return;
         }
@@ -991,29 +1365,24 @@
             }, 3000);
         }
 
-        // 키보드 단축키 추가 (재호출 기능 포함)
+        // 키보드 단축키
         document.addEventListener('keydown', function(e) {
-            // Ctrl + R: 재호출
             if (e.ctrlKey && e.key === 'r') {
                 e.preventDefault();
                 recallCurrent();
             }
             
-            // Ctrl + N: 다음 호출  
             if (e.ctrlKey && e.key === 'n') {
                 e.preventDefault();
                 callNext();
             }
             
-            // Ctrl + E: 상담 완료
             if (e.ctrlKey && e.key === 'e') {
                 e.preventDefault();
                 completeService();
             }
             
-            // R 키만으로도 재호출 (단순화)
             if (e.key === 'r' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-                // 입력 필드에 포커스가 없을 때만
                 if (!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                     e.preventDefault();
                     recallCurrent();
@@ -1023,15 +1392,20 @@
 
         // 모달 외부 클릭 시 닫기
         window.onclick = function(event) {
-            const modal = document.getElementById('resetModal');
-            if (event.target === modal) {
+            const resetModal = document.getElementById('resetModal');
+            const settingsModal = document.getElementById('settingsModal');
+            
+            if (event.target === resetModal) {
                 closeResetModal();
+            }
+            if (event.target === settingsModal) {
+                hideSettings();
             }
         }
 
         // 초기화
         function initialize() {
-            console.log('🚀 상담창구 시스템 초기화 시작');
+            console.log('🚀 상담창구 시스템 초기화 시작 (창구별 전담 과정 기능 추가)');
             
             currentCounter = getCounterFromUrl();
             selectCounter(currentCounter);
