@@ -357,14 +357,7 @@
             font-weight: 900;
             color: #FFD700;
             text-shadow: 0 2px 12px rgba(255,215,0,0.4);
-        }
-        
-        .counter-status-text {
-            font-size: 0.8rem;
-            opacity: 0.9;
-            margin-top: 4px;
-            font-weight: 500;
-            color: #FFD700;
+            margin-bottom: 8px;
         }
 
         /* 창구별 담당 과정 표시 */
@@ -946,13 +939,9 @@
                     // 창구별 담당 과정 정보
                     const assignment = getCounterAssignment(counter.id);
                     
-                    // 상태 텍스트 결정
-                    const statusText = hasCustomer ? '상담중' : '대기중';
-                    
                     div.innerHTML = `
                         <div class="counter-name">${counter.id}번 창구</div>
                         <div class="counter-number">${counter.current || '-'}</div>
-                        <div class="counter-status-text">${statusText}</div>
                         <div class="counter-assignment ${assignment.type}">${assignment.text}</div>
                     `;
                     counterContainer.appendChild(div);
