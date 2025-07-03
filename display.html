@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대기번호 출력 화면 - Firebase 연동</title>
+    <title>대기번호 출력 화면 - 창구별 전담 과정</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
         
@@ -335,6 +335,7 @@
             border: 1px solid rgba(255,255,255,0.2);
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            position: relative;
         }
         
         .counter-item.active {
@@ -364,6 +365,35 @@
             margin-top: 4px;
             font-weight: 500;
             color: #FFD700;
+        }
+
+        /* 창구별 담당 과정 표시 */
+        .counter-assignment {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+            backdrop-filter: blur(5px);
+            opacity: 0.9;
+        }
+
+        .counter-assignment.specialized {
+            background: rgba(0,184,148,0.8);
+            color: white;
+            font-weight: 600;
+        }
+
+        .counter-assignment.all-courses {
+            background: rgba(253,203,110,0.8);
+            color: #2d3436;
+            font-weight: 600;
         }
         
         .status-bar {
@@ -565,7 +595,7 @@
             
             <!-- 창구현황 섹션 -->
             <div class="counter-section">
-                <div class="counter-title">🏢 창구현황</div>
+                <div class="counter-title">🏢 창구현황 (전담 과정별)</div>
                 <div class="counter-status" id="counterStatus">
                     <!-- 창구별 현황 -->
                 </div>
@@ -594,15 +624,46 @@
                 { id: 5, current: null, course: null },
                 { id: 6, current: null, course: null }
             ],
+            counterSettings: {}, // 창구별 설정
             lastUpdateTime: null,
             isConnected: false,
             lastCalledNumber: null
         };
 
+        let courses = [
+            { code: 'CH', name: '중국어 과정' },
+            { code: 'EN', name: '영어 과정' },
+            { code: 'HSK', name: 'HSK 시험반' },
+            { code: 'TO', name: 'TOEIC 집중반' }
+        ];
+
         let isDebugMode = false;
         let lastCallData = null;
         let audioContext = null;
         let isAudioEnabled = false;
+
+        // 과정 이름 가져오기
+        function getCourseName(courseCode) {
+            const course = courses.find(c => c.code === courseCode);
+            return course ? course.name : courseCode;
+        }
+
+        // 창구별 담당 과정 정보 가져오기
+        function getCounterAssignment(counterId) {
+            const assignment = displayData.counterSettings[counterId];
+            
+            if (!assignment || assignment === 'ALL') {
+                return {
+                    text: '모든 과정',
+                    type: 'all-courses'
+                };
+            } else {
+                return {
+                    text: getCourseName(assignment),
+                    type: 'specialized'
+                };
+            }
+        }
 
         // 오디오 토글 함수
         function toggleAudio() {
@@ -755,6 +816,7 @@
                     displayData.currentCall = data.currentCall || displayData.currentCall;
                     displayData.waiting = data.waiting || [];
                     displayData.counters = data.counters || displayData.counters;
+                    displayData.counterSettings = data.counterSettings || {}; // 창구별 설정 동기화
                     displayData.lastUpdateTime = new Date();
                     displayData.isConnected = true;
                     
@@ -774,6 +836,7 @@
             try {
                 console.log('🖥️ DISPLAY 화면 업데이트');
                 console.log('📋 현재 대기열 크기:', displayData.waiting ? displayData.waiting.length : 0);
+                console.log('⚙️ 창구별 설정:', displayData.counterSettings);
                 
                 // 현재 호출번호 업데이트
                 const currentNumber = displayData.currentCall.number || '-';
@@ -783,8 +846,9 @@
                 document.getElementById('currentNumber').textContent = currentNumber;
                 
                 if (currentNumber !== '-' && currentCounter > 0) {
+                    const assignment = getCounterAssignment(currentCounter);
                     document.getElementById('counterInfo').textContent = 
-                        `${currentCounter}번 창구 - ${currentCourse}`;
+                        `${currentCounter}번 창구 (${assignment.text}) - ${currentCourse}`;
                 } else {
                     document.getElementById('counterInfo').textContent = '대기 중';
                 }
@@ -826,7 +890,7 @@
                     waitingContainer.innerHTML = '<div class="no-waiting">대기 중인 번호가 없습니다</div>';
                 }
 
-                // 창구 현황 업데이트
+                // 창구 현황 업데이트 (담당 과정 포함)
                 const counterContainer = document.getElementById('counterStatus');
                 counterContainer.innerHTML = '';
                 
@@ -839,6 +903,9 @@
                         div.classList.add('active');
                     }
                     
+                    // 창구별 담당 과정 정보
+                    const assignment = getCounterAssignment(counter.id);
+                    
                     // 상태 텍스트 결정
                     const statusText = hasCustomer ? '상담중' : '대기중';
                     
@@ -846,6 +913,7 @@
                         <div class="counter-name">${counter.id}번 창구</div>
                         <div class="counter-number">${counter.current || '-'}</div>
                         <div class="counter-status-text">${statusText}</div>
+                        <div class="counter-assignment ${assignment.type}">${assignment.text}</div>
                     `;
                     counterContainer.appendChild(div);
                 });
@@ -862,6 +930,7 @@
                 }
                 
                 console.log('✅ DISPLAY 화면 업데이트 완료 - 대기인원:', waitingLength);
+                console.log('🏢 창구별 담당 과정 표시 완료');
                 
             } catch (error) {
                 console.error('❌ 화면 업데이트 오류:', error);
@@ -916,6 +985,7 @@
                 console.log('현재 데이터:', displayData);
                 console.log('마지막 호출 데이터:', lastCallData);
                 console.log('오디오 상태:', isAudioEnabled ? '활성화' : '비활성화');
+                console.log('창구별 설정:', displayData.counterSettings);
             }
         });
 
@@ -940,9 +1010,12 @@
                         console.log('  오디오 상태:', isAudioEnabled ? '🔊 활성화' : '🔇 비활성화');
                         console.log('  현재 데이터:', displayData);
                         console.log('  마지막 호출:', lastCallData);
+                        console.log('🏢 창구별 설정:');
+                        console.log('  담당 과정 표시: 활성화');
+                        console.log('  창구별 설정:', displayData.counterSettings);
                         console.log('📋 레이아웃 정보:');
                         console.log('  대기번호: 최대 10개 표시 (동적 크기)');
-                        console.log('  창구현황: 6개 창구 표시');
+                        console.log('  창구현황: 6개 창구 + 담당 과정 표시');
                     }
                     
                     adminClicks = 0;
@@ -953,10 +1026,11 @@
 
         // 초기화 함수
         function initialize() {
-            console.log('🖥️ DISPLAY 화면 초기화 시작 (새 레이아웃)');
+            console.log('🖥️ DISPLAY 화면 초기화 시작 (창구별 전담 과정 표시)');
             console.log('📋 레이아웃: 현재 호출 | (대기번호 + 창구현황)');
             console.log('🔢 대기번호: 최대 10개 표시 (동적 크기 조절)');
-            console.log('🏢 창구현황: 6개 창구 표시');
+            console.log('🏢 창구현황: 6개 창구 + 담당 과정 표시');
+            console.log('⚙️ 창구별 설정: Firebase에서 실시간 동기화');
             console.log('🔇 오디오 비활성화 상태로 시작 - 🔇 버튼 클릭하여 활성화');
             
             // Firebase 리스너 설정 (즉시)
@@ -994,6 +1068,13 @@
                 console.log('  현재 호출:', displayData.currentCall.number);
                 console.log('  오디오 상태:', isAudioEnabled ? '🔊 활성화' : '🔇 비활성화');
                 console.log('  마지막 호출 데이터:', lastCallData?.number || 'None');
+                console.log('  창구별 설정:', displayData.counterSettings);
+                
+                // 창구별 담당 과정 현황
+                for (let i = 1; i <= 6; i++) {
+                    const assignment = getCounterAssignment(i);
+                    console.log(`  ${i}번 창구: ${assignment.text} (${assignment.type})`);
+                }
             }
         }, 10000);
     </script>
