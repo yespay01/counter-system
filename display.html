@@ -810,8 +810,8 @@
                 return;
             }
 
+            // 1. 카운터 시스템 데이터 구독
             const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
-            
             window.firebaseOnValue(systemRef, (snapshot) => {
                 const data = snapshot.val();
                 console.log('🔥 DISPLAY - Firebase 데이터 수신:', data);
@@ -838,6 +838,38 @@
                     updateDisplay();
                 }
             });
+
+            // 2. 키오스크 글로벌 설정 구독 (과정 정보)
+            const kioskSettingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+            window.firebaseOnValue(kioskSettingsRef, (snapshot) => {
+                const kioskSettings = snapshot.val();
+                if (kioskSettings && kioskSettings.courses) {
+                    console.log('🎫 DISPLAY - 키오스크 과정 설정 수신:', kioskSettings.courses);
+                    courses = kioskSettings.courses;
+                    
+                    // 과정 정보가 업데이트되면 화면도 업데이트
+                    updateDisplay();
+                    
+                    console.log('✅ DISPLAY - 과정 정보 동기화 완료:', courses.length, '개 과정');
+                } else {
+                    console.log('📭 DISPLAY - 키오스크 과정 설정 없음 - 기본값 사용');
+                    setDefaultCourses();
+                }
+            });
+        }
+
+        // 기본 과정 설정 (키오스크 설정이 없을 때)
+        function setDefaultCourses() {
+            if (courses.length === 0) {
+                courses = [
+                    { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
+                    { code: 'EN', name: '영어 과정', englishName: 'English Course' },
+                    { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
+                    { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+                ];
+                console.log('📚 DISPLAY - 기본 과정 설정 완료');
+                updateDisplay(); // 기본 과정 설정 후 화면 업데이트
+            }
         }
 
         function updateDisplay() {
@@ -1039,8 +1071,12 @@
             console.log('🔢 대기번호: 최대 10개 표시 (동적 크기 조절)');
             console.log('🏢 창구현황: 6개 창구 + 담당 과정 표시');
             console.log('⚙️ 창구별 설정: Firebase에서 실시간 동기화');
+            console.log('📚 과정 정보: 키오스크에서 실시간 동기화');
             console.log('🔇 오디오 비활성화 상태로 시작 - 🔇 버튼 클릭하여 활성화');
             console.log('🔄 자동 새로고침: 비활성화 (오디오 설정 유지)');
+            
+            // 기본 과정 설정
+            setDefaultCourses();
             
             // Firebase 리스너 설정 (즉시)
             setupFirebaseListeners();
