@@ -12,6 +12,9 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
         }
         
         .container {
@@ -174,21 +177,22 @@
             background: rgba(255, 255, 255, 0.95);
             border: none;
             border-radius: 20px;
-            padding: 50px 40px;
+            padding: 60px 50px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
             flex: 1 1 400px;
-            min-width: 280px;
+            min-width: 320px;
             max-width: none;
             text-align: center;
             width: 100%;
-            min-height: 120px;
+            min-height: 150px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             touch-action: manipulation;
             user-select: none;
+            font-size: 1.2rem;
         }
         
         .course-btn:hover {
@@ -203,9 +207,20 @@
         }
         
         .course-btn:disabled {
-            opacity: 0.5;
+            opacity: 0.3;
             cursor: not-allowed;
             transform: none;
+            background: rgba(200, 200, 200, 0.8);
+        }
+
+        .course-btn.enabled {
+            animation: enablePulse 1s ease-in-out;
+        }
+
+        @keyframes enablePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         
         .course-name {
@@ -233,12 +248,15 @@
             background: #3498db;
             color: white;
             border: none;
-            padding: 20px;
+            padding: 25px;
             border-radius: 15px;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
+            min-height: 70px;
+            touch-action: manipulation;
+            user-select: none;
         }
 
         .number-btn:hover {
@@ -680,16 +698,19 @@
             const phoneInput = document.getElementById('phoneInput');
             if (phoneInput.value.length < 11) {
                 phoneInput.value += num;
+                updateCourseButtonsState(); // 버튼 상태 업데이트
             }
         }
 
         function deleteNumber() {
             const phoneInput = document.getElementById('phoneInput');
             phoneInput.value = phoneInput.value.slice(0, -1);
+            updateCourseButtonsState(); // 버튼 상태 업데이트
         }
 
         function clearPhone() {
             document.getElementById('phoneInput').value = '';
+            updateCourseButtonsState(); // 버튼 상태 업데이트
         }
 
         // 핸드폰 번호 유효성 검사
@@ -851,7 +872,7 @@
             }
         }
 
-        // 과목 버튼 생성
+        // 과목 버튼 생성 (핸드폰 번호 확인)
         function createCourseButtons() {
             const container = document.getElementById('courseButtons');
             container.innerHTML = '';
@@ -859,12 +880,53 @@
             courses.forEach(course => {
                 const button = document.createElement('button');
                 button.className = 'course-btn';
-                button.onclick = () => issueTicketWithSMS(course);
+                button.id = `course-${course.code}`;
+                button.onclick = () => {
+                    const phoneNumber = document.getElementById('phoneInput').value.trim();
+                    if (!phoneNumber) {
+                        alert('먼저 핸드폰 번호를 입력해주세요!');
+                        document.getElementById('phoneInput').focus();
+                        return;
+                    }
+                    if (!validatePhoneNumber(phoneNumber)) {
+                        alert('올바른 핸드폰 번호를 입력해주세요!\n예: 01012345678');
+                        document.getElementById('phoneInput').focus();
+                        return;
+                    }
+                    issueTicketWithSMS(course);
+                };
+                
+                // 초기에는 비활성화
+                button.disabled = true;
+                
                 button.innerHTML = `
                     <div class="course-name">${course.name}</div>
                     <div class="course-description">${course.englishName}</div>
                 `;
                 container.appendChild(button);
+            });
+            
+            // 핸드폰 번호 입력 상태 확인
+            updateCourseButtonsState();
+        }
+
+        // 과목 버튼 활성화/비활성화 상태 업데이트
+        function updateCourseButtonsState() {
+            const phoneNumber = document.getElementById('phoneInput').value.trim();
+            const isValid = validatePhoneNumber(phoneNumber);
+            
+            courses.forEach(course => {
+                const button = document.getElementById(`course-${course.code}`);
+                if (button) {
+                    if (isValid) {
+                        button.disabled = false;
+                        button.classList.add('enabled');
+                        setTimeout(() => button.classList.remove('enabled'), 1000);
+                    } else {
+                        button.disabled = true;
+                        button.classList.remove('enabled');
+                    }
+                }
             });
         }
 
@@ -1173,12 +1235,14 @@
         document.addEventListener('DOMContentLoaded', function() {
             const phoneInput = document.getElementById('phoneInput');
             
-            // 숫자만 입력 허용
+            // 핸드폰 번호 입력 이벤트 (실시간 버튼 활성화)
             phoneInput.addEventListener('input', function(e) {
                 this.value = this.value.replace(/[^0-9]/g, '');
                 if (this.value.length > 11) {
                     this.value = this.value.slice(0, 11);
                 }
+                // 실시간으로 과목 버튼 상태 업데이트
+                updateCourseButtonsState();
             });
             
             // 엔터키 방지
