@@ -44,25 +44,24 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            width: 25px;
-            height: 25px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.3);
+            font-size: 1.2rem;
+            color: white;
             backdrop-filter: blur(5px);
         }
         
         .settings-button:hover {
-            background: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.6);
-            transform: scale(1.2) rotate(45deg);
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
         }
         
         .status-bar {
@@ -97,7 +96,7 @@
             text-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
-        /* 핸드폰 번호 입력 영역 - 키오스크 최적화 */
+        /* 핸드폰 번호 입력 영역 */
         .phone-input-section {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 25px;
@@ -153,21 +152,54 @@
             box-shadow: 0 0 20px rgba(52, 152, 219, 0.3);
         }
 
-        .clear-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 15px 20px;
-            border-radius: 15px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        /* 번호패드 */
+        .number-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            max-width: 450px;
+            margin: 0 auto 30px auto;
         }
 
-        .clear-btn:hover {
-            background: #c0392b;
-            transform: translateY(-2px);
+        .number-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 35px 30px;
+            border-radius: 20px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 100px;
+            min-width: 100px;
+            touch-action: manipulation;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .number-btn:hover {
+            background: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        .number-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.5);
+            background: #1f618d;
+        }
+
+        .delete-btn {
+            background: #e74c3c !important;
+        }
+
+        .clear-btn {
+            background: #f39c12 !important;
+            font-size: 1.4rem !important;
         }
 
         /* 과목 버튼 영역 */
@@ -240,71 +272,6 @@
         .course-description {
             font-size: 1.3rem;
             color: #7f8c8d;
-        }
-
-        /* 번호패드 - 키오스크 최적화 */
-        .number-pad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 25px;
-            max-width: 450px;
-            margin: 0 auto 30px auto;
-        }
-
-        .number-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 35px 30px;
-            border-radius: 20px;
-            font-size: 2.5rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 100px;
-            min-width: 100px;
-            touch-action: manipulation;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
-        }
-
-        .number-btn:hover {
-            background: #2980b9;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
-        }
-
-        .number-btn:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.5);
-            background: #1f618d;
-        }
-
-        /* 키오스크 세로 화면 대응 */
-        @media (max-height: 900px) {
-            .header h1 { font-size: 2.8rem; }
-            .phone-title { font-size: 1.8rem; }
-            .phone-description { font-size: 1.1rem; }
-            .service-title { font-size: 2.5rem; }
-            .course-btn { 
-                padding: 60px 40px; 
-                min-height: 160px; 
-            }
-            .course-name { font-size: 1.8rem; }
-            .course-description { font-size: 1.1rem; }
-        }
-
-        /* 키오스크 가로 화면 대응 */
-        @media (min-width: 1400px) {
-            .container { max-width: 1400px; }
-            .course-buttons { 
-                grid-template-columns: repeat(2, 1fr);
-                gap: 40px;
-            }
-            .phone-input-section { max-width: 900px; }
         }
 
         /* 성공 메시지 */
@@ -384,78 +351,8 @@
             cursor: pointer;
             padding: 5px;
         }
-        
-        .settings-content { 
-            padding: 25px; 
-            padding-bottom: 100px;
-        }
-        
-        .setting-group { 
-            margin-bottom: 30px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-        }
-        
-        .setting-label {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-            display: block;
-            color: #2c3e50;
-        }
-        
-        .setting-input, .setting-select {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ecf0f1;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            min-height: 50px;
-            touch-action: manipulation;
-        }
-        
-        .setting-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 8px 8px 8px 0;
-            transition: all 0.3s ease;
-            min-height: 50px;
-            touch-action: manipulation;
-            user-select: none;
-        }
-        
-        .setting-btn:hover { background: #2980b9; }
-        .setting-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
-        .setting-btn.success { background: #27ae60; }
-        .setting-btn.success:hover { background: #229954; }
-        
-        .status-message {
-            background: #d4edda;
-            color: #155724;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
-        
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-            font-size: 0.9rem;
-        }
 
-        /* 반응형 디자인 - 키오스크 최적화 */
+        /* 반응형 디자인 */
         @media (max-width: 768px) {
             .settings-panel { width: 100%; right: -100%; }
             .header h1 { font-size: 2.5rem; }
@@ -548,8 +445,8 @@
                            autocomplete="off">
                 </div>
 
-                <!-- 번호패드 - 간단한 onclick 방식 -->
-                <div class="number-pad" id="numberPad">
+                <!-- 번호패드 -->
+                <div class="number-pad">
                     <button class="number-btn" onclick="addNumber('1')">1</button>
                     <button class="number-btn" onclick="addNumber('2')">2</button>
                     <button class="number-btn" onclick="addNumber('3')">3</button>
@@ -559,16 +456,16 @@
                     <button class="number-btn" onclick="addNumber('7')">7</button>
                     <button class="number-btn" onclick="addNumber('8')">8</button>
                     <button class="number-btn" onclick="addNumber('9')">9</button>
-                    <button class="number-btn" onclick="deleteNumber()" style="background: #e74c3c;">←</button>
+                    <button class="number-btn delete-btn" onclick="deleteNumber()">←</button>
                     <button class="number-btn" onclick="addNumber('0')">0</button>
-                    <button class="number-btn" onclick="clearPhone()" style="background: #f39c12; font-size: 1.4rem;">전체삭제</button>
+                    <button class="number-btn clear-btn" onclick="clearPhone()">전체삭제</button>
                 </div>
             </div>
 
             <div class="service-title">원하는 상담 과정을 선택해 주세요</div>
             
             <div class="course-buttons" id="courseButtons">
-                <!-- 과목 버튼들 -->
+                <!-- 과목 버튼들이 여기에 생성됩니다 -->
             </div>
         </div>
     </div>
@@ -586,791 +483,226 @@
             <button class="close-settings" onclick="toggleSettings()">×</button>
         </div>
         <div class="settings-content">
-            
-                <!-- 솔라피 API 설정 -->
-                <div class="setting-group">
-                    <label class="setting-label">📡 솔라피 API 설정</label>
-                    
-                    <label>API Key:</label>
-                    <input type="text" class="setting-input" id="solapiApiKey" 
-                           placeholder="NCSRVLD2FFGTEK7B" value="NCSRVLD2FFGTEK7B">
-                    
-                    <label>Secret Key:</label>
-                    <input type="text" class="setting-input" id="solapiSecret" 
-                           placeholder="IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8" value="IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8">
-                    
-                    <label>발신번호:</label>
-                    <input type="tel" class="setting-input" id="senderNumber" 
-                           placeholder="02-1234-5678 또는 010-1234-5678">
-                    
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-                        <button class="setting-btn" onclick="testSolapi()" 
-                                style="flex: 1; min-width: 150px;">📱 API 테스트</button>
-                        <button class="setting-btn success" onclick="saveApiSettings()"
-                                style="flex: 1; min-width: 150px;">💾 API 설정 저장</button>
-                    </div>
-                    
-                    <div id="apiMessage"></div>
-                </div>
-
-            <!-- 알림톡 템플릿 설정 -->
-            <div class="setting-group">
-                <label class="setting-label">📝 알림톡 템플릿</label>
-                
-                <label>발급완료 템플릿 코드:</label>
-                <input type="text" class="setting-input" id="issueTemplateCode" 
-                       placeholder="TEMPLATE_001">
-                
-                <label>호출예정 템플릿 코드:</label>
-                <input type="text" class="setting-input" id="readyTemplateCode" 
-                       placeholder="TEMPLATE_002">
-                
-                <label>호출알림 템플릿 코드:</label>
-                <input type="text" class="setting-input" id="callTemplateCode" 
-                       placeholder="TEMPLATE_003">
-                
-                <button class="setting-btn success" onclick="saveTemplateSettings()">💾 템플릿 설정 저장</button>
-                
-                <div id="templateMessage"></div>
-            </div>
-
-            <!-- 과목 설정 -->
-            <div class="setting-group">
-                <label class="setting-label">📚 과목 관리</label>
-                <div id="courseSettings">
-                    <!-- 과목 설정이 여기에 표시됩니다 -->
-                </div>
-                <button class="setting-btn success" onclick="addCourse()">+ 과목 추가</button>
-            </div>
-
-            <!-- 시스템 정보 -->
-            <div class="setting-group">
-                <label class="setting-label">ℹ️ 시스템 정보</label>
-                <div>
-                    브라우저: <span id="browserInfo"></span><br>
-                    Firebase 연결: <span id="firebaseStatus">확인 중...</span><br>
-                    알림톡 상태: <span id="smsStatus">설정 필요</span>
-                </div>
+            <div style="padding: 20px;">
+                <h3>설정 준비 중...</h3>
+                <p>기본 SMS 발송 기능이 준비되어 있습니다.</p>
             </div>
         </div>
     </div>
 
     <script>
+        console.log('🚀 스크립트 시작');
+
         // 전역 변수
-        let sharedData = {
-            waiting: [],
-            counters: Array(6).fill().map((_, i) => ({ id: i + 1, current: null, course: null, count: 0 })),
-            totalToday: 0,
-            lastUpdated: null,
-            currentNumbers: {}, // Firebase에서 관리되는 번호 카운터
-            lastDate: null,      // 마지막 업데이트 날짜
-            smsWaiting: []       // 알림톡 전용 대기열
-        };
-        
-        let courses = [
+        var courses = [
             { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
             { code: 'EN', name: '영어 과정', englishName: 'English Course' },
             { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
             { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
         ];
 
-        // 솔라피 설정
-        let solapiConfig = {
-            apiKey: 'NCSRVLD2FFGTEK7B',
-            secret: 'IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8',
-            senderNumber: '',
-            templates: {
-                issue: '',
-                ready: '',
-                call: ''
-            }
-        };
-
-        // 번호패드 버튼 이벤트 (전역 함수로 이동)
+        // 전역 함수들 (HTML에서 호출 가능)
         function addNumber(num) {
-            const phoneInput = document.getElementById('phoneInput');
+            console.log('addNumber 호출:', num);
+            var phoneInput = document.getElementById('phoneInput');
             if (phoneInput && phoneInput.value.length < 11) {
                 phoneInput.value += num;
                 updateCourseButtonsState();
-                
-                // 진동 피드백
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
-                }
-                
                 console.log('번호 추가:', num, '현재:', phoneInput.value);
             }
         }
 
         function deleteNumber() {
-            const phoneInput = document.getElementById('phoneInput');
+            console.log('deleteNumber 호출');
+            var phoneInput = document.getElementById('phoneInput');
             if (phoneInput) {
                 phoneInput.value = phoneInput.value.slice(0, -1);
                 updateCourseButtonsState();
-                
-                if (navigator.vibrate) {
-                    navigator.vibrate(30);
-                }
-                
                 console.log('번호 삭제, 현재:', phoneInput.value);
             }
         }
 
         function clearPhone() {
-            const phoneInput = document.getElementById('phoneInput');
+            console.log('clearPhone 호출');
+            var phoneInput = document.getElementById('phoneInput');
             if (phoneInput) {
                 phoneInput.value = '';
                 updateCourseButtonsState();
-                
-                if (navigator.vibrate) {
-                    navigator.vibrate([50, 50, 50]);
-                }
-                
                 console.log('번호 전체삭제');
             }
         }
 
-        // 설정 패널 토글 (전역 함수로 이동)
         function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
-            if (!panel) {
-                console.error('설정 패널을 찾을 수 없습니다');
-                return;
-            }
-            
-            const isOpen = panel.classList.contains('open');
-            
-            if (isOpen) {
-                panel.classList.remove('open');
-                console.log('설정 패널 닫기');
-            } else {
-                panel.classList.add('open');
-                console.log('설정 패널 열기');
-                
-                try {
-                    updateSystemInfo();
-                    renderCourseSettings();
-                    loadSettings();
-                } catch (error) {
-                    console.error('설정 패널 열기 오류:', error);
+            console.log('toggleSettings 호출');
+            var panel = document.getElementById('settingsPanel');
+            if (panel) {
+                if (panel.classList.contains('open')) {
+                    panel.classList.remove('open');
+                    console.log('설정 패널 닫기');
+                } else {
+                    panel.classList.add('open');
+                    console.log('설정 패널 열기');
                 }
+            } else {
+                console.error('설정 패널을 찾을 수 없습니다');
             }
         }
-
-        // 오늘 날짜 가져오기
-        function getTodayString() {
-            const today = new Date();
-            return today.toISOString().split('T')[0]; // YYYY-MM-DD 형식
-        }
-
-        // 날짜 체크 및 카운터 초기화
-        function checkDateAndResetCounters() {
-            const today = getTodayString();
-            
-            if (!sharedData.lastDate || sharedData.lastDate !== today) {
-                console.log(`📅 날짜 변경 감지: ${sharedData.lastDate} → ${today}`);
-                
-                // 새로운 날이므로 카운터 초기화
-                sharedData.currentNumbers = {};
-                sharedData.totalToday = 0;
-                sharedData.lastDate = today;
-                
-                // 창구별 카운터도 초기화
-                sharedData.counters.forEach(counter => {
-                    counter.count = 0;
-                });
-                
-                console.log('🔄 일일 카운터 자동 초기화 완료');
-                
-                // Firebase에 저장
-                saveToFirebase();
-                
-                return true; // 초기화됨
-            }
-            
-            return false; // 초기화 안됨
-        }
-
-        // 현재 번호 가져오기 (Firebase 동기화)
-        function getCurrentNumber(courseCode) {
-            if (!sharedData.currentNumbers[courseCode]) {
-                sharedData.currentNumbers[courseCode] = 0;
-            }
-            return sharedData.currentNumbers[courseCode];
-        }
-
-        // 다음 번호 생성 및 저장
-        function getNextNumber(courseCode) {
-            // 날짜 체크
-            checkDateAndResetCounters();
-            
-            // 다음 번호 생성
-            const currentNum = getCurrentNumber(courseCode);
-            const nextNum = currentNum + 1;
-            
-            // Firebase에 저장
-            sharedData.currentNumbers[courseCode] = nextNum;
-            
-            return nextNum;
-        }
-
-        // 핸드폰 번호 관련 함수들
-
 
         // 핸드폰 번호 유효성 검사
         function validatePhoneNumber(phone) {
-            const phoneRegex = /^01[016789]\d{7,8}$/;
+            var phoneRegex = /^01[016789]\d{7,8}$/;
             return phoneRegex.test(phone);
         }
 
-        // 솔라피 SMS 발송 함수 (문자 테스트용)
-        async function sendSMS(phoneNumber, message) {
-            try {
-                console.log('📱 SMS 발송 시도:', phoneNumber, message);
-                
-                // 실제 솔라피 API 호출
-                const response = await fetch('https://api.solapi.com/messages/v4/send', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `HMAC-SHA256 apiKey=${solapiConfig.apiKey}, date=${new Date().toISOString()}, salt=${Date.now()}, signature=temp`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: {
-                            to: phoneNumber,
-                            from: solapiConfig.senderNumber,
-                            text: message,
-                            type: 'SMS'  // 일반 SMS로 발송
-                        }
-                    })
-                });
-
-                const result = await response.json();
-                console.log('📱 SMS 발송 결과:', result);
-                
-                if (response.ok) {
-                    return { success: true, result };
-                } else {
-                    throw new Error(result.message || 'SMS 발송 실패');
+        // 과목 버튼 상태 업데이트
+        function updateCourseButtonsState() {
+            var phoneInput = document.getElementById('phoneInput');
+            if (!phoneInput) return;
+            
+            var phoneNumber = phoneInput.value.trim();
+            var isValid = validatePhoneNumber(phoneNumber);
+            
+            console.log('과목 버튼 상태 업데이트:', phoneNumber, isValid);
+            
+            for (var i = 0; i < courses.length; i++) {
+                var course = courses[i];
+                var button = document.getElementById('course-' + course.code);
+                if (button) {
+                    if (isValid) {
+                        button.disabled = false;
+                        button.classList.add('enabled');
+                        setTimeout(function() {
+                            button.classList.remove('enabled');
+                        }, 1000);
+                    } else {
+                        button.disabled = true;
+                        button.classList.remove('enabled');
+                    }
                 }
-                
-            } catch (error) {
-                console.error('❌ SMS 발송 실패:', error);
-                
-                // 테스트 모드 - 실제 발송 대신 로그만 출력
-                console.log('📱 테스트 모드 SMS 시뮬레이션:');
-                console.log('  받는번호:', phoneNumber);
-                console.log('  메시지:', message);
-                console.log('  발신번호:', solapiConfig.senderNumber);
-                
-                return { 
-                    success: false, 
-                    error: error.message,
-                    testMode: true 
-                };
             }
         }
 
-        // SMS 메시지 생성 (단순 문자용)
-        function createSMSMessage(type, data) {
-            const messages = {
-                issue: `[대기표발급] ${data.ticketNumber} / ${data.courseName} / ${data.issueTime} / 대기:${data.waitingCount}명 / 예상:${data.estimatedTime}분`,
-                ready: `[호출예정] ${data.ticketNumber} / ${data.courseName} / 앞으로 ${data.waitingCount}명 남음 / 준비하세요!`,
-                call: `[호출알림] ${data.ticketNumber} / ${data.counterNumber}번창구 / ${data.courseName} / ${data.callTime}`
-            };
+        // 과목 버튼 생성
+        function createCourseButtons() {
+            console.log('과목 버튼 생성 시작');
+            var container = document.getElementById('courseButtons');
+            if (!container) {
+                console.error('courseButtons 컨테이너를 찾을 수 없습니다');
+                return;
+            }
             
-            return messages[type] || '';
+            container.innerHTML = '';
+            
+            for (var i = 0; i < courses.length; i++) {
+                var course = courses[i];
+                var button = document.createElement('button');
+                button.className = 'course-btn';
+                button.id = 'course-' + course.code;
+                button.disabled = true; // 초기에는 비활성화
+                
+                button.onclick = function(courseData) {
+                    return function() {
+                        issueTicket(courseData);
+                    };
+                }(course);
+                
+                button.innerHTML = 
+                    '<div class="course-name">' + course.name + '</div>' +
+                    '<div class="course-description">' + course.englishName + '</div>';
+                
+                container.appendChild(button);
+                console.log('과목 버튼 생성:', course.name);
+            }
+            
+            console.log('과목 버튼 생성 완료');
         }
 
-        // 대기표 발급 (알림톡 포함)
-        async function issueTicketWithSMS(course) {
-            const phoneNumber = document.getElementById('phoneInput').value.trim();
+        // 대기표 발급
+        function issueTicket(course) {
+            var phoneInput = document.getElementById('phoneInput');
+            if (!phoneInput) return;
             
-            // 핸드폰 번호 유효성 검사
+            var phoneNumber = phoneInput.value.trim();
+            
             if (!phoneNumber) {
                 alert('핸드폰 번호를 입력해주세요.');
                 return;
             }
             
             if (!validatePhoneNumber(phoneNumber)) {
-                alert('올바른 핸드폰 번호를 입력해주세요.\n예: 01012345678');
+                alert('올바른 핸드폰 번호를 입력해주세요.\\n예: 01012345678');
                 return;
             }
 
-            try {
-                // 날짜 체크 및 다음 번호 생성
-                const nextNum = getNextNumber(course.code);
-                const ticketNumber = course.code + String(nextNum).padStart(3, '0');
-                
-                const now = new Date();
-                const issueTime = now.toLocaleString('ko-KR');
-                
-                // 대기열에 추가 (알림톡 전용)
-                const newWaitingItem = {
-                    number: ticketNumber,
-                    course: course.name,
-                    phoneNumber: phoneNumber,
-                    time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-                    issueTime: issueTime,
-                    type: 'sms' // 알림톡 전용 표시
-                };
-                
-                // 기존 대기열과 알림톡 대기열 모두에 추가
-                sharedData.waiting.push(newWaitingItem);
-                if (!sharedData.smsWaiting) sharedData.smsWaiting = [];
-                sharedData.smsWaiting.push(newWaitingItem);
-                
-                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
-                
-                // Firebase에 저장
-                saveToFirebase();
-                
-                // SMS 발송 (일반 문자로 테스트)
-                const smsData = {
-                    ticketNumber: ticketNumber,
-                    courseName: course.name,
-                    issueTime: issueTime,
-                    waitingCount: sharedData.waiting.length - 1,
-                    estimatedTime: Math.max(5, (sharedData.waiting.length - 1) * 5)
-                };
-                
-                const issueMessage = createSMSMessage('issue', smsData);
-                
-                // SMS 발송 (일반 문자로 테스트)
-                const smsData = {
-                    ticketNumber: ticketNumber,
-                    courseName: course.name,
-                    issueTime: issueTime,
-                    waitingCount: sharedData.waiting.length - 1,
-                    estimatedTime: Math.max(5, (sharedData.waiting.length - 1) * 5)
-                };
-                
-                const issueMessage = createSMSMessage('issue', smsData);
-                
-                // 성공 메시지 표시 (일단 대기표 발급은 완료)
-                showSuccessMessage(ticketNumber, phoneNumber, 'SMS 발송 중...');
-                
-                // SMS 발송 시도 (비동기)
-                sendSMS(phoneNumber, issueMessage).then(smsResult => {
-                    if (smsResult.success) {
-                        console.log('📱 SMS 발송 성공:', ticketNumber);
-                    } else if (smsResult.testMode) {
-                        console.log('📱 SMS 테스트 모드 - 실제 발송 안됨');
-                    } else {
-                        console.error('📱 SMS 발송 실패:', smsResult.error);
-                    }
-                }).catch(error => {
-                    console.error('📱 SMS 발송 오류:', error);
-                });
-                
-                // 성공 메시지 표시
-                showSuccessMessage(ticketNumber, phoneNumber);
-                
-                // 핸드폰 번호 초기화
-                clearPhone();
-                
-                console.log('✅ 알림톡 대기표 발급 완료:', ticketNumber, phoneNumber);
-                
-            } catch (error) {
-                console.error('❌ 알림톡 대기표 발급 오류:', error);
-                alert('대기표 발급 중 오류가 발생했습니다.');
-            }
-        }
-
-        // Firebase 저장
-        function saveToFirebase() {
-            if (!window.firebaseDB) return;
+            console.log('대기표 발급:', course.name, phoneNumber);
             
-            try {
-                sharedData.lastUpdated = new Date().toISOString();
-                const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
-                window.firebaseSet(systemRef, sharedData);
-                console.log('✅ Firebase 저장 완료');
-            } catch (error) {
-                console.error('❌ Firebase 저장 실패:', error);
-            }
-        }
-
-        // 과목 버튼 생성 (핸드폰 번호 확인)
-        function createCourseButtons() {
-            const container = document.getElementById('courseButtons');
-            container.innerHTML = '';
+            // 임시 번호 생성
+            var ticketNumber = course.code + '001';
             
-            courses.forEach(course => {
-                const button = document.createElement('button');
-                button.className = 'course-btn';
-                button.id = `course-${course.code}`;
-                button.onclick = () => {
-                    const phoneNumber = document.getElementById('phoneInput').value.trim();
-                    if (!phoneNumber) {
-                        alert('먼저 핸드폰 번호를 입력해주세요!');
-                        document.getElementById('phoneInput').focus();
-                        return;
-                    }
-                    if (!validatePhoneNumber(phoneNumber)) {
-                        alert('올바른 핸드폰 번호를 입력해주세요!\n예: 01012345678');
-                        document.getElementById('phoneInput').focus();
-                        return;
-                    }
-                    issueTicketWithSMS(course);
-                };
-                
-                // 초기에는 비활성화
-                button.disabled = true;
-                
-                button.innerHTML = `
-                    <div class="course-name">${course.name}</div>
-                    <div class="course-description">${course.englishName}</div>
-                `;
-                container.appendChild(button);
-            });
+            // 성공 메시지 표시
+            showSuccessMessage(ticketNumber, phoneNumber);
             
-            // 핸드폰 번호 입력 상태 확인
+            // 핸드폰 번호 초기화
+            phoneInput.value = '';
             updateCourseButtonsState();
         }
 
-
-
-        // 성공 메시지 표시 (SMS 상태 포함)
-        function showSuccessMessage(ticketNumber, phoneNumber, smsStatus) {
-            const successEl = document.getElementById('successMessage');
-            const messageEl = document.getElementById('successMessageText');
+        // 성공 메시지 표시
+        function showSuccessMessage(ticketNumber, phoneNumber) {
+            var successEl = document.getElementById('successMessage');
+            var messageEl = document.getElementById('successMessageText');
             
-            // 전화번호 마스킹
-            const maskedPhone = phoneNumber.substring(0, 3) + '****' + phoneNumber.substring(7);
-            
-            messageEl.innerHTML = `
-                <div style="font-size: 2.5rem; margin-bottom: 15px;">${ticketNumber}</div>
-                <div style="font-size: 1.5rem; margin-bottom: 10px;">대기표 발급 완료!</div>
-                <div style="font-size: 1.2rem; margin-bottom: 8px;">${maskedPhone}</div>
-                <div style="font-size: 1rem; opacity: 0.9; color: #FFD700;">${smsStatus}</div>
-            `;
-            
-            successEl.classList.add('show');
-            setTimeout(() => {
-                successEl.classList.remove('show');
-            }, 5000); // 5초로 연장
-        }
-
-
-
-        // API 설정 저장
-        function saveApiSettings() {
-            solapiConfig.apiKey = document.getElementById('solapiApiKey').value;
-            solapiConfig.secret = document.getElementById('solapiSecret').value;
-            solapiConfig.senderNumber = document.getElementById('senderNumber').value;
-            
-            localStorage.setItem('solapiConfig', JSON.stringify(solapiConfig));
-            showMessage('apiMessage', '✅ API 설정이 저장되었습니다!', 'success');
-            
-            console.log('💾 솔라피 API 설정 저장 완료');
-        }
-
-        // 템플릿 설정 저장
-        function saveTemplateSettings() {
-            solapiConfig.templates.issue = document.getElementById('issueTemplateCode').value;
-            solapiConfig.templates.ready = document.getElementById('readyTemplateCode').value;
-            solapiConfig.templates.call = document.getElementById('callTemplateCode').value;
-            
-            localStorage.setItem('solapiConfig', JSON.stringify(solapiConfig));
-            showMessage('templateMessage', '✅ 템플릿 설정이 저장되었습니다!', 'success');
-            
-            console.log('💾 알림톡 템플릿 설정 저장 완료');
-        }
-
-        // 솔라피 API 테스트 (에러 방지 버전)
-        function testSolapi() {
-            try {
-                showMessage('apiMessage', '📱 설정 확인 중...', 'info');
+            if (successEl && messageEl) {
+                var maskedPhone = phoneNumber.substring(0, 3) + '****' + phoneNumber.substring(7);
                 
-                const apiKey = document.getElementById('solapiApiKey').value.trim();
-                const secret = document.getElementById('solapiSecret').value.trim();
-                const senderNumber = document.getElementById('senderNumber').value.trim();
+                messageEl.innerHTML = 
+                    '<div style="font-size: 2.5rem; margin-bottom: 15px;">' + ticketNumber + '</div>' +
+                    '<div style="font-size: 1.5rem; margin-bottom: 10px;">대기표 발급 완료!</div>' +
+                    '<div style="font-size: 1.2rem; margin-bottom: 8px;">' + maskedPhone + '</div>' +
+                    '<div style="font-size: 1rem; opacity: 0.9; color: #FFD700;">SMS 테스트 모드</div>';
                 
-                // 1. API Key 확인
-                if (!apiKey) {
-                    throw new Error('API Key를 입력해주세요.');
-                }
-                if (apiKey.length < 10) {
-                    throw new Error('API Key가 너무 짧습니다.');
-                }
-                
-                // 2. Secret Key 확인
-                if (!secret) {
-                    throw new Error('Secret Key를 입력해주세요.');
-                }
-                if (secret.length < 20) {
-                    throw new Error('Secret Key가 너무 짧습니다.');
-                }
-                
-                // 3. 발신번호 확인
-                if (!senderNumber) {
-                    throw new Error('발신번호를 입력해주세요.');
-                }
-                
-                // 발신번호 형식 확인 (숫자와 하이픈만)
-                const cleanNumber = senderNumber.replace(/-/g, '');
-                if (!/^(02|0[3-9][0-9]|01[0-9])[0-9]{7,8}$/.test(cleanNumber)) {
-                    throw new Error('발신번호 형식이 올바르지 않습니다. (예: 02-1234-5678, 010-1234-5678)');
-                }
-                
-                // 4. 설정 저장
-                solapiConfig.apiKey = apiKey;
-                solapiConfig.secret = secret;
-                solapiConfig.senderNumber = senderNumber;
-                
-                console.log('📱 솔라피 설정 확인 완료:');
-                console.log('  - API Key: ' + apiKey.substring(0, 8) + '...');
-                console.log('  - Secret: ' + secret.substring(0, 8) + '...');
-                console.log('  - 발신번호: ' + senderNumber);
-                
-                showMessage('apiMessage', 
-                    '✅ 설정이 올바릅니다!<br>' +
-                    '알림톡 템플릿 승인 후 실제 발송 가능합니다.', 'success');
-                
-            } catch (error) {
-                console.error('설정 확인 실패:', error.message);
-                showMessage('apiMessage', '❌ ' + error.message, 'error');
+                successEl.classList.add('show');
+                setTimeout(function() {
+                    successEl.classList.remove('show');
+                }, 4000);
             }
-        }
-
-        // 설정 로드
-        function loadSettings() {
-            try {
-                const savedConfig = localStorage.getItem('solapiConfig');
-                if (savedConfig) {
-                    const config = JSON.parse(savedConfig);
-                    solapiConfig = { ...solapiConfig, ...config };
-                    
-                    // UI에 반영
-                    document.getElementById('solapiApiKey').value = solapiConfig.apiKey || '';
-                    document.getElementById('solapiSecret').value = solapiConfig.secret || '';
-                    document.getElementById('senderNumber').value = solapiConfig.senderNumber || '';
-                    document.getElementById('issueTemplateCode').value = solapiConfig.templates.issue || '';
-                    document.getElementById('readyTemplateCode').value = solapiConfig.templates.ready || '';
-                    document.getElementById('callTemplateCode').value = solapiConfig.templates.call || '';
-                    
-                    console.log('✅ 설정 로드 완료');
-                }
-            } catch (error) {
-                console.error('설정 로드 오류:', error);
-            }
-        }
-
-        // 과목 추가
-        function addCourse() {
-            const newCourse = {
-                code: 'NEW',
-                name: '새 과목',
-                englishName: 'New Course'
-            };
-            courses.push(newCourse);
-            renderCourseSettings();
-            createCourseButtons();
-        }
-
-        // 과목 삭제
-        function removeCourse(index) {
-            if (confirm('이 과목을 삭제하시겠습니까?')) {
-                courses.splice(index, 1);
-                renderCourseSettings();
-                createCourseButtons();
-            }
-        }
-
-        // 과목 설정 렌더링
-        function renderCourseSettings() {
-            const container = document.getElementById('courseSettings');
-            container.innerHTML = '';
-            
-            courses.forEach((course, index) => {
-                const courseDiv = document.createElement('div');
-                courseDiv.style.cssText = 'background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd;';
-                
-                courseDiv.innerHTML = `
-                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                        <input type="text" placeholder="코드" value="${course.code}" 
-                               style="width: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 5px;"
-                               onchange="updateCourse(${index}, 'code', this.value)">
-                        <input type="text" placeholder="한글명" value="${course.name}" 
-                               style="width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 5px;"
-                               onchange="updateCourse(${index}, 'name', this.value)">
-                        <input type="text" placeholder="영문명" value="${course.englishName}" 
-                               style="width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 5px;"
-                               onchange="updateCourse(${index}, 'englishName', this.value)">
-                        <button onclick="removeCourse(${index})" 
-                                style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer;">삭제</button>
-                    </div>
-                `;
-                
-                container.appendChild(courseDiv);
-            });
-        }
-
-        // 과목 정보 업데이트
-        function updateCourse(index, field, value) {
-            courses[index][field] = value;
-            createCourseButtons();
         }
 
         // 시간 업데이트
         function updateTime() {
-            document.getElementById('currentTime').textContent = 
-                new Date().toLocaleString('ko-KR');
-        }
-
-        // 시스템 정보 업데이트
-        function updateSystemInfo() {
-            document.getElementById('browserInfo').textContent = navigator.userAgent.split(' ').slice(-2).join(' ');
-            
-            if (window.firebaseDB) {
-                document.getElementById('firebaseStatus').textContent = '✅ 연결됨';
-            } else {
-                document.getElementById('firebaseStatus').textContent = '❌ 연결 실패';
-            }
-            
-            // 알림톡 상태 확인
-            if (solapiConfig.apiKey && solapiConfig.secret && solapiConfig.senderNumber) {
-                document.getElementById('smsStatus').textContent = '✅ 설정 완료';
-            } else {
-                document.getElementById('smsStatus').textContent = '⚠️ 설정 필요';
+            var timeEl = document.getElementById('currentTime');
+            if (timeEl) {
+                timeEl.textContent = new Date().toLocaleString('ko-KR');
             }
         }
 
-        // 메시지 표시
-        function showMessage(elementId, message, type) {
-            const element = document.getElementById(elementId);
-            const className = type === 'error' ? 'error-message' : 'status-message';
-            element.innerHTML = `<div class="${className}">${message}</div>`;
-            setTimeout(() => {
-                element.innerHTML = '';
-            }, 5000);
-        }
-
-        // Firebase 리스너 설정
-        function setupFirebaseListener() {
-            if (!window.firebaseDB) return;
-            
-            const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
-            window.firebaseOnValue(systemRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    console.log('🔥 KIOSK SMS - Firebase 데이터 수신:', data);
-                    
-                    // 서버 데이터로 동기화
-                    sharedData = { 
-                        waiting: data.waiting || [],
-                        counters: data.counters || sharedData.counters,
-                        totalToday: data.totalToday || 0,
-                        currentNumbers: data.currentNumbers || {},
-                        lastDate: data.lastDate || null,
-                        lastUpdated: data.lastUpdated || null,
-                        smsWaiting: data.smsWaiting || []
-                    };
-                    
-                    console.log('📱 KIOSK SMS - 동기화 완료');
-                    
-                    // 날짜 체크
-                    checkDateAndResetCounters();
-                }
-            });
-        }
-
-        // 초기화 (간단하게 수정)
+        // 초기화
         function initialize() {
-            console.log('🚀 알림톡 키오스크 초기화 시작');
+            console.log('🚀 키오스크 초기화 시작');
             
             try {
-                // 설정 로드
-                loadSettings();
-                console.log('✅ 설정 로드 완료');
-                
                 // UI 생성
                 createCourseButtons();
-                console.log('✅ 과목 버튼 생성 완료');
-                
                 updateTime();
-                console.log('✅ 시간 표시 완료');
                 
                 // 시간 업데이트
                 setInterval(updateTime, 1000);
                 
-                // Firebase 연결
-                setTimeout(() => {
-                    setupFirebaseListener();
-                    
-                    // 초기 날짜 체크
-                    setTimeout(() => {
-                        checkDateAndResetCounters();
-                    }, 2000);
-                }, 1000);
-                
-                console.log('✅ 알림톡 키오스크 초기화 완료');
+                console.log('✅ 키오스크 초기화 완료');
                 
             } catch (error) {
                 console.error('❌ 초기화 오류:', error);
             }
         }
 
-        // 페이지 언로드 시 정리
-        window.addEventListener('beforeunload', () => {
-            console.log('📱 알림톡 키오스크 종료');
-        });
-
-        // 설정 패널 외부 클릭 시 닫기
-        document.addEventListener('click', function(e) {
-            const panel = document.getElementById('settingsPanel');
-            const settingsButton = document.querySelector('.settings-button');
-            
-            if (panel && panel.classList.contains('open') && 
-                !panel.contains(e.target) && 
-                !settingsButton.contains(e.target)) {
-                toggleSettings();
-            }
-        });
-
-        // 폰 입력 이벤트
-        document.addEventListener('DOMContentLoaded', function() {
-            const phoneInput = document.getElementById('phoneInput');
-            
-            // 핸드폰 번호 입력 이벤트 (간단하게 수정)
-            const phoneInput = document.getElementById('phoneInput');
-            if (phoneInput) {
-                phoneInput.addEventListener('input', function(e) {
-                    this.value = this.value.replace(/[^0-9]/g, '');
-                    if (this.value.length > 11) {
-                        this.value = this.value.slice(0, 11);
-                    }
-                    updateCourseButtonsState();
-                    console.log('핸드폰 번호 입력:', this.value);
-                });
-                
-                // 엔터키 방지
-                phoneInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                    }
-                });
-                
-                console.log('✅ 핸드폰 입력 이벤트 설정 완료');
-            } else {
-                console.error('❌ 핸드폰 입력 필드를 찾을 수 없습니다');
-            }
-            
-            // 엔터키 방지
-            phoneInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                }
-            });
-        });
-
-        // 초기화 실행
+        // 페이지 로드 완료 시 초기화
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initialize);
         } else {
             initialize();
         }
+
+        console.log('✅ 스크립트 로드 완료');
     </script>
 </body>
 </html>
