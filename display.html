@@ -375,13 +375,19 @@
             right: 5px;
             background: rgba(0,0,0,0.5);
             color: white;
-            font-size: 0.7rem;
-            padding: 3px 6px;
+            font-size: 0.65rem;
+            padding: 4px 6px;
             border-radius: 6px;
             text-align: center;
             font-weight: 500;
             backdrop-filter: blur(5px);
             opacity: 0.9;
+            line-height: 1.2;
+            max-height: 32px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .counter-assignment.specialized {
@@ -658,8 +664,10 @@
                     type: 'all-courses'
                 };
             } else {
+                // 과정 코드로 전체 이름 찾기
+                const course = courses.find(c => c.code === assignment);
                 return {
-                    text: getCourseName(assignment),
+                    text: course ? course.name : assignment, // 전체 이름으로 표시
                     type: 'specialized'
                 };
             }
