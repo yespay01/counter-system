@@ -350,23 +350,29 @@
         
         .setting-input, .setting-select {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             border: 2px solid #ecf0f1;
             border-radius: 8px;
-            font-size: 1rem;
-            margin-bottom: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            min-height: 50px;
+            touch-action: manipulation;
         }
         
         .setting-btn {
             background: #3498db;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 15px 25px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
-            margin: 5px 5px 5px 0;
-            transition: background 0.3s ease;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 8px 8px 8px 0;
+            transition: all 0.3s ease;
+            min-height: 50px;
+            touch-action: manipulation;
+            user-select: none;
         }
         
         .setting-btn:hover { background: #2980b9; }
@@ -472,7 +478,6 @@
                            placeholder="01012345678" 
                            maxlength="11"
                            autocomplete="off">
-                    <button class="clear-btn" onclick="clearPhone()">지우기</button>
                 </div>
 
                 <!-- 번호패드 -->
@@ -514,27 +519,31 @@
         </div>
         <div class="settings-content">
             
-            <!-- 솔라피 API 설정 -->
-            <div class="setting-group">
-                <label class="setting-label">📡 솔라피 API 설정</label>
-                
-                <label>API Key:</label>
-                <input type="text" class="setting-input" id="solapiApiKey" 
-                       placeholder="NCSRVLD2FFGTEK7B" value="NCSRVLD2FFGTEK7B">
-                
-                <label>Secret Key:</label>
-                <input type="text" class="setting-input" id="solapiSecret" 
-                       placeholder="IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8" value="IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8">
-                
-                <label>발신번호:</label>
-                <input type="tel" class="setting-input" id="senderNumber" 
-                       placeholder="01012345678">
-                
-                <button class="setting-btn" onclick="testSolapi()">📱 API 테스트</button>
-                <button class="setting-btn success" onclick="saveApiSettings()">💾 API 설정 저장</button>
-                
-                <div id="apiMessage"></div>
-            </div>
+                <!-- 솔라피 API 설정 -->
+                <div class="setting-group">
+                    <label class="setting-label">📡 솔라피 API 설정</label>
+                    
+                    <label>API Key:</label>
+                    <input type="text" class="setting-input" id="solapiApiKey" 
+                           placeholder="NCSRVLD2FFGTEK7B" value="NCSRVLD2FFGTEK7B">
+                    
+                    <label>Secret Key:</label>
+                    <input type="text" class="setting-input" id="solapiSecret" 
+                           placeholder="IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8" value="IYLPMGODFSDJA3Y88QZDHBQYG6XYCNV8">
+                    
+                    <label>발신번호:</label>
+                    <input type="tel" class="setting-input" id="senderNumber" 
+                           placeholder="02-1234-5678 또는 010-1234-5678">
+                    
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                        <button class="setting-btn" onclick="testSolapi()" 
+                                style="flex: 1; min-width: 150px;">📱 API 테스트</button>
+                        <button class="setting-btn success" onclick="saveApiSettings()"
+                                style="flex: 1; min-width: 150px;">💾 API 설정 저장</button>
+                    </div>
+                    
+                    <div id="apiMessage"></div>
+                </div>
 
             <!-- 알림톡 템플릿 설정 -->
             <div class="setting-group">
