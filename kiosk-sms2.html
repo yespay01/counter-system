@@ -548,20 +548,20 @@
                            autocomplete="off">
                 </div>
 
-                <!-- 번호패드 - 스크롤 방해 방지 -->
+                <!-- 번호패드 - 간단한 onclick 방식 -->
                 <div class="number-pad" id="numberPad">
-                    <button class="number-btn" data-number="1">1</button>
-                    <button class="number-btn" data-number="2">2</button>
-                    <button class="number-btn" data-number="3">3</button>
-                    <button class="number-btn" data-number="4">4</button>
-                    <button class="number-btn" data-number="5">5</button>
-                    <button class="number-btn" data-number="6">6</button>
-                    <button class="number-btn" data-number="7">7</button>
-                    <button class="number-btn" data-number="8">8</button>
-                    <button class="number-btn" data-number="9">9</button>
-                    <button class="number-btn delete-btn" style="background: #e74c3c;">←</button>
-                    <button class="number-btn" data-number="0">0</button>
-                    <button class="number-btn clear-btn" style="background: #f39c12; font-size: 1.4rem;">전체삭제</button>
+                    <button class="number-btn" onclick="addNumber('1')">1</button>
+                    <button class="number-btn" onclick="addNumber('2')">2</button>
+                    <button class="number-btn" onclick="addNumber('3')">3</button>
+                    <button class="number-btn" onclick="addNumber('4')">4</button>
+                    <button class="number-btn" onclick="addNumber('5')">5</button>
+                    <button class="number-btn" onclick="addNumber('6')">6</button>
+                    <button class="number-btn" onclick="addNumber('7')">7</button>
+                    <button class="number-btn" onclick="addNumber('8')">8</button>
+                    <button class="number-btn" onclick="addNumber('9')">9</button>
+                    <button class="number-btn" onclick="deleteNumber()" style="background: #e74c3c;">←</button>
+                    <button class="number-btn" onclick="addNumber('0')">0</button>
+                    <button class="number-btn" onclick="clearPhone()" style="background: #f39c12; font-size: 1.4rem;">전체삭제</button>
                 </div>
             </div>
 
@@ -686,6 +686,77 @@
             }
         };
 
+        // 번호패드 버튼 이벤트 (전역 함수로 이동)
+        function addNumber(num) {
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput && phoneInput.value.length < 11) {
+                phoneInput.value += num;
+                updateCourseButtonsState();
+                
+                // 진동 피드백
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+                
+                console.log('번호 추가:', num, '현재:', phoneInput.value);
+            }
+        }
+
+        function deleteNumber() {
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput) {
+                phoneInput.value = phoneInput.value.slice(0, -1);
+                updateCourseButtonsState();
+                
+                if (navigator.vibrate) {
+                    navigator.vibrate(30);
+                }
+                
+                console.log('번호 삭제, 현재:', phoneInput.value);
+            }
+        }
+
+        function clearPhone() {
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput) {
+                phoneInput.value = '';
+                updateCourseButtonsState();
+                
+                if (navigator.vibrate) {
+                    navigator.vibrate([50, 50, 50]);
+                }
+                
+                console.log('번호 전체삭제');
+            }
+        }
+
+        // 설정 패널 토글 (전역 함수로 이동)
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            if (!panel) {
+                console.error('설정 패널을 찾을 수 없습니다');
+                return;
+            }
+            
+            const isOpen = panel.classList.contains('open');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
+                console.log('설정 패널 닫기');
+            } else {
+                panel.classList.add('open');
+                console.log('설정 패널 열기');
+                
+                try {
+                    updateSystemInfo();
+                    renderCourseSettings();
+                    loadSettings();
+                } catch (error) {
+                    console.error('설정 패널 열기 오류:', error);
+                }
+            }
+        }
+
         // 오늘 날짜 가져오기
         function getTodayString() {
             const today = new Date();
@@ -744,64 +815,7 @@
         }
 
         // 핸드폰 번호 관련 함수들
-        // 터치 이벤트 최적화 - 스크롤 방해 방지
-        let touchStartY = 0;
-        let touchEndY = 0;
-        let isScrolling = false;
 
-        function addNumber(num) {
-            if (isScrolling) return; // 스크롤 중이면 무시
-            
-            const phoneInput = document.getElementById('phoneInput');
-            if (phoneInput.value.length < 11) {
-                phoneInput.value += num;
-                updateCourseButtonsState();
-                
-                // 진동 피드백
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
-                }
-                
-                // 버튼 시각적 피드백
-                event.target.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    event.target.style.transform = 'scale(1)';
-                }, 100);
-            }
-        }
-
-        function deleteNumber() {
-            if (isScrolling) return;
-            
-            const phoneInput = document.getElementById('phoneInput');
-            phoneInput.value = phoneInput.value.slice(0, -1);
-            updateCourseButtonsState();
-            
-            if (navigator.vibrate) {
-                navigator.vibrate(30);
-            }
-            
-            event.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                event.target.style.transform = 'scale(1)';
-            }, 100);
-        }
-
-        function clearPhone() {
-            if (isScrolling) return;
-            
-            document.getElementById('phoneInput').value = '';
-            updateCourseButtonsState();
-            
-            if (navigator.vibrate) {
-                navigator.vibrate([50, 50, 50]);
-            }
-            
-            event.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                event.target.style.transform = 'scale(1)';
-            }, 100);
-        }
 
         // 핸드폰 번호 유효성 검사
         function validatePhoneNumber(phone) {
@@ -1015,25 +1029,7 @@
             updateCourseButtonsState();
         }
 
-        // 과목 버튼 활성화/비활성화 상태 업데이트
-        function updateCourseButtonsState() {
-            const phoneNumber = document.getElementById('phoneInput').value.trim();
-            const isValid = validatePhoneNumber(phoneNumber);
-            
-            courses.forEach(course => {
-                const button = document.getElementById(`course-${course.code}`);
-                if (button) {
-                    if (isValid) {
-                        button.disabled = false;
-                        button.classList.add('enabled');
-                        setTimeout(() => button.classList.remove('enabled'), 1000);
-                    } else {
-                        button.disabled = true;
-                        button.classList.remove('enabled');
-                    }
-                }
-            });
-        }
+
 
         // 성공 메시지 표시 (SMS 상태 포함)
         function showSuccessMessage(ticketNumber, phoneNumber, smsStatus) {
@@ -1056,20 +1052,7 @@
             }, 5000); // 5초로 연장
         }
 
-        // 설정 관련 함수들
-        function toggleSettings() {
-            const panel = document.getElementById('settingsPanel');
-            const isOpen = panel.classList.contains('open');
-            
-            if (isOpen) {
-                panel.classList.remove('open');
-            } else {
-                panel.classList.add('open');
-                updateSystemInfo();
-                renderCourseSettings();
-                loadSettings();
-            }
-        }
+
 
         // API 설정 저장
         function saveApiSettings() {
@@ -1293,34 +1276,40 @@
             });
         }
 
-        // 초기화
+        // 초기화 (간단하게 수정)
         function initialize() {
             console.log('🚀 알림톡 키오스크 초기화 시작');
             
-            // 설정 로드
-            loadSettings();
-            
-            // UI 생성
-            createCourseButtons();
-            updateTime();
-            
-            // 터치 이벤트 설정
-            setupTouchEvents();
-            
-            // 시간 업데이트
-            setInterval(updateTime, 1000);
-            
-            // Firebase 연결
-            setTimeout(() => {
-                setupFirebaseListener();
+            try {
+                // 설정 로드
+                loadSettings();
+                console.log('✅ 설정 로드 완료');
                 
-                // 초기 날짜 체크
+                // UI 생성
+                createCourseButtons();
+                console.log('✅ 과목 버튼 생성 완료');
+                
+                updateTime();
+                console.log('✅ 시간 표시 완료');
+                
+                // 시간 업데이트
+                setInterval(updateTime, 1000);
+                
+                // Firebase 연결
                 setTimeout(() => {
-                    checkDateAndResetCounters();
-                }, 2000);
-            }, 1000);
-            
-            console.log('✅ 알림톡 키오스크 초기화 완료 (스크롤 방해 방지 적용)');
+                    setupFirebaseListener();
+                    
+                    // 초기 날짜 체크
+                    setTimeout(() => {
+                        checkDateAndResetCounters();
+                    }, 2000);
+                }, 1000);
+                
+                console.log('✅ 알림톡 키오스크 초기화 완료');
+                
+            } catch (error) {
+                console.error('❌ 초기화 오류:', error);
+            }
         }
 
         // 페이지 언로드 시 정리
@@ -1344,15 +1333,29 @@
         document.addEventListener('DOMContentLoaded', function() {
             const phoneInput = document.getElementById('phoneInput');
             
-            // 핸드폰 번호 입력 이벤트 (실시간 버튼 활성화)
-            phoneInput.addEventListener('input', function(e) {
-                this.value = this.value.replace(/[^0-9]/g, '');
-                if (this.value.length > 11) {
-                    this.value = this.value.slice(0, 11);
-                }
-                // 실시간으로 과목 버튼 상태 업데이트
-                updateCourseButtonsState();
-            });
+            // 핸드폰 번호 입력 이벤트 (간단하게 수정)
+            const phoneInput = document.getElementById('phoneInput');
+            if (phoneInput) {
+                phoneInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    if (this.value.length > 11) {
+                        this.value = this.value.slice(0, 11);
+                    }
+                    updateCourseButtonsState();
+                    console.log('핸드폰 번호 입력:', this.value);
+                });
+                
+                // 엔터키 방지
+                phoneInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                    }
+                });
+                
+                console.log('✅ 핸드폰 입력 이벤트 설정 완료');
+            } else {
+                console.error('❌ 핸드폰 입력 필드를 찾을 수 없습니다');
+            }
             
             // 엔터키 방지
             phoneInput.addEventListener('keydown', function(e) {
