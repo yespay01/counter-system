@@ -702,7 +702,7 @@
                 </button>
                 <button class="action-btn complete-btn" id="completeBtn" onclick="completeService()">
                     ✅
-                    <span>상담 완료</span>
+                    <span>수동 상담완료</span>
                 </button>
                 <button class="action-btn reset-btn" onclick="showResetModal('waiting')">
                     🔄
@@ -1079,6 +1079,16 @@
                 return;
             }
             
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            // 🔄 이전 상담 자동 완료 처리
+            if (counter.current && counter.current !== '-') {
+                const previousNumber = counter.current;
+                counter.count = (counter.count || 0) + 1;
+                console.log(`✅ 이전 상담 자동 완료: ${previousNumber} (${currentCounter}번 창구)`);
+                showMessage(`${previousNumber} 상담 자동 완료 → 다음 호출`);
+            }
+            
             const nextCustomer = filteredWaiting[0];
             
             // 전체 대기열에서 해당 고객 제거
@@ -1087,7 +1097,7 @@
                 sharedData.waiting.splice(customerIndex, 1);
             }
             
-            const counter = sharedData.counters[currentCounter - 1];
+            // 새 고객 호출
             counter.current = nextCustomer.number;
             counter.course = nextCustomer.course;
             
@@ -1201,7 +1211,9 @@
             saveToFirebase();
             
             // 성공 메시지
-            showMessage(`${completedNumber} 상담 완료!`);
+            showMessage(`${completedNumber} 수동 완료!`);
+            
+            console.log(`✅ 수동 완료: ${completedNumber} (${currentCounter}번 창구)`);
         }
 
         function callSpecific(number) {
@@ -1213,13 +1225,25 @@
                 return;
             }
             
+            const counter = sharedData.counters[currentCounter - 1];
+            
+            // 🔄 이전 상담 자동 완료 처리
+            if (counter.current && counter.current !== '-') {
+                const previousNumber = counter.current;
+                counter.count = (counter.count || 0) + 1;
+                console.log(`✅ 이전 상담 자동 완료: ${previousNumber} (${currentCounter}번 창구)`);
+                showMessage(`${previousNumber} 상담 자동 완료 → ${customer.number} 호출`);
+            } else {
+                showMessage(`${customer.number} 호출 완료!`);
+            }
+            
             // 전체 대기열에서 해당 고객 제거
             const customerIndex = sharedData.waiting.findIndex(item => item.number === number);
             if (customerIndex !== -1) {
                 sharedData.waiting.splice(customerIndex, 1);
             }
             
-            const counter = sharedData.counters[currentCounter - 1];
+            // 새 고객 호출
             counter.current = customer.number;
             counter.course = customer.course;
             
@@ -1236,8 +1260,6 @@
             
             saveToFirebase();
             playCallSound();
-            
-            showMessage(`${customer.number} 호출 완료!`);
         }
 
         // 창구 설정 관련 함수들
