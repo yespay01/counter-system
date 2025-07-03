@@ -918,47 +918,59 @@
             console.log('💾 알림톡 템플릿 설정 저장 완료');
         }
 
-        // 솔라피 API 테스트 (수정된 버전)
-        async function testSolapi() {
+        // 솔라피 API 테스트 (에러 방지 버전)
+        function testSolapi() {
             try {
-                showMessage('apiMessage', '📱 API 설정 확인 중...', 'info');
+                showMessage('apiMessage', '📱 설정 확인 중...', 'info');
                 
-                // 1. 기본 설정 유효성 검사
-                if (!solapiConfig.apiKey || solapiConfig.apiKey.length < 10) {
-                    throw new Error('API Key가 올바르지 않습니다.');
+                const apiKey = document.getElementById('solapiApiKey').value.trim();
+                const secret = document.getElementById('solapiSecret').value.trim();
+                const senderNumber = document.getElementById('senderNumber').value.trim();
+                
+                // 1. API Key 확인
+                if (!apiKey) {
+                    throw new Error('API Key를 입력해주세요.');
+                }
+                if (apiKey.length < 10) {
+                    throw new Error('API Key가 너무 짧습니다.');
                 }
                 
-                if (!solapiConfig.secret || solapiConfig.secret.length < 10) {
-                    throw new Error('Secret Key가 올바르지 않습니다.');
+                // 2. Secret Key 확인
+                if (!secret) {
+                    throw new Error('Secret Key를 입력해주세요.');
+                }
+                if (secret.length < 20) {
+                    throw new Error('Secret Key가 너무 짧습니다.');
                 }
                 
-                if (!solapiConfig.senderNumber) {
-                    throw new Error('발신번호를 입력해주세요. (예: 01012345678)');
+                // 3. 발신번호 확인
+                if (!senderNumber) {
+                    throw new Error('발신번호를 입력해주세요.');
                 }
                 
-                // 2. 발신번호 형식 검사
-                const phoneRegex = /^(02|0[3-9][0-9]|01[0-9])-?[0-9]{3,4}-?[0-9]{4}$/;
-                if (!phoneRegex.test(solapiConfig.senderNumber.replace(/-/g, ''))) {
-                    throw new Error('발신번호 형식이 올바르지 않습니다.');
+                // 발신번호 형식 확인 (숫자와 하이픈만)
+                const cleanNumber = senderNumber.replace(/-/g, '');
+                if (!/^(02|0[3-9][0-9]|01[0-9])[0-9]{7,8}$/.test(cleanNumber)) {
+                    throw new Error('발신번호 형식이 올바르지 않습니다. (예: 02-1234-5678, 010-1234-5678)');
                 }
                 
-                // 3. API 키 형식 검사 (솔라피 형식 확인)
-                if (solapiConfig.apiKey !== 'NCSRVLD2FFGTEK7B') {
-                    console.warn('⚠️ API Key가 예상과 다릅니다. 확인해주세요.');
-                }
+                // 4. 설정 저장
+                solapiConfig.apiKey = apiKey;
+                solapiConfig.secret = secret;
+                solapiConfig.senderNumber = senderNumber;
                 
-                // 4. 간단한 연결 테스트 (실제 발송 안함)
-                console.log('📱 솔라피 설정 확인:');
-                console.log('  - API Key:', solapiConfig.apiKey.substring(0, 8) + '...');
-                console.log('  - Secret Key:', solapiConfig.secret.substring(0, 8) + '...');
-                console.log('  - 발신번호:', solapiConfig.senderNumber);
+                console.log('📱 솔라피 설정 확인 완료:');
+                console.log('  - API Key: ' + apiKey.substring(0, 8) + '...');
+                console.log('  - Secret: ' + secret.substring(0, 8) + '...');
+                console.log('  - 발신번호: ' + senderNumber);
                 
-                showMessage('apiMessage', '✅ API 설정이 올바릅니다! 실제 알림톡 발송 준비 완료', 'success');
-                console.log('📱 솔라피 API 설정 검증 완료');
+                showMessage('apiMessage', 
+                    '✅ 설정이 올바릅니다!<br>' +
+                    '알림톡 템플릿 승인 후 실제 발송 가능합니다.', 'success');
                 
             } catch (error) {
+                console.error('설정 확인 실패:', error.message);
                 showMessage('apiMessage', '❌ ' + error.message, 'error');
-                console.error('❌ 솔라피 API 테스트 실패:', error);
             }
         }
 
