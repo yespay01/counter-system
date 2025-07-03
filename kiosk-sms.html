@@ -548,20 +548,20 @@
                            autocomplete="off">
                 </div>
 
-                <!-- 번호패드 - 터치 최적화 -->
-                <div class="number-pad">
-                    <button class="number-btn" onclick="addNumber('1')" ontouchend="addNumber('1')">1</button>
-                    <button class="number-btn" onclick="addNumber('2')" ontouchend="addNumber('2')">2</button>
-                    <button class="number-btn" onclick="addNumber('3')" ontouchend="addNumber('3')">3</button>
-                    <button class="number-btn" onclick="addNumber('4')" ontouchend="addNumber('4')">4</button>
-                    <button class="number-btn" onclick="addNumber('5')" ontouchend="addNumber('5')">5</button>
-                    <button class="number-btn" onclick="addNumber('6')" ontouchend="addNumber('6')">6</button>
-                    <button class="number-btn" onclick="addNumber('7')" ontouchend="addNumber('7')">7</button>
-                    <button class="number-btn" onclick="addNumber('8')" ontouchend="addNumber('8')">8</button>
-                    <button class="number-btn" onclick="addNumber('9')" ontouchend="addNumber('9')">9</button>
-                    <button class="number-btn" onclick="deleteNumber()" ontouchend="deleteNumber()" style="background: #e74c3c;">←</button>
-                    <button class="number-btn" onclick="addNumber('0')" ontouchend="addNumber('0')">0</button>
-                    <button class="number-btn" onclick="clearPhone()" ontouchend="clearPhone()" style="background: #f39c12; font-size: 1.2rem;">전체삭제</button>
+                <!-- 번호패드 - 스크롤 방해 방지 -->
+                <div class="number-pad" id="numberPad">
+                    <button class="number-btn" data-number="1">1</button>
+                    <button class="number-btn" data-number="2">2</button>
+                    <button class="number-btn" data-number="3">3</button>
+                    <button class="number-btn" data-number="4">4</button>
+                    <button class="number-btn" data-number="5">5</button>
+                    <button class="number-btn" data-number="6">6</button>
+                    <button class="number-btn" data-number="7">7</button>
+                    <button class="number-btn" data-number="8">8</button>
+                    <button class="number-btn" data-number="9">9</button>
+                    <button class="number-btn delete-btn" style="background: #e74c3c;">←</button>
+                    <button class="number-btn" data-number="0">0</button>
+                    <button class="number-btn clear-btn" style="background: #f39c12; font-size: 1.4rem;">전체삭제</button>
                 </div>
             </div>
 
@@ -744,62 +744,63 @@
         }
 
         // 핸드폰 번호 관련 함수들
-        // 터치 이벤트 중복 방지
-        let touchHandled = false;
+        // 터치 이벤트 최적화 - 스크롤 방해 방지
+        let touchStartY = 0;
+        let touchEndY = 0;
+        let isScrolling = false;
 
         function addNumber(num) {
-            if (touchHandled) {
-                touchHandled = false;
-                return;
-            }
+            if (isScrolling) return; // 스크롤 중이면 무시
             
             const phoneInput = document.getElementById('phoneInput');
             if (phoneInput.value.length < 11) {
                 phoneInput.value += num;
                 updateCourseButtonsState();
                 
-                // 진동 피드백 (지원되는 경우)
+                // 진동 피드백
                 if (navigator.vibrate) {
                     navigator.vibrate(50);
                 }
+                
+                // 버튼 시각적 피드백
+                event.target.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    event.target.style.transform = 'scale(1)';
+                }, 100);
             }
-            touchHandled = true;
-            setTimeout(() => touchHandled = false, 100);
         }
 
         function deleteNumber() {
-            if (touchHandled) {
-                touchHandled = false;
-                return;
-            }
+            if (isScrolling) return;
             
             const phoneInput = document.getElementById('phoneInput');
             phoneInput.value = phoneInput.value.slice(0, -1);
             updateCourseButtonsState();
             
-            // 진동 피드백
             if (navigator.vibrate) {
                 navigator.vibrate(30);
             }
-            touchHandled = true;
-            setTimeout(() => touchHandled = false, 100);
+            
+            event.target.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                event.target.style.transform = 'scale(1)';
+            }, 100);
         }
 
         function clearPhone() {
-            if (touchHandled) {
-                touchHandled = false;
-                return;
-            }
+            if (isScrolling) return;
             
             document.getElementById('phoneInput').value = '';
             updateCourseButtonsState();
             
-            // 진동 피드백
             if (navigator.vibrate) {
                 navigator.vibrate([50, 50, 50]);
             }
-            touchHandled = true;
-            setTimeout(() => touchHandled = false, 100);
+            
+            event.target.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                event.target.style.transform = 'scale(1)';
+            }, 100);
         }
 
         // 핸드폰 번호 유효성 검사
@@ -1287,6 +1288,9 @@
             createCourseButtons();
             updateTime();
             
+            // 터치 이벤트 설정
+            setupTouchEvents();
+            
             // 시간 업데이트
             setInterval(updateTime, 1000);
             
@@ -1300,7 +1304,7 @@
                 }, 2000);
             }, 1000);
             
-            console.log('✅ 알림톡 키오스크 초기화 완료');
+            console.log('✅ 알림톡 키오스크 초기화 완료 (스크롤 방해 방지 적용)');
         }
 
         // 페이지 언로드 시 정리
