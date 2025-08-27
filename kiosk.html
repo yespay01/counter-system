@@ -112,12 +112,17 @@
             max-width: none;
             text-align: center;
             width: 100%;
-            min-height: 120px;
+            min-height: 150px; /* 기본 높이 증가 */
             display: flex;
             flex-direction: column;
             justify-content: center;
             touch-action: manipulation;
             user-select: none;
+            -webkit-tap-highlight-color: rgba(0,0,0,0.1); /* 터치 하이라이트 */
+            -webkit-touch-callout: none; /* 길게 눌러서 나오는 메뉴 비활성화 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         
         .course-btn:hover {
@@ -410,7 +415,61 @@
             60% { transform: translateY(-5px); }
         }
         
-        /* 반응형 - 터치 영역 확대 */
+        /* 1080*1920 세로모드 최적화 (키오스크 전용) */
+        @media (max-width: 1080px) and (min-height: 1800px) {
+            .container {
+                min-height: 100vh;
+                padding: 30px;
+            }
+            
+            .header h1 { 
+                font-size: 3.5rem; 
+                margin-bottom: 20px;
+            }
+            
+            .service-title { 
+                font-size: 2.8rem; 
+                margin-bottom: 60px;
+            }
+            
+            .course-buttons { 
+                flex-direction: column; 
+                align-items: stretch;
+                gap: 30px;
+                padding: 0 40px;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            
+            .course-btn { 
+                min-width: unset;
+                max-width: unset;
+                width: 100%;
+                min-height: 180px;
+                padding: 60px 40px;
+                margin: 0;
+                font-size: 1.3rem;
+                border-radius: 25px;
+                box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+            }
+            
+            .course-name {
+                font-size: 2.2rem;
+                margin-bottom: 15px;
+            }
+            
+            .course-description {
+                font-size: 1.3rem;
+            }
+            
+            .settings-button {
+                width: 35px;
+                height: 35px;
+                font-size: 1rem;
+            }
+        }
+
+        /* 일반 태블릿/모바일 */
         @media (max-width: 768px) {
             .settings-panel { width: 100%; right: -100%; }
             .header h1 { font-size: 2.5rem; }
@@ -428,6 +487,33 @@
                 padding: 40px 20px;
                 margin: 0;
             }
+        }
+
+        /* 터치 디바이스 전용 최적화 */
+        .touch-device .course-btn {
+            /* 터치 디바이스에서 더 큰 터치 영역 보장 */
+            min-height: 160px;
+            padding: 55px 45px;
+        }
+
+        .touch-device .course-btn:active {
+            /* 터치 시 즉각적인 피드백 */
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.8);
+            transition: all 0.1s ease;
+        }
+
+        .touch-device .settings-button {
+            /* 설정 버튼도 터치 영역 확대 */
+            min-width: 40px;
+            min-height: 40px;
+            padding: 8px;
+        }
+
+        /* 터치 디바이스에서 불필요한 요소 숨김 */
+        .touch-device {
+            -webkit-overflow-scrolling: touch;
+            overflow: hidden;
         }
     </style>
     
@@ -1077,7 +1163,8 @@
                 
                 const ticketInfo = {
                     number: number,
-                    time: formatTime(now, timeFormat)
+                    time: formatTime(now, timeFormat),
+                    courseEng: course.englishName || course.name // 영문명 우선 사용
                 };
                 
                 // Firebase에 대기열 추가
@@ -1481,12 +1568,38 @@
             currentCourses.forEach(course => {
                 const button = document.createElement('button');
                 button.className = 'course-btn';
-                button.onclick = () => issueTicket(course);
                 button.disabled = !isPrinterConnected;
                 button.innerHTML = `
                     <div class="course-name">${course.name}</div>
                     <div class="course-description">${course.englishName}</div>
                 `;
+                
+                // 멀티 터치 이벤트 처리 (더 확실한 반응)
+                const handleTicketIssue = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!button.disabled) {
+                        issueTicket(course);
+                    }
+                };
+                
+                // 다양한 이벤트로 확실한 터치 처리
+                button.addEventListener('click', handleTicketIssue);
+                button.addEventListener('touchend', handleTicketIssue, { passive: false });
+                
+                // 터치 피드백 강화
+                button.addEventListener('touchstart', (e) => {
+                    if (!button.disabled) {
+                        button.style.transform = 'scale(0.98)';
+                        button.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+                    }
+                }, { passive: true });
+                
+                button.addEventListener('touchcancel', () => {
+                    button.style.transform = 'scale(1)';
+                    button.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                }, { passive: true });
+                
                 container.appendChild(button);
             });
         }
@@ -1953,6 +2066,56 @@
             });
         }
 
+        // 터치 최적화 설정 (1080*1920 세로모드 전용)
+        function setupTouchOptimization() {
+            // 전체 페이지 터치 반응성 개선
+            document.body.style.webkitTouchCallout = 'none';
+            document.body.style.webkitUserSelect = 'none';
+            document.body.style.touchAction = 'manipulation';
+            
+            // 더블 탭 줌 비활성화 (키오스크에서 불필요)
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+            
+            // 스크롤 방지 (키오스크에서 불필요)
+            document.addEventListener('touchmove', function(e) {
+                if (e.target.closest('.settings-panel') === null) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            // 터치 디바이스 감지 및 최적화
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
+                console.log('📱 터치 디바이스 감지됨 - 터치 최적화 활성화');
+                
+                // 해상도 감지 및 로그
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+                console.log(`📐 해상도: ${width}x${height}`);
+                
+                if (width <= 1080 && height >= 1800) {
+                    console.log('🎯 1080*1920 세로모드 최적화 적용됨');
+                }
+            }
+            
+            // 키오스크 모드에서 컨텍스트 메뉴 비활성화
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
+            
+            // 드래그 비활성화
+            document.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+            });
+        }
+
         // 초기화 (날짜 체크 및 번호 동기화 포함)
         async function initialize() {
             console.log('🚀 키오스크 초기화 시작');
@@ -1986,6 +2149,9 @@
             // 미리보기 초기 생성
             updatePreview();
             
+            // 터치 최적화 설정
+            setupTouchOptimization();
+            
             // 자동 연결 시도 (비동기)
             setTimeout(async () => {
                 if (isSerialSupported()) {
@@ -1995,6 +2161,7 @@
             
             console.log('✅ 키오스크 초기화 완료');
             console.log('🔢 번호 카운팅: Firebase 동기화 모드');
+            console.log('📱 터치 최적화: 1080*1920 세로모드 지원');
         }
 
         // 전체화면 상태 변경 감지
