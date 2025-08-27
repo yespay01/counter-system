@@ -149,11 +149,15 @@
             font-weight: 700;
             color: #2c3e50;
             margin-bottom: 10px;
+            pointer-events: none; /* 터치 이벤트를 부모 버튼으로 전달 */
+            user-select: none; /* 텍스트 선택 방지 */
         }
         
         .course-description {
             font-size: 1.1rem;
             color: #7f8c8d;
+            pointer-events: none; /* 터치 이벤트를 부모 버튼으로 전달 */
+            user-select: none; /* 텍스트 선택 방지 */
         }
         
         /* 설정 패널 - 해상도 대응 */
@@ -456,10 +460,14 @@
             .course-name {
                 font-size: 2.2rem;
                 margin-bottom: 15px;
+                pointer-events: none; /* 터치 이벤트 전달 보장 */
+                user-select: none;
             }
             
             .course-description {
                 font-size: 1.3rem;
+                pointer-events: none; /* 터치 이벤트 전달 보장 */
+                user-select: none;
             }
             
             .settings-button {
@@ -1570,8 +1578,8 @@
                 button.className = 'course-btn';
                 button.disabled = !isPrinterConnected;
                 button.innerHTML = `
-                    <div class="course-name">${course.name}</div>
-                    <div class="course-description">${course.englishName}</div>
+                    <div class="course-name" style="pointer-events: none; user-select: none;">${course.name}</div>
+                    <div class="course-description" style="pointer-events: none; user-select: none;">${course.englishName}</div>
                 `;
                 
                 // 멀티 터치 이벤트 처리 (더 확실한 반응)
@@ -1579,13 +1587,19 @@
                     e.preventDefault();
                     e.stopPropagation();
                     if (!button.disabled) {
+                        console.log(`🎯 터치 이벤트 감지: ${course.name} (${e.type})`);
                         issueTicket(course);
                     }
                 };
                 
-                // 다양한 이벤트로 확실한 터치 처리
-                button.addEventListener('click', handleTicketIssue);
+                // 다양한 이벤트로 확실한 터치 처리 (순서 중요)
                 button.addEventListener('touchend', handleTicketIssue, { passive: false });
+                button.addEventListener('click', handleTicketIssue);
+                
+                // 터치 영역 전체에서 이벤트 캡처 보장
+                button.addEventListener('touchstart', (e) => {
+                    e.stopPropagation(); // 다른 요소로의 이벤트 전파 차단
+                }, { passive: true });
                 
                 // 터치 피드백 강화
                 button.addEventListener('touchstart', (e) => {
