@@ -395,21 +395,22 @@
         /* 성공 메시지 */
         .print-success {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #00b894, #00cec9);
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 184, 148, 0.95); /* 전체 화면 반투명 배경 */
             color: white;
-            padding: 40px 60px;
-            border-radius: 25px;
-            font-size: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
             font-weight: 700;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             z-index: 10000;
             text-align: center;
             opacity: 0;
-            transition: all 0.4s ease;
-            border: 2px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
             cursor: pointer; /* 클릭 가능함을 표시 */
             user-select: none; /* 텍스트 선택 방지 */
             touch-action: manipulation; /* 터치 최적화 */
@@ -417,12 +418,11 @@
         
         .print-success.show { 
             opacity: 1; 
-            transform: translate(-50%, -50%) scale(1.05);
         }
         
         .success-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 8rem;
+            margin-bottom: 40px;
             animation: bounce 0.6s ease-in-out;
         }
         
@@ -2072,10 +2072,10 @@
             
             successEl.classList.add('show');
             
-            // 자동으로 1초 후 사라짐
+            // 자동으로 0.8초 후 사라짐
             const autoHideTimer = setTimeout(() => {
                 successEl.classList.remove('show');
-            }, 1000); // 3초 → 1초로 단축
+            }, 800); // 1초 → 0.8초로 더 단축
             
             // 터치/클릭하면 즉시 사라짐
             const hideSuccess = () => {
