@@ -664,9 +664,10 @@
                 
                 <label>용지 자르기:</label>
                 <select class="setting-select" id="paperCut">
-                    <option value="full" selected>전체 자르기</option>
-                    <option value="partial">부분 자르기</option>
-                    <option value="none">자르지 않음</option>
+                    <option value="full" selected>완전 컷팅 (용지를 완전히 자름)</option>
+                    <option value="full_alt">강력 완전 컷팅 (일부 프린터용)</option>
+                    <option value="partial">부분 컷팅 (뜯기 쉽게 홈만 냄)</option>
+                    <option value="none">컷팅 안함</option>
                 </select>
                 
                 <label>상단 여백:</label>
@@ -872,8 +873,9 @@
             FONT_HUGE: ESC + 'E1' + GS + '!17',  // 볼드 + 더블사이즈
             BOLD_ON: ESC + 'E1',
             BOLD_OFF: ESC + 'E0',
-            CUT_FULL: GS + 'V0',
-            CUT_PARTIAL: GS + 'V1',
+            CUT_FULL: GS + 'V1',     // 완전 컷팅 (용지를 완전히 자름)
+            CUT_PARTIAL: GS + 'V0',  // 부분 컷팅 (뜯을 수 있도록 홈만 냄)
+            CUT_FULL_ALT: GS + 'VB' + String.fromCharCode(0), // 대안 완전 컷팅
             LINE_FEED: '\n'
         };
 
@@ -1146,9 +1148,12 @@
                 // 용지 자르기
                 if (paperCut === 'full') {
                     bottomData += ESCPOS.CUT_FULL;
+                } else if (paperCut === 'full_alt') {
+                    bottomData += ESCPOS.CUT_FULL_ALT;
                 } else if (paperCut === 'partial') {
                     bottomData += ESCPOS.CUT_PARTIAL;
                 }
+                // 'none' 선택 시 컷팅 명령어 추가하지 않음
 
                 await sendToPrinter(bottomData);
                 showPrintSuccess(ticketInfo.number);
