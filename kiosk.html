@@ -411,9 +411,8 @@
             text-align: center;
             opacity: 0;
             transition: all 0.3s ease;
-            cursor: pointer; /* 클릭 가능함을 표시 */
+            pointer-events: none; /* 터치/클릭 완전 차단 */
             user-select: none; /* 텍스트 선택 방지 */
-            touch-action: manipulation; /* 터치 최적화 */
         }
         
         .print-success.show { 
@@ -2072,21 +2071,10 @@
             
             successEl.classList.add('show');
             
-            // 자동으로 0.8초 후 사라짐
-            const autoHideTimer = setTimeout(() => {
+            // 자동으로 0.8초 후 사라짐 (터치 불가)
+            setTimeout(() => {
                 successEl.classList.remove('show');
-            }, 800); // 1초 → 0.8초로 더 단축
-            
-            // 터치/클릭하면 즉시 사라짐
-            const hideSuccess = () => {
-                clearTimeout(autoHideTimer); // 타이머 취소
-                successEl.classList.remove('show');
-                successEl.removeEventListener('click', hideSuccess);
-                successEl.removeEventListener('touchend', hideSuccess);
-            };
-            
-            successEl.addEventListener('click', hideSuccess);
-            successEl.addEventListener('touchend', hideSuccess, { passive: true });
+            }, 800);
         }
 
         // Firebase 리스너 설정 (서버 우선 동기화)
