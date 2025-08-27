@@ -664,22 +664,9 @@
                 
                 <label>용지 자르기:</label>
                 <select class="setting-select" id="paperCut">
-                    <option value="full" selected>표준 완전 컷팅 (약간 연결부 있음)</option>
-                    <option value="full_alt">강화 완전 컷팅 (일부 프린터용)</option>
-                    <option value="super">슈퍼 컷팅 (더 강력한 컷팅)</option>
-                    <option value="manual">수동 컷팅 (다른 방식)</option>
-                    <option value="double">이중 컷팅 (두 번 자르기)</option>
-                    <option value="partial">부분 컷팅 (뜯기 쉽게 홈만 냄)</option>
+                    <option value="cut" selected>컷팅</option>
                     <option value="none">컷팅 안함</option>
                 </select>
-                
-                <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 12px; border-radius: 6px; margin-top: 10px; font-size: 0.85rem;">
-                    <strong>💡 컷팅 참고사항:</strong><br>
-                    • 대부분의 ESC/POS 프린터는 용지 걸림 방지를 위해 완전 컷팅시에도 미세한 연결부를 남깁니다<br>
-                    • 완전히 분리하려면 손으로 살짝 뜯어내야 할 수 있습니다<br>
-                    • 프린터 모델에 따라 지원하는 컷팅 방식이 다를 수 있습니다<br>
-                    • 이중 컷팅은 더 깔끔한 절단을 위해 두 번 잘라줍니다
-                </div>
                 
                 <label>상단 여백:</label>
                 <select class="setting-select" id="topMargin">
@@ -884,11 +871,7 @@
             FONT_HUGE: ESC + 'E1' + GS + '!17',  // 볼드 + 더블사이즈
             BOLD_ON: ESC + 'E1',
             BOLD_OFF: ESC + 'E0',
-            CUT_FULL: GS + 'V1',     // 완전 컷팅 (용지를 완전히 자름)
-            CUT_PARTIAL: GS + 'V0',  // 부분 컷팅 (뜯을 수 있도록 홈만 냄)
-            CUT_FULL_ALT: GS + 'VB' + String.fromCharCode(0), // 대안 완전 컷팅
-            CUT_SUPER: GS + 'V' + String.fromCharCode(65) + String.fromCharCode(0), // 슈퍼 컷팅
-            CUT_MANUAL: String.fromCharCode(27) + 'd' + String.fromCharCode(3), // 수동 컷팅
+            CUT_FULL: GS + 'V1',     // 컷팅
             LINE_FEED: '\n'
         };
 
@@ -1159,21 +1142,8 @@
                 bottomData += ESCPOS.LINE_FEED.repeat(bottomMargin);
                 
                 // 용지 자르기
-                if (paperCut === 'full') {
+                if (paperCut === 'cut') {
                     bottomData += ESCPOS.CUT_FULL;
-                } else if (paperCut === 'full_alt') {
-                    bottomData += ESCPOS.CUT_FULL_ALT;
-                } else if (paperCut === 'super') {
-                    bottomData += ESCPOS.CUT_SUPER;
-                } else if (paperCut === 'manual') {
-                    bottomData += ESCPOS.CUT_MANUAL;
-                } else if (paperCut === 'double') {
-                    // 이중 컷팅: 첫 번째 컷팅 후 약간의 지연 후 두 번째 컷팅
-                    bottomData += ESCPOS.CUT_FULL;
-                    bottomData += ESCPOS.LINE_FEED; // 약간의 간격
-                    bottomData += ESCPOS.CUT_FULL;
-                } else if (paperCut === 'partial') {
-                    bottomData += ESCPOS.CUT_PARTIAL;
                 }
                 // 'none' 선택 시 컷팅 명령어 추가하지 않음
 
@@ -1400,7 +1370,7 @@
                     document.getElementById('numberFontSize').value = settings.numberFontSize || 'xlarge';
                     document.getElementById('timeFontSize').value = settings.timeFontSize || 'normal';
                     document.getElementById('timeFormat').value = settings.timeFormat || 'time';
-                    document.getElementById('paperCut').value = settings.paperCut || 'full';
+                    document.getElementById('paperCut').value = settings.paperCut || 'cut';
                     document.getElementById('topMargin').value = settings.topMargin || '4';
                     document.getElementById('bottomMargin').value = settings.bottomMargin || '6';
                     
