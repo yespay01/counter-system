@@ -943,8 +943,8 @@
                 
                 let printData = '';
                 
-                // 상단 여백 (2줄)
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                // 상단 여백 (4줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
                 // 상단 구분선
                 printData += ESCPOS.ALIGN_CENTER;
@@ -991,8 +991,8 @@
                 bottomData += ESCPOS.FONT_NORMAL;
                 bottomData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 
-                // 여백 (2줄)
-                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                // 여백 (4줄)
+                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
                 
                 // 용지 자르기
                 if (paperCut === 'full') {
@@ -1098,7 +1098,7 @@
             let preview = '';
             
             // 상단 여백
-            preview += '\n\n';
+            preview += '\n\n\n\n';
             
             // 상단 구분선
             preview += createLine('=', paperWidth) + '\n';
@@ -1142,7 +1142,7 @@
             preview += createLine('=', paperWidth) + '\n';
             
             // 하단 여백
-            preview += '\n\n';
+            preview += '\n\n\n\n';
             
             // 번호 정보 추가
             if (courses.length > 0) {
