@@ -410,6 +410,9 @@
             opacity: 0;
             transition: all 0.4s ease;
             border: 2px solid rgba(255,255,255,0.2);
+            cursor: pointer; /* 클릭 가능함을 표시 */
+            user-select: none; /* 텍스트 선택 방지 */
+            touch-action: manipulation; /* 터치 최적화 */
         }
         
         .print-success.show { 
@@ -2068,9 +2071,22 @@
             messageEl.textContent = `${number} 대기표 출력 완료!`;
             
             successEl.classList.add('show');
-            setTimeout(() => {
+            
+            // 자동으로 1초 후 사라짐
+            const autoHideTimer = setTimeout(() => {
                 successEl.classList.remove('show');
-            }, 3000);
+            }, 1000); // 3초 → 1초로 단축
+            
+            // 터치/클릭하면 즉시 사라짐
+            const hideSuccess = () => {
+                clearTimeout(autoHideTimer); // 타이머 취소
+                successEl.classList.remove('show');
+                successEl.removeEventListener('click', hideSuccess);
+                successEl.removeEventListener('touchend', hideSuccess);
+            };
+            
+            successEl.addEventListener('click', hideSuccess);
+            successEl.addEventListener('touchend', hideSuccess, { passive: true });
         }
 
         // Firebase 리스너 설정 (서버 우선 동기화)
