@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>키오스크 - 시리얼 프린터</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .header h1 {
+            color: white;
+            font-size: 3rem;
+            font-weight: 900;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .settings-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 25px;
+            height: 25px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.3);
+            backdrop-filter: blur(5px);
+        }
+        
+        .settings-button:hover {
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.6);
+            transform: scale(1.2) rotate(45deg);
+        }
+        
+        .status-bar {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .current-time {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .service-title {
+            text-align: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .course-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 40px;
+            padding: 0 20px;
+        }
+        
+        .course-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 20px;
+            padding: 50px 40px;
+            cursor: pointer;
+            transition: none; /* 효과 제거 */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            flex: 1 1 400px;
+            min-width: 280px;
+            max-width: none;
+            text-align: center;
+            width: 100%;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        .course-btn:hover {
+            /* 호버 효과 제거 */
+            transform: none;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .course-btn:active {
+            /* 액티브 효과 제거 */
+            transform: none;
+            transition: none;
+        }
+        
+        .course-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .course-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .course-description {
+            font-size: 1.1rem;
+            color: #7f8c8d;
+        }
+        
+        /* 설정 패널 - 해상도 대응 */
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -500px;
+            width: 500px;
+            height: 100%;
+            background: white;
+            transition: right 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+        }
+        
+        .settings-panel.open { 
+            right: 0; 
+        }
+        
+        /* 낮은 해상도 대응 - 터치 영역 대폭 확대 */
+        @media (max-width: 1024px) {
+            .settings-panel {
+                width: 400px;
+                right: -400px;
+            }
+            
+            /* 체크박스 터치 영역 대폭 확대 */
+            .checkboxDiv {
+                min-height: 60px !important;
+                padding: 20px !important;
+                margin-bottom: 12px !important;
+            }
+            
+            .time-period {
+                padding: 30px !important;
+            }
+            
+            .course-inputs {
+                gap: 20px !important;
+            }
+            
+            /* 설정 버튼들 터치 영역 확대 */
+            .setting-btn {
+                min-height: 55px !important;
+                padding: 18px 30px !important;
+                font-size: 1.1rem !important;
+                margin: 8px 8px 8px 0 !important;
+            }
+            
+            /* 입력 필드 터치 영역 확대 */
+            .setting-input, .setting-select {
+                padding: 18px !important;
+                font-size: 1.1rem !important;
+                min-height: 50px !important;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .settings-panel {
+                width: 350px;
+                right: -350px;
+            }
+            
+            /* 더 큰 터치 영역 */
+            .checkboxDiv {
+                min-height: 70px !important;
+                padding: 25px !important;
+                margin-bottom: 15px !important;
+            }
+            
+            .setting-btn {
+                min-height: 60px !important;
+                padding: 20px 35px !important;
+                font-size: 1.2rem !important;
+                margin: 10px 10px 10px 0 !important;
+            }
+            
+            /* 입력 필드 더 크게 */
+            .setting-input, .setting-select {
+                padding: 20px !important;
+                font-size: 1.2rem !important;
+                min-height: 55px !important;
+            }
+            
+            /* 시간 입력 필드도 크게 */
+            input[type="time"] {
+                padding: 20px !important;
+                font-size: 1.2rem !important;
+                min-height: 55px !important;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            .settings-header {
+                padding: 15px;
+                font-size: 1.2rem;
+            }
+            
+            .settings-content {
+                padding: 15px;
+                padding-bottom: 50px;
+            }
+            
+            .setting-group {
+                margin-bottom: 20px;
+                padding: 15px;
+            }
+            
+            /* 체크박스 컴팩트하지만 여전히 터치 가능 */
+            .checkboxDiv {
+                min-height: 55px !important;
+                padding: 18px !important;
+            }
+        }
+        
+        .settings-header {
+            background: #3498db;
+            color: white;
+            padding: 25px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .close-settings {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .settings-content { 
+            padding: 25px; 
+            padding-bottom: 100px;
+        }
+        
+        .setting-group { 
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .setting-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            color: #2c3e50;
+        }
+        
+        .setting-input, .setting-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .setting-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px 5px 5px 0;
+            transition: background 0.3s ease;
+        }
+        
+        .setting-btn:hover { background: #2980b9; }
+        .setting-btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .setting-btn.danger { background: #e74c3c; }
+        .setting-btn.danger:hover { background: #c0392b; }
+        .setting-btn.success { background: #27ae60; }
+        .setting-btn.success:hover { background: #229954; }
+        
+        .status-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 0.9rem;
+        }
+        
+        .setting-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .preview-section {
+            background: #2c3e50;
+            color: white;
+            font-family: 'Courier New', monospace;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            white-space: pre-line;
+            font-size: 0.8rem;
+            line-height: 1.2;
+        }
+        
+        /* 성공 메시지 */
+        .print-success {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 40px 60px;
+            border-radius: 25px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            z-index: 10000;
+            text-align: center;
+            opacity: 0;
+            transition: all 0.4s ease;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .print-success.show { 
+            opacity: 1; 
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        /* 반응형 - 터치 영역 확대 */
+        @media (max-width: 768px) {
+            .settings-panel { width: 100%; right: -100%; }
+            .header h1 { font-size: 2.5rem; }
+            .service-title { font-size: 2rem; }
+            .course-buttons { 
+                flex-direction: column; 
+                align-items: stretch;
+                padding: 0 10px;
+            }
+            .course-btn { 
+                min-width: unset;
+                max-width: unset;
+                width: 100%;
+                min-height: 100px;
+                padding: 40px 20px;
+                margin: 0;
+            }
+        }
+    </style>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCuvEDDEoMLwLB2miGHCWX1-B5u8gKlGEQ",
+            authDomain: "counter-system-26479.firebaseapp.com",
+            databaseURL: "https://counter-system-26479-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "counter-system-26479",
+            storageBucket: "counter-system-26479.firebasestorage.app",
+            messagingSenderId: "316144964417",
+            appId: "1:316144964417:web:8a95a80f9db622f4ee87c0"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseOnValue = onValue;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="settings-button" onclick="toggleSettings()" title="설정">⚙️</button>
+            <h1>🎫 순번대기표 발급</h1>
+        </div>
+
+        <div class="status-bar">
+            <div class="current-time" id="currentTime"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="service-title">원하는 상담 과정을 선택해 주세요</div>
+            
+            <div class="course-buttons" id="courseButtons">
+                <!-- 과목 버튼들 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 출력 성공 메시지 -->
+    <div class="print-success" id="printSuccess">
+        <div class="success-icon">✨</div>
+        <div id="printSuccessMessage">대기표 출력 완료!</div>
+    </div>
+
+    <!-- 설정 패널 -->
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            🔧 시스템 설정
+            <button class="close-settings" onclick="toggleSettings()">×</button>
+        </div>
+        <div class="settings-content">
+            
+            <!-- 프린터 연결 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">🖨️ 프린터 연결 설정</label>
+                <div class="setting-description">
+                    USB 또는 시리얼 포트로 연결된 ESC/POS 프린터를 설정합니다.<br>
+                    <strong>요구사항:</strong> Chrome 89+ 브라우저, HTTPS 환경<br>
+                    <strong>포트 고정:</strong> 한 번 연결하면 포트 정보가 자동 저장됩니다.
+                </div>
+                
+                <label>통신 속도 (Baud Rate):</label>
+                <select class="setting-select" id="baudRate">
+                    <option value="9600">9600 baud</option>
+                    <option value="19200">19200 baud</option>
+                    <option value="38400">38400 baud</option>
+                    <option value="57600">57600 baud</option>
+                    <option value="115200" selected>115200 baud</option>
+                </select>
+                
+                <div style="margin: 15px 0;">
+                    <button class="setting-btn" onclick="connectPrinter()">🔌 프린터 연결</button>
+                    <button class="setting-btn" onclick="disconnectPrinter()">🔌 연결 해제</button>
+                    <button class="setting-btn" onclick="testPrint()">🖨️ 테스트 출력</button>
+                    <button class="setting-btn" onclick="clearPrinterPort()">🗑️ 포트 정보 삭제</button>
+                </div>
+                
+                <div style="background: #e8f4fd; border: 1px solid #bee5eb; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem;">
+                    <strong>📍 포트 고정 기능:</strong><br>
+                    • 처음 연결 시: 프린터 포트를 선택하고 정보가 자동 저장됩니다<br>
+                    • 재연결 시: 저장된 포트로 자동 연결을 시도합니다<br>
+                    • 포트 변경 시: "포트 정보 삭제" 후 다시 연결하세요
+                </div>
+                
+                <div id="printerMessage"></div>
+            </div>
+
+            <!-- 출력 형식 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">📄 출력 형식 설정</label>
+                
+                <label>용지 폭:</label>
+                <select class="setting-select" id="paperWidth">
+                    <option value="32">32 characters (58mm 용지)</option>
+                    <option value="42" selected>42 characters (80mm 용지)</option>
+                    <option value="48">48 characters (112mm 용지)</option>
+                </select>
+                
+                <label>대기번호 글씨 크기:</label>
+                <select class="setting-select" id="numberFontSize">
+                    <option value="normal">일반 크기</option>
+                    <option value="large">큰 글씨 (2배)</option>
+                    <option value="xlarge" selected>매우 큰 글씨 (3배)</option>
+                    <option value="huge">초대형 글씨 (4배)</option>
+                </select>
+                
+                <label>시간 글씨 크기:</label>
+                <select class="setting-select" id="timeFontSize">
+                    <option value="small">작은 글씨</option>
+                    <option value="normal" selected>일반 크기</option>
+                    <option value="large">큰 글씨</option>
+                </select>
+                
+                <label>시간 표시 형식:</label>
+                <select class="setting-select" id="timeFormat">
+                    <option value="time" selected>시간만 (02:30 PM)</option>
+                    <option value="datetime">날짜+시간 (07/02 02:30 PM)</option>
+                    <option value="full">전체 (7/2/2025 02:30 PM)</option>
+                </select>
+                
+                <label>용지 자르기:</label>
+                <select class="setting-select" id="paperCut">
+                    <option value="full" selected>전체 자르기</option>
+                    <option value="partial">부분 자르기</option>
+                    <option value="none">자르지 않음</option>
+                </select>
+                
+                <button class="setting-btn" onclick="updatePreview()">👁️ 미리보기</button>
+                <button class="setting-btn success" onclick="saveSettings()">💾 설정 저장</button>
+                
+                <div class="preview-section" id="printPreview">
+                    <!-- 출력 미리보기가 여기에 표시됩니다 -->
+                </div>
+            </div>
+
+            <!-- 시간대별 과목 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">⏰ 시간대별 과목 설정</label>
+                <div class="setting-description">
+                    시간대별로 다른 과목을 표시할 수 있습니다. 현재 시간에 해당하는 과목만 화면에 나타납니다.
+                </div>
+                <div id="timePeriodsContainer"></div>
+                <button class="setting-btn success" onclick="addTimePeriod()">+ 시간대 추가</button>
+                <button class="setting-btn" onclick="saveTimeSettings()">시간 설정 저장</button>
+                <button class="setting-btn" onclick="loadDefaultTimeSettings()">기본값 복원</button>
+                <div id="timeSettingsMessage"></div>
+            </div>
+
+            <!-- 과목 설정 -->
+            <div class="setting-group">
+                <label class="setting-label">📚 전체 과목 관리</label>
+                <div class="setting-description">
+                    모든 과목을 관리합니다. 위의 시간대별 설정에서 이 과목들을 선택하여 사용할 수 있습니다.
+                </div>
+                <div id="courseSettings">
+                    <!-- 과목 설정이 여기에 표시됩니다 -->
+                </div>
+                <button class="setting-btn success" onclick="addCourse()">+ 과목 추가</button>
+            </div>
+
+            <!-- 시스템 정보 -->
+            <div class="setting-group">
+                <label class="setting-label">ℹ️ 시스템 정보</label>
+                <div class="setting-description">
+                    브라우저: <span id="browserInfo"></span><br>
+                    Web Serial API: <span id="serialSupport"></span><br>
+                    Firebase 연결: <span id="firebaseStatus">확인 중...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let serialPort = null;
+        let writer = null;
+        let isPrinterConnected = false;
+        let sharedData = {
+            waiting: [],
+            counters: Array(6).fill().map((_, i) => ({ id: i + 1, current: null, course: null, count: 0 })),
+            totalToday: 0,
+            lastUpdated: null,
+            currentNumbers: {}, // Firebase에서 관리되는 번호 카운터
+            lastDate: null      // 마지막 업데이트 날짜
+        };
+        let timeSettings = [];
+        
+        // 오늘 날짜 가져오기
+        function getTodayString() {
+            const today = new Date();
+            return today.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+        }
+
+        // 날짜 체크 및 카운터 초기화
+        function checkDateAndResetCounters() {
+            const today = getTodayString();
+            
+            if (!sharedData.lastDate || sharedData.lastDate !== today) {
+                console.log(`📅 날짜 변경 감지: ${sharedData.lastDate} → ${today}`);
+                
+                // 새로운 날이므로 카운터 초기화
+                sharedData.currentNumbers = {};
+                sharedData.totalToday = 0;
+                sharedData.lastDate = today;
+                
+                // 창구별 카운터도 초기화
+                sharedData.counters.forEach(counter => {
+                    counter.count = 0;
+                });
+                
+                console.log('🔄 일일 카운터 자동 초기화 완료');
+                
+                // Firebase에 저장
+                saveToFirebase();
+                
+                return true; // 초기화됨
+            }
+            
+            return false; // 초기화 안됨
+        }
+
+        // 현재 번호 가져오기 (Firebase 동기화)
+        function getCurrentNumber(courseCode) {
+            if (!sharedData.currentNumbers[courseCode]) {
+                sharedData.currentNumbers[courseCode] = 0;
+            }
+            return sharedData.currentNumbers[courseCode];
+        }
+
+        // 다음 번호 생성 및 저장
+        function getNextNumber(courseCode) {
+            // 날짜 체크
+            checkDateAndResetCounters();
+            
+            // 다음 번호 생성
+            const currentNum = getCurrentNumber(courseCode);
+            const nextNum = currentNum + 1;
+            
+            // Firebase에 저장
+            sharedData.currentNumbers[courseCode] = nextNum;
+            
+            return nextNum;
+        }
+        let courses = [
+            { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
+            { code: 'EN', name: '영어 과정', englishName: 'English Course' },
+            { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
+            { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+        ];
+
+        // 기본 시간대 설정
+        const defaultTimeSettings = [
+            {
+                startTime: '09:00',
+                endTime: '12:00',
+                courses: ['CH', 'EN']
+            },
+            {
+                startTime: '12:00',
+                endTime: '15:00',
+                courses: ['EN', 'HSK']
+            },
+            {
+                startTime: '15:00',
+                endTime: '18:00',
+                courses: ['HSK', 'TO']
+            },
+            {
+                startTime: '18:00',
+                endTime: '21:00',
+                courses: ['TO', 'CH']
+            }
+        ];
+
+        // ESC/POS 명령어 (단순화)
+        const ESC = '\x1B';
+        const GS = '\x1D';
+        
+        const ESCPOS = {
+            INIT: ESC + '@',
+            ALIGN_CENTER: ESC + 'a1',
+            ALIGN_LEFT: ESC + 'a0',
+            FONT_NORMAL: '',  // 기본 폰트만 사용
+            FONT_LARGE: ESC + 'E1',  // 볼드만 사용
+            FONT_XLARGE: ESC + 'E1' + GS + '!1',  // 볼드 + 더블폭
+            FONT_HUGE: ESC + 'E1' + GS + '!17',  // 볼드 + 더블사이즈
+            BOLD_ON: ESC + 'E1',
+            BOLD_OFF: ESC + 'E0',
+            CUT_FULL: GS + 'V0',
+            CUT_PARTIAL: GS + 'V1',
+            LINE_FEED: '\n'
+        };
+
+        // Web Serial API 지원 확인
+        function isSerialSupported() {
+            return 'serial' in navigator;
+        }
+
+        // 프린터 연결 (수동 - 포트 선택창 표시 + 점유 확인)
+        async function connectPrinter() {
+            if (!isSerialSupported()) {
+                showMessage('printerMessage', '이 브라우저는 Web Serial API를 지원하지 않습니다. Chrome 89+ 버전을 사용하세요.', 'error');
+                return;
+            }
+
+            try {
+                const baudRate = parseInt(document.getElementById('baudRate').value) || 115200;
+                
+                if (serialPort) {
+                    await disconnectPrinter();
+                }
+                
+                // 수동 연결 - 사용자가 포트 선택
+                serialPort = await navigator.serial.requestPort();
+                await openPrinterPort(serialPort, baudRate);
+
+            } catch (error) {
+                console.error('프린터 연결 오류:', error);
+                isPrinterConnected = false;
+                updatePrinterStatus();
+                
+                let errorMsg = '프린터 연결 실패: ';
+                if (error.name === 'NotFoundError') {
+                    errorMsg += '사용자가 포트 선택을 취소했습니다.';
+                } else if (error.name === 'InvalidStateError') {
+                    errorMsg = '⚠️ 프린터가 다른 브라우저 탭에서 사용 중입니다.<br>' +
+                              '<strong>해결 방법:</strong><br>' +
+                              '1. 다른 키오스크 탭 모두 닫기<br>' +
+                              '2. 이 페이지 새로고침 (F5)<br>' +
+                              '3. 다시 연결 시도<br><br>' +
+                              '<small>※ 시리얼 포트는 한 번에 하나의 탭에서만 사용 가능합니다.</small>';
+                } else if (error.name === 'NetworkError') {
+                    errorMsg += '포트를 열 수 없습니다. 프린터가 연결되어 있는지 확인하세요.';
+                } else if (error.message && error.message.includes('already open')) {
+                    errorMsg = '⚠️ 선택한 포트가 다른 곳에서 사용 중입니다.<br>' +
+                              '다른 키오스크 프로그램을 종료하고 다시 시도하세요.';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                showMessage('printerMessage', errorMsg, 'error');
+            }
+        }
+
+        // 프린터 포트 열기 (공통 함수 + 점유 상태 체크)
+        async function openPrinterPort(port, baudRate) {
+            try {
+                await port.open({ 
+                    baudRate: baudRate,
+                    dataBits: 8,
+                    stopBits: 1,
+                    parity: 'none',
+                    flowControl: 'none'
+                });
+
+                const textEncoder = new TextEncoderStream();
+                const writableStreamClosed = textEncoder.readable.pipeTo(port.writable);
+                writer = textEncoder.writable.getWriter();
+
+                isPrinterConnected = true;
+                updatePrinterStatus();
+                
+                await sendToPrinter(ESCPOS.INIT);
+                
+                showMessage('printerMessage', '✅ 프린터가 성공적으로 연결되었습니다!', 'success');
+                console.log('🖨️ 프린터 연결 성공');
+                
+            } catch (error) {
+                console.error('포트 열기 오류:', error);
+                isPrinterConnected = false;
+                updatePrinterStatus();
+                
+                let errorMsg = '';
+                if (error.name === 'InvalidStateError' || error.message.includes('already open')) {
+                    errorMsg = '⚠️ 프린터가 다른 브라우저 탭에서 사용 중입니다.<br>' +
+                              '<strong>해결 방법:</strong><br>' +
+                              '1. 다른 키오스크 탭 모두 닫기<br>' +
+                              '2. 브라우저 완전 종료 후 재시작<br>' +
+                              '3. 프린터 USB 케이블 재연결<br><br>' +
+                              '<small>※ 한 번에 하나의 탭에서만 프린터 사용 가능</small>';
+                } else if (error.name === 'NetworkError') {
+                    errorMsg = '❌ 프린터 연결 실패<br>' +
+                              '프린터가 켜져 있고 USB가 연결되어 있는지 확인하세요.';
+                } else {
+                    errorMsg = `프린터 연결 오류: ${error.message}`;
+                }
+                
+                showMessage('printerMessage', errorMsg, 'error');
+                throw error;
+            }
+        }
+
+        // 프린터 연결 해제
+        async function disconnectPrinter() {
+            try {
+                if (writer) {
+                    await writer.close();
+                    writer = null;
+                }
+                if (serialPort) {
+                    await serialPort.close();
+                    serialPort = null;
+                }
+                
+                isPrinterConnected = false;
+                updatePrinterStatus();
+                showMessage('printerMessage', '프린터 연결이 해제되었습니다.', 'success');
+                
+            } catch (error) {
+                console.error('프린터 해제 오류:', error);
+                isPrinterConnected = false;
+                updatePrinterStatus();
+            }
+        }
+
+        // 프린터로 데이터 전송
+        async function sendToPrinter(data) {
+            if (!isPrinterConnected || !writer) {
+                throw new Error('프린터가 연결되지 않았습니다.');
+            }
+            
+            try {
+                await writer.write(data);
+            } catch (error) {
+                console.error('프린터 전송 오류:', error);
+                throw error;
+            }
+        }
+
+        // 텍스트 중앙 정렬
+        function centerText(text, width) {
+            const padding = Math.max(0, Math.floor((width - text.length) / 2));
+            return ' '.repeat(padding) + text;
+        }
+
+        // 라인 생성
+        function createLine(char, width) {
+            return char.repeat(width);
+        }
+
+        // 폰트 크기 명령어 가져오기 (단순화)
+        function getFontSizeCommand(size) {
+            switch(size) {
+                case 'normal': return ESCPOS.FONT_NORMAL;
+                case 'large': return ESCPOS.FONT_LARGE;
+                case 'xlarge': return ESCPOS.FONT_XLARGE;
+                case 'huge': return ESCPOS.FONT_HUGE;
+                default: return ESCPOS.FONT_NORMAL;
+            }
+        }
+
+        // 시간 포맷팅 (AM/PM 형식)
+        function formatTime(date, format) {
+            switch(format) {
+                case 'time':
+                    return date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                case 'datetime':
+                    return date.toLocaleDateString('en-US', { 
+                        month: '2-digit', 
+                        day: '2-digit' 
+                    }) + ' ' + date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                case 'full':
+                    return date.toLocaleDateString('en-US') + ' ' + 
+                           date.toLocaleTimeString('en-US', { 
+                               hour: '2-digit', 
+                               minute: '2-digit',
+                               hour12: true 
+                           });
+                default:
+                    return date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+            }
+        }
+
+        // 대기표 출력 (번호 + 시간 추가)
+        async function printTicket(ticketInfo) {
+            if (!isPrinterConnected) {
+                console.log('⚠️ 프린터 미연결 - 출력 시뮬레이션');
+                showPrintSuccess(ticketInfo.number);
+                return;
+            }
+
+            try {
+                const numberFontSize = document.getElementById('numberFontSize').value;
+                const timeFontSize = document.getElementById('timeFontSize').value;
+                const timeFormat = document.getElementById('timeFormat').value;
+                const paperCut = document.getElementById('paperCut').value;
+                const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
+
+                // 프린터 완전 초기화
+                await sendToPrinter(ESCPOS.INIT);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                let printData = '';
+                
+                // 상단 여백 (4줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 상단 구분선
+                printData += ESCPOS.ALIGN_CENTER;
+                printData += ESCPOS.FONT_NORMAL;
+                printData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                
+                // 여백 (2줄)
+                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 대기번호 출력 (설정된 크기)
+                printData += ESCPOS.ALIGN_CENTER;
+                printData += getFontSizeCommand(numberFontSize);
+                printData += ticketInfo.number + ESCPOS.LINE_FEED;
+                
+                // 폰트 크기 리셋
+                printData += ESCPOS.INIT;
+                await sendToPrinter(printData);
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                // 시간 출력 부분
+                let timeData = '';
+                
+                // 여백 (2줄)
+                timeData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 시간 출력
+                timeData += ESCPOS.ALIGN_CENTER;
+                timeData += getFontSizeCommand(timeFontSize);
+                timeData += ticketInfo.time + ESCPOS.LINE_FEED;
+                
+                // 폰트 크기 완전 리셋
+                timeData += ESCPOS.INIT;
+                await sendToPrinter(timeData);
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                // 하단 부분
+                let bottomData = '';
+                
+                // 여백 (2줄)
+                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 하단 구분선
+                bottomData += ESCPOS.ALIGN_CENTER;
+                bottomData += ESCPOS.FONT_NORMAL;
+                bottomData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
+                
+                // 여백 (4줄)
+                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                
+                // 용지 자르기
+                if (paperCut === 'full') {
+                    bottomData += ESCPOS.CUT_FULL;
+                } else if (paperCut === 'partial') {
+                    bottomData += ESCPOS.CUT_PARTIAL;
+                }
+
+                await sendToPrinter(bottomData);
+                showPrintSuccess(ticketInfo.number);
+                
+            } catch (error) {
+                console.error('출력 오류:', error);
+                showMessage('printerMessage', '출력 실패: ' + error.message, 'error');
+            }
+        }
+
+        // 테스트 출력 (시간 포함)
+        async function testPrint() {
+            const timeFormat = document.getElementById('timeFormat').value;
+            const testTicket = {
+                number: 'TEST01',
+                time: formatTime(new Date(), timeFormat)
+            };
+            
+            await printTicket(testTicket);
+        }
+
+        // 대기표 발급 (Firebase 번호 카운팅)
+        function issueTicket(course) {
+            try {
+                // 날짜 체크 및 다음 번호 생성
+                const nextNum = getNextNumber(course.code);
+                const number = course.code + String(nextNum).padStart(3, '0');
+                
+                const now = new Date();
+                const timeFormat = document.getElementById('timeFormat').value;
+                
+                const ticketInfo = {
+                    number: number,
+                    time: formatTime(now, timeFormat)
+                };
+                
+                // Firebase에 대기열 추가
+                const newWaitingItem = {
+                    number: number,
+                    course: course.name,
+                    time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+                };
+                
+                sharedData.waiting.push(newWaitingItem);
+                sharedData.totalToday = (sharedData.totalToday || 0) + 1;
+                
+                // Firebase에 저장 (번호 카운터 포함)
+                saveToFirebase();
+                
+                // 프린터 출력
+                printTicket(ticketInfo);
+                
+                console.log('✅ 대기표 발급 완료:', number, ticketInfo.time);
+                console.log(`📊 현재 ${course.code} 카운터: ${nextNum}`);
+                
+            } catch (error) {
+                console.error('❌ 대기표 발급 오류:', error);
+                alert('대기표 발급 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Firebase 저장
+        function saveToFirebase() {
+            if (!window.firebaseDB) return;
+            
+            try {
+                sharedData.lastUpdated = new Date().toISOString();
+                const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+                window.firebaseSet(systemRef, sharedData);
+                console.log('✅ Firebase 저장 완료');
+            } catch (error) {
+                console.error('❌ Firebase 저장 실패:', error);
+            }
+        }
+
+        // 출력 미리보기 생성 (동적 번호 표시)
+        function generatePreview(ticketNumber = null) {
+            const numberFontSize = document.getElementById('numberFontSize').value;
+            const timeFontSize = document.getElementById('timeFontSize').value;
+            const timeFormat = document.getElementById('timeFormat').value;
+            const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
+            
+            // 실제 다음 번호 미리보기 (첫 번째 과목 기준)
+            if (!ticketNumber && courses.length > 0) {
+                const firstCourse = courses[0];
+                const nextNum = getCurrentNumber(firstCourse.code) + 1;
+                ticketNumber = firstCourse.code + String(nextNum).padStart(3, '0');
+            }
+            
+            if (!ticketNumber) {
+                ticketNumber = 'CH001'; // 기본값
+            }
+            
+            const sampleTime = formatTime(new Date(), timeFormat);
+            
+            let preview = '';
+            
+            // 상단 여백
+            preview += '\n\n\n\n';
+            
+            // 상단 구분선
+            preview += createLine('=', paperWidth) + '\n';
+            
+            // 여백
+            preview += '\n\n';
+            
+            // 대기번호 크기별 표시
+            if (numberFontSize === 'huge') {
+                preview += '         ████████████\n';
+                preview += '         ████████████\n';
+                preview += '         ██  ' + ticketNumber + '  ██\n';
+                preview += '         ████████████\n';
+                preview += '         ████████████\n';
+            } else if (numberFontSize === 'xlarge') {
+                preview += '         ████████\n';
+                preview += '         █ ' + ticketNumber + ' █\n';
+                preview += '         ████████\n';
+            } else if (numberFontSize === 'large') {
+                preview += '         【' + ticketNumber + '】\n';
+            } else {
+                preview += '         ' + ticketNumber + '\n';
+            }
+            
+            // 여백
+            preview += '\n\n';
+            
+            // 시간 크기별 표시
+            if (timeFontSize === 'large') {
+                preview += '         【' + sampleTime + '】\n';
+            } else if (timeFontSize === 'small') {
+                preview += '           ' + sampleTime + '\n';
+            } else {
+                preview += '         ' + sampleTime + '\n';
+            }
+            
+            // 여백
+            preview += '\n\n';
+            
+            // 하단 구분선
+            preview += createLine('=', paperWidth) + '\n';
+            
+            // 하단 여백
+            preview += '\n\n\n\n';
+            
+            // 번호 정보 추가
+            if (courses.length > 0) {
+                preview += '\n📊 현재 번호 상태:\n';
+                courses.forEach(course => {
+                    const currentNum = getCurrentNumber(course.code);
+                    const nextNum = currentNum + 1;
+                    preview += `${course.code}: 현재 ${String(currentNum).padStart(3, '0')} → 다음 ${String(nextNum).padStart(3, '0')}\n`;
+                });
+            }
+            
+            return preview;
+        }
+
+        // 미리보기 업데이트
+        function updatePreview() {
+            const preview = generatePreview();
+            document.getElementById('printPreview').textContent = preview;
+        }
+
+        // 설정 저장 (하이브리드 방식)
+        function saveSettings() {
+            // 1. 개인 설정 - localStorage에 저장
+            const localSettings = {
+                baudRate: document.getElementById('baudRate').value,
+                paperWidth: document.getElementById('paperWidth').value,
+                numberFontSize: document.getElementById('numberFontSize').value,
+                timeFontSize: document.getElementById('timeFontSize').value,
+                timeFormat: document.getElementById('timeFormat').value,
+                paperCut: document.getElementById('paperCut').value
+            };
+            
+            localStorage.setItem('kioskLocalSettings', JSON.stringify(localSettings));
+            
+            // 2. 공통 설정 - Firebase에 저장
+            const globalSettings = {
+                courses: courses,
+                timeSettings: timeSettings,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: 'kiosk-' + Date.now() // 어느 키오스크에서 변경했는지 추적
+            };
+            
+            if (window.firebaseDB) {
+                try {
+                    const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                    window.firebaseSet(settingsRef, globalSettings).then(() => {
+                        console.log('✅ 공통 설정 Firebase 저장 완료');
+                        showMessage('printerMessage', '✅ 설정이 저장되었습니다! (모든 키오스크에 적용됨)', 'success');
+                    }).catch((error) => {
+                        console.error('❌ Firebase 저장 실패:', error);
+                        showMessage('printerMessage', '⚠️ 서버 저장 실패, 로컬에만 저장됨', 'error');
+                    });
+                } catch (error) {
+                    console.error('❌ Firebase 저장 오류:', error);
+                    showMessage('printerMessage', '⚠️ 서버 저장 실패, 로컬에만 저장됨', 'error');
+                }
+            } else {
+                showMessage('printerMessage', '⚠️ Firebase 미연결, 로컬에만 저장됨', 'error');
+            }
+            
+            updatePreview();
+        }
+
+        // 설정 로드 (하이브리드 방식)
+        function loadSettings() {
+            // 1. 개인 설정 - localStorage에서 로드
+            try {
+                const localSettings = localStorage.getItem('kioskLocalSettings');
+                if (localSettings) {
+                    const settings = JSON.parse(localSettings);
+                    
+                    document.getElementById('baudRate').value = settings.baudRate || '115200';
+                    document.getElementById('paperWidth').value = settings.paperWidth || '42';
+                    document.getElementById('numberFontSize').value = settings.numberFontSize || 'xlarge';
+                    document.getElementById('timeFontSize').value = settings.timeFontSize || 'normal';
+                    document.getElementById('timeFormat').value = settings.timeFormat || 'time';
+                    document.getElementById('paperCut').value = settings.paperCut || 'full';
+                    
+                    console.log('✅ 개인 설정 로드 완료');
+                }
+            } catch (error) {
+                console.error('개인 설정 로드 오류:', error);
+            }
+            
+            // 2. 공통 설정 - Firebase에서 로드 (우선순위)
+            loadGlobalSettings();
+        }
+
+        // 공통 설정 Firebase에서 로드
+        function loadGlobalSettings() {
+            if (!window.firebaseDB) {
+                console.log('Firebase 미연결 - 기본 설정 사용');
+                useDefaultSettings();
+                return;
+            }
+            
+            try {
+                const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                window.firebaseOnValue(settingsRef, (snapshot) => {
+                    const globalSettings = snapshot.val();
+                    
+                    if (globalSettings) {
+                        console.log('🔥 공통 설정 Firebase에서 로드:', globalSettings);
+                        
+                        // 공통 설정 적용
+                        if (globalSettings.courses) {
+                            courses = globalSettings.courses;
+                        }
+                        
+                        if (globalSettings.timeSettings) {
+                            timeSettings = globalSettings.timeSettings;
+                        }
+                        
+                        // UI 업데이트
+                        createCourseButtons();
+                        
+                        console.log('✅ 공통 설정 동기화 완료');
+                        
+                        // 설정 패널이 열려있으면 업데이트
+                        if (document.getElementById('settingsPanel').classList.contains('open')) {
+                            renderCourseSettings();
+                            renderTimePeriodsEditor();
+                        }
+                        
+                    } else {
+                        console.log('📭 서버에 공통 설정 없음 - 기본값 사용');
+                        useDefaultSettings();
+                        saveGlobalSettingsToServer(); // 기본값을 서버에 저장
+                    }
+                });
+            } catch (error) {
+                console.error('공통 설정 로드 오류:', error);
+                useDefaultSettings();
+            }
+        }
+
+        // 기본 설정 사용
+        function useDefaultSettings() {
+            courses = [
+                { code: 'CH', name: '중국어 과정', englishName: 'Chinese Course' },
+                { code: 'EN', name: '영어 과정', englishName: 'English Course' },
+                { code: 'HSK', name: 'HSK 시험반', englishName: 'HSK Test Prep' },
+                { code: 'TO', name: 'TOEIC 집중반', englishName: 'TOEIC Course' }
+            ];
+            
+            timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+            console.log('✅ 기본 설정 적용');
+        }
+
+        // 기본값을 서버에 저장 (최초 1회)
+        function saveGlobalSettingsToServer() {
+            if (!window.firebaseDB) return;
+            
+            const globalSettings = {
+                courses: courses,
+                timeSettings: timeSettings,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: 'default-init'
+            };
+            
+            try {
+                const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                window.firebaseSet(settingsRef, globalSettings);
+                console.log('✅ 기본 설정을 서버에 저장');
+            } catch (error) {
+                console.error('기본 설정 서버 저장 실패:', error);
+            }
+        }
+
+        // 과목 추가
+        function addCourse() {
+            const newCourse = {
+                code: 'NEW',
+                name: '새 과목',
+                englishName: 'New Course'
+            };
+            courses.push(newCourse);
+            renderCourseSettings();
+            createCourseButtons();
+        }
+
+        // 과목 삭제
+        function removeCourse(index) {
+            if (confirm('이 과목을 삭제하시겠습니까?')) {
+                courses.splice(index, 1);
+                renderCourseSettings();
+                createCourseButtons();
+            }
+        }
+
+        // 과목 설정 렌더링
+        function renderCourseSettings() {
+            const container = document.getElementById('courseSettings');
+            container.innerHTML = '';
+            
+            courses.forEach((course, index) => {
+                const courseDiv = document.createElement('div');
+                courseDiv.style.cssText = 'background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ddd;';
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'setting-btn danger';
+                deleteBtn.textContent = '삭제';
+                deleteBtn.style.cssText = 'margin-left: 10px; flex-shrink: 0;';
+                deleteBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeCourse(index);
+                };
+                
+                const inputContainer = document.createElement('div');
+                inputContainer.style.cssText = 'display: flex; gap: 10px; align-items: center; flex-wrap: wrap;';
+                
+                const codeInput = document.createElement('input');
+                codeInput.type = 'text';
+                codeInput.placeholder = '코드';
+                codeInput.value = course.code;
+                codeInput.className = 'course-management-input';
+                codeInput.style.width = '80px';
+                codeInput.addEventListener('change', function() {
+                    updateCourse(index, 'code', this.value);
+                });
+                
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = '한글명';
+                nameInput.value = course.name;
+                nameInput.className = 'course-management-input';
+                nameInput.style.width = '150px';
+                nameInput.addEventListener('change', function() {
+                    updateCourse(index, 'name', this.value);
+                });
+                
+                const englishInput = document.createElement('input');
+                englishInput.type = 'text';
+                englishInput.placeholder = '영문명';
+                englishInput.value = course.englishName;
+                englishInput.className = 'course-management-input';
+                englishInput.style.width = '150px';
+                englishInput.addEventListener('change', function() {
+                    updateCourse(index, 'englishName', this.value);
+                });
+                
+                inputContainer.appendChild(codeInput);
+                inputContainer.appendChild(nameInput);
+                inputContainer.appendChild(englishInput);
+                inputContainer.appendChild(deleteBtn);
+                
+                courseDiv.appendChild(inputContainer);
+                container.appendChild(courseDiv);
+            });
+        }
+
+        // 과목 정보 업데이트
+        function updateCourse(index, field, value) {
+            courses[index][field] = value;
+            createCourseButtons();
+        }
+
+        // 과목 버튼 생성 (시간대별 필터링)
+        function createCourseButtons() {
+            const container = document.getElementById('courseButtons');
+            container.innerHTML = '';
+            
+            const currentCourses = getCurrentCourses();
+            
+            if (currentCourses.length === 0) {
+                const noCoursesDiv = document.createElement('div');
+                noCoursesDiv.style.cssText = `
+                    text-align: center;
+                    background: rgba(255, 255, 255, 0.95);
+                    border-radius: 20px;
+                    padding: 60px 40px;
+                    max-width: 500px;
+                    margin: 0 auto;
+                    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+                `;
+                noCoursesDiv.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.7;">🕐</div>
+                    <h3 style="font-size: 1.8rem; font-weight: 600; margin-bottom: 15px; color: #2c3e50;">현재는 상담 시간이 아닙니다</h3>
+                    <p style="font-size: 1.1rem; color: #7f8c8d; line-height: 1.5;">설정된 상담 시간에 다시 방문해 주세요</p>
+                `;
+                container.appendChild(noCoursesDiv);
+                return;
+            }
+            
+            currentCourses.forEach(course => {
+                const button = document.createElement('button');
+                button.className = 'course-btn';
+                button.onclick = () => issueTicket(course);
+                button.disabled = !isPrinterConnected;
+                button.innerHTML = `
+                    <div class="course-name">${course.name}</div>
+                    <div class="course-description">${course.englishName}</div>
+                `;
+                container.appendChild(button);
+            });
+        }
+
+        // 현재 시간에 해당하는 과목들 가져오기
+        function getCurrentCourses() {
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            
+            const currentPeriod = timeSettings.find(setting => {
+                const start = timeToMinutes(setting.startTime);
+                const end = timeToMinutes(setting.endTime);
+                return currentTime >= start && currentTime < end;
+            });
+            
+            if (!currentPeriod) return [];
+            
+            return currentPeriod.courses.map(courseCode => 
+                courses.find(course => course.code === courseCode)
+            ).filter(course => course);
+        }
+
+        // 시간을 분으로 변환
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        // 시간대 추가
+        function addTimePeriod() {
+            timeSettings.push({
+                startTime: '09:00',
+                endTime: '18:00',
+                courses: []
+            });
+            renderTimePeriodsEditor();
+        }
+
+        // 시간대 삭제
+        function removeTimePeriod(index) {
+            if (confirm('이 시간대를 삭제하시겠습니까?')) {
+                timeSettings.splice(index, 1);
+                renderTimePeriodsEditor();
+                createCourseButtons();
+            }
+        }
+
+        // 시간대별 설정 렌더링
+        function renderTimePeriodsEditor() {
+            const container = document.getElementById('timePeriodsContainer');
+            container.innerHTML = '';
+            
+            timeSettings.forEach((period, index) => {
+                const periodDiv = document.createElement('div');
+                periodDiv.style.cssText = `
+                    border: 2px solid #ecf0f1;
+                    border-radius: 10px;
+                    padding: 20px;
+                    margin-bottom: 15px;
+                    background: white;
+                `;
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.style.cssText = 'display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;';
+                
+                const titleSpan = document.createElement('strong');
+                titleSpan.textContent = `시간대 ${index + 1}`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'setting-btn danger';
+                deleteBtn.textContent = '삭제';
+                deleteBtn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    removeTimePeriod(index);
+                };
+                
+                headerDiv.appendChild(titleSpan);
+                headerDiv.appendChild(deleteBtn);
+                
+                const timeDiv = document.createElement('div');
+                timeDiv.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 15px;';
+                
+                const startInput = document.createElement('input');
+                startInput.type = 'time';
+                startInput.value = period.startTime;
+                startInput.addEventListener('change', function() {
+                    updateTimeField(index, 'startTime', this.value);
+                });
+                
+                const endInput = document.createElement('input');
+                endInput.type = 'time';
+                endInput.value = period.endTime;
+                endInput.addEventListener('change', function() {
+                    updateTimeField(index, 'endTime', this.value);
+                });
+                
+                const separator = document.createElement('span');
+                separator.textContent = '~';
+                separator.style.fontWeight = 'bold';
+                
+                timeDiv.appendChild(startInput);
+                timeDiv.appendChild(separator);
+                timeDiv.appendChild(endInput);
+                
+                const courseLabel = document.createElement('div');
+                courseLabel.innerHTML = '<label style="font-weight: 600; margin-bottom: 10px; display: block;">활성화할 과목 선택:</label>';
+                
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.id = `courseCheckboxes-${index}`;
+                checkboxContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 10px;';
+                
+                periodDiv.appendChild(headerDiv);
+                periodDiv.appendChild(timeDiv);
+                periodDiv.appendChild(courseLabel);
+                periodDiv.appendChild(checkboxContainer);
+                
+                container.appendChild(periodDiv);
+                
+                renderCourseCheckboxes(index);
+            });
+        }
+
+        // 과목 체크박스 렌더링 (터치 영역 대폭 개선)
+        function renderCourseCheckboxes(periodIndex) {
+            const container = document.getElementById(`courseCheckboxes-${periodIndex}`);
+            container.innerHTML = '';
+            
+            courses.forEach(course => {
+                const isChecked = timeSettings[periodIndex].courses.includes(course.code);
+                
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'checkboxDiv';
+                checkboxDiv.style.cssText = `
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    background: #f8f9fa;
+                    padding: 20px 25px;
+                    border-radius: 12px;
+                    border: 3px solid #dee2e6;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    min-height: 65px;
+                    margin-bottom: 12px;
+                    box-sizing: border-box;
+                    font-size: 1.1rem;
+                `;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `course-${periodIndex}-${course.code}`;
+                checkbox.checked = isChecked;
+                checkbox.style.cssText = `
+                    width: 25px; 
+                    height: 25px; 
+                    cursor: pointer; 
+                    flex-shrink: 0;
+                    transform: scale(1.3);
+                `;
+                checkbox.addEventListener('change', function() {
+                    toggleCourseInPeriod(periodIndex, course.code, this.checked);
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = `course-${periodIndex}-${course.code}`;
+                label.textContent = `${course.name} (${course.code})`;
+                label.style.cssText = `
+                    font-size: 1.1rem; 
+                    cursor: pointer; 
+                    user-select: none; 
+                    flex: 1; 
+                    line-height: 1.4;
+                    font-weight: 500;
+                `;
+                
+                // 전체 div 클릭 시 체크박스 토글 (더 확실한 이벤트 처리)
+                checkboxDiv.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    checkbox.checked = !checkbox.checked;
+                    toggleCourseInPeriod(periodIndex, course.code, checkbox.checked);
+                });
+                
+                // 체크박스 직접 클릭은 중복 토글 방지
+                checkbox.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // 터치 피드백 강화
+                checkboxDiv.addEventListener('touchstart', function(e) {
+                    this.style.backgroundColor = '#e9ecef';
+                    this.style.borderColor = '#adb5bd';
+                    this.style.transform = 'scale(0.97)';
+                }, { passive: true });
+                
+                checkboxDiv.addEventListener('touchend', function(e) {
+                    setTimeout(() => {
+                        this.style.backgroundColor = '#f8f9fa';
+                        this.style.borderColor = '#dee2e6';
+                        this.style.transform = 'scale(1)';
+                    }, 150);
+                }, { passive: true });
+                
+                // 마우스 호버 효과 (데스크톱용)
+                checkboxDiv.addEventListener('mouseenter', function() {
+                    if (!('ontouchstart' in window)) {
+                        this.style.backgroundColor = '#e9ecef';
+                        this.style.borderColor = '#adb5bd';
+                    }
+                });
+                
+                checkboxDiv.addEventListener('mouseleave', function() {
+                    if (!('ontouchstart' in window)) {
+                        this.style.backgroundColor = '#f8f9fa';
+                        this.style.borderColor = '#dee2e6';
+                    }
+                });
+                
+                checkboxDiv.appendChild(checkbox);
+                checkboxDiv.appendChild(label);
+                container.appendChild(checkboxDiv);
+            });
+        }
+
+        // 시간대에서 과목 토글
+        function toggleCourseInPeriod(periodIndex, courseCode, isChecked) {
+            if (isChecked) {
+                if (!timeSettings[periodIndex].courses.includes(courseCode)) {
+                    timeSettings[periodIndex].courses.push(courseCode);
+                }
+            } else {
+                timeSettings[periodIndex].courses = timeSettings[periodIndex].courses.filter(code => code !== courseCode);
+            }
+            createCourseButtons();
+        }
+
+        // 시간 필드 업데이트
+        function updateTimeField(periodIndex, field, value) {
+            timeSettings[periodIndex][field] = value;
+            createCourseButtons();
+        }
+
+        // 시간 설정 저장 (공통 설정이므로 Firebase에)
+        function saveTimeSettings() {
+            const globalSettings = {
+                courses: courses,
+                timeSettings: timeSettings,
+                lastUpdated: new Date().toISOString(),
+                updatedBy: 'time-settings-' + Date.now()
+            };
+            
+            if (window.firebaseDB) {
+                try {
+                    const settingsRef = window.firebaseRef(window.firebaseDB, 'kioskGlobalSettings');
+                    window.firebaseSet(settingsRef, globalSettings).then(() => {
+                        console.log('✅ 시간 설정 Firebase 저장 완료');
+                        showMessage('timeSettingsMessage', '✅ 시간 설정이 저장되었습니다! (모든 키오스크에 적용됨)', 'success');
+                        createCourseButtons();
+                    }).catch((error) => {
+                        console.error('❌ 시간 설정 Firebase 저장 실패:', error);
+                        showMessage('timeSettingsMessage', '⚠️ 서버 저장 실패', 'error');
+                    });
+                } catch (error) {
+                    console.error('❌ 시간 설정 저장 오류:', error);
+                    showMessage('timeSettingsMessage', '⚠️ 서버 저장 실패', 'error');
+                }
+            } else {
+                // Firebase 미연결 시 로컬에만 저장
+                localStorage.setItem('timeSettings', JSON.stringify(timeSettings));
+                showMessage('timeSettingsMessage', '⚠️ 서버 미연결, 로컬에만 저장됨', 'error');
+                createCourseButtons();
+            }
+        }
+
+        // 기본 시간 설정 복원 (서버에도 적용)
+        function loadDefaultTimeSettings() {
+            if (confirm('기본 시간 설정으로 복원하시겠습니까?\n현재 설정이 모두 사라지며 모든 키오스크에 적용됩니다.')) {
+                timeSettings = JSON.parse(JSON.stringify(defaultTimeSettings));
+                renderTimePeriodsEditor();
+                createCourseButtons();
+                
+                // 서버에도 저장
+                saveTimeSettings();
+                
+                showMessage('timeSettingsMessage', '✅ 기본 설정으로 복원되었습니다! (모든 키오스크에 적용됨)', 'success');
+            }
+        }
+
+        // 프린터 상태 업데이트
+        function updatePrinterStatus() {
+            const buttons = document.querySelectorAll('.course-btn');
+            buttons.forEach(btn => {
+                btn.disabled = !isPrinterConnected;
+            });
+        }
+
+        // 시간 업데이트 및 버튼 새로고침
+        function updateTime() {
+            document.getElementById('currentTime').textContent = 
+                new Date().toLocaleString('ko-KR');
+            
+            createCourseButtons();
+        }
+
+        // 포트 정보 삭제
+        function clearPrinterPort() {
+            if (confirm('저장된 프린터 포트 정보를 삭제하시겠습니까?\n다음 연결 시 새로운 포트를 선택해야 합니다.')) {
+                localStorage.removeItem('printerPortInfo');
+                showMessage('printerMessage', '✅ 포트 정보가 삭제되었습니다. 다음 연결 시 새 포트를 선택하세요.', 'success');
+                console.log('🗑️ 프린터 포트 정보 삭제됨');
+            }
+        }
+
+        // 초기화 시 자동 연결 시도
+        async function tryAutoConnect() {
+            if (isPrinterConnected) return;
+            
+            try {
+                const availablePorts = await navigator.serial.getPorts();
+                
+                if (availablePorts.length > 0) {
+                    console.log('🔄 기존 권한 포트로 자동 연결 시도');
+                    await connectPrinter();
+                } else {
+                    console.log('⚠️ 사용 가능한 포트 없음 - 수동 연결 필요');
+                }
+            } catch (error) {
+                console.error('자동 연결 실패:', error);
+            }
+        }
+
+        // 설정 패널 토글
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            const isOpen = panel.classList.contains('open');
+            
+            if (isOpen) {
+                panel.classList.remove('open');
+            } else {
+                panel.classList.add('open');
+                updateSystemInfo();
+                renderCourseSettings();
+                renderTimePeriodsEditor();
+                updatePreview();
+            }
+        }
+
+        // 시스템 정보 업데이트
+        function updateSystemInfo() {
+            document.getElementById('browserInfo').textContent = navigator.userAgent.split(' ').slice(-2).join(' ');
+            document.getElementById('serialSupport').textContent = isSerialSupported() ? '✅ 지원됨' : '❌ 지원 안됨';
+            
+            if (window.firebaseDB) {
+                document.getElementById('firebaseStatus').textContent = '✅ 연결됨';
+            } else {
+                document.getElementById('firebaseStatus').textContent = '❌ 연결 실패';
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            const className = type === 'error' ? 'error-message' : 'status-message';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+            setTimeout(() => {
+                element.innerHTML = '';
+            }, 5000);
+        }
+
+        // 출력 성공 메시지
+        function showPrintSuccess(number) {
+            const successEl = document.getElementById('printSuccess');
+            const messageEl = document.getElementById('printSuccessMessage');
+            messageEl.textContent = `${number} 대기표 출력 완료!`;
+            
+            successEl.classList.add('show');
+            setTimeout(() => {
+                successEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // Firebase 리스너 설정 (서버 우선 동기화)
+        function setupFirebaseListener() {
+            if (!window.firebaseDB) return;
+            
+            const systemRef = window.firebaseRef(window.firebaseDB, 'counterSystem');
+            window.firebaseOnValue(systemRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    console.log('🔥 KIOSK - Firebase 데이터 동기화:', data);
+                    
+                    // 서버 데이터로 완전 덮어쓰기 (로컬 데이터 무시)
+                    sharedData = { 
+                        waiting: data.waiting || [],  // 서버의 대기열이 우선
+                        counters: data.counters || sharedData.counters,
+                        totalToday: data.totalToday || 0,
+                        currentNumbers: data.currentNumbers || {},
+                        lastDate: data.lastDate || null,
+                        lastUpdated: data.lastUpdated || null,
+                        currentCall: data.currentCall || sharedData.currentCall
+                    };
+                    
+                    console.log('📊 KIOSK - 동기화된 대기열 크기:', sharedData.waiting.length);
+                    console.log('🔢 KIOSK - 동기화된 번호 카운터:', sharedData.currentNumbers);
+                    
+                    // 날짜 체크 (다른 키오스크에서 날짜가 바뀌었을 수 있음)
+                    if (checkDateAndResetCounters()) {
+                        console.log('📅 KIOSK - 다른 키오스크에서 날짜 변경됨 - 동기화 완료');
+                    }
+                }
+            });
+        }
+
+        // 초기화 (날짜 체크 및 번호 동기화 포함)
+        async function initialize() {
+            console.log('🚀 키오스크 초기화 시작');
+            
+            // 오늘 날짜 설정
+            const today = getTodayString();
+            console.log('📅 오늘 날짜:', today);
+            
+            // 설정 로드 (하이브리드 방식)
+            loadSettings();
+            
+            // UI 생성
+            createCourseButtons();
+            updateTime();
+            updatePrinterStatus();
+            
+            // 시간 업데이트
+            setInterval(updateTime, 1000);
+            
+            // Firebase 연결 (번호 카운터 동기화)
+            setTimeout(() => {
+                setupFirebaseListener();
+                loadGlobalSettings(); // 공통 설정 로드
+                
+                // 초기 날짜 체크
+                setTimeout(() => {
+                    checkDateAndResetCounters();
+                }, 2000);
+            }, 1000);
+            
+            // 미리보기 초기 생성
+            updatePreview();
+            
+            // 자동 연결 시도 (비동기)
+            setTimeout(async () => {
+                if (isSerialSupported()) {
+                    await tryAutoConnect();
+                }
+            }, 2000);
+            
+            console.log('✅ 키오스크 초기화 완료');
+            console.log('🔢 번호 카운팅: Firebase 동기화 모드');
+        }
+
+        // 페이지 언로드 시 프린터 연결 해제
+        window.addEventListener('beforeunload', () => {
+            if (isPrinterConnected) {
+                disconnectPrinter();
+            }
+        });
+
+        // 설정 패널 외부 클릭 시 닫기
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('settingsPanel');
+            const settingsButton = document.querySelector('.settings-button');
+            
+            if (panel && panel.classList.contains('open') && 
+                !panel.contains(e.target) && 
+                !settingsButton.contains(e.target)) {
+                toggleSettings();
+            }
+        });
+
+        // 터치 이벤트도 처리 (모바일/태블릿 대응)
+        document.addEventListener('touchend', function(e) {
+            const panel = document.getElementById('settingsPanel');
+            const settingsButton = document.querySelector('.settings-button');
+            
+            if (panel && panel.classList.contains('open') && 
+                !panel.contains(e.target) && 
+                !settingsButton.contains(e.target)) {
+                toggleSettings();
+            }
+        });
+
+        // 폼 제출 방지 (엔터키 눌렀을 때 페이지 새로고침 방지)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                e.preventDefault();
+                e.target.blur();
+            }
+        });
+
+        // 초기화 실행
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+    </script>
+</body>
+</html>
