@@ -564,6 +564,24 @@
                     <option value="none">자르지 않음</option>
                 </select>
                 
+                <label>상단 여백:</label>
+                <select class="setting-select" id="topMargin">
+                    <option value="2">적음 (2줄)</option>
+                    <option value="3">보통 (3줄)</option>
+                    <option value="4" selected>많음 (4줄)</option>
+                    <option value="5">아주 많음 (5줄)</option>
+                </select>
+                
+                <label>하단 여백:</label>
+                <select class="setting-select" id="bottomMargin">
+                    <option value="2">적음 (2줄)</option>
+                    <option value="3">보통 (3줄)</option>
+                    <option value="4">많음 (4줄)</option>
+                    <option value="5">아주 많음 (5줄)</option>
+                    <option value="6" selected>매우 많음 (6줄)</option>
+                    <option value="8">극대 (8줄)</option>
+                </select>
+                
                 <button class="setting-btn" onclick="updatePreview()">👁️ 미리보기</button>
                 <button class="setting-btn success" onclick="saveSettings()">💾 설정 저장</button>
                 
@@ -960,6 +978,8 @@
                 const timeFormat = document.getElementById('timeFormat').value;
                 const paperCut = document.getElementById('paperCut').value;
                 const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
+                const topMargin = parseInt(document.getElementById('topMargin').value) || 4;
+                const bottomMargin = parseInt(document.getElementById('bottomMargin').value) || 6;
 
                 // 프린터 완전 초기화
                 await sendToPrinter(ESCPOS.INIT);
@@ -967,8 +987,8 @@
                 
                 let printData = '';
                 
-                // 상단 여백 (4줄)
-                printData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                // 상단 여백 (설정값 사용)
+                printData += ESCPOS.LINE_FEED.repeat(topMargin);
                 
                 // 상단 구분선
                 printData += ESCPOS.ALIGN_CENTER;
@@ -1015,8 +1035,8 @@
                 bottomData += ESCPOS.FONT_NORMAL;
                 bottomData += createLine('=', paperWidth) + ESCPOS.LINE_FEED;
                 
-                // 여백 (4줄)
-                bottomData += ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED + ESCPOS.LINE_FEED;
+                // 하단 여백 (설정값 사용)
+                bottomData += ESCPOS.LINE_FEED.repeat(bottomMargin);
                 
                 // 용지 자르기
                 if (paperCut === 'full') {
@@ -1105,6 +1125,8 @@
             const timeFontSize = document.getElementById('timeFontSize').value;
             const timeFormat = document.getElementById('timeFormat').value;
             const paperWidth = parseInt(document.getElementById('paperWidth').value) || 42;
+            const topMargin = parseInt(document.getElementById('topMargin').value) || 4;
+            const bottomMargin = parseInt(document.getElementById('bottomMargin').value) || 6;
             
             // 실제 다음 번호 미리보기 (첫 번째 과목 기준)
             if (!ticketNumber && courses.length > 0) {
@@ -1121,8 +1143,8 @@
             
             let preview = '';
             
-            // 상단 여백
-            preview += '\n\n\n\n';
+            // 상단 여백 (설정값 사용)
+            preview += '\n'.repeat(topMargin);
             
             // 상단 구분선
             preview += createLine('=', paperWidth) + '\n';
@@ -1165,8 +1187,8 @@
             // 하단 구분선
             preview += createLine('=', paperWidth) + '\n';
             
-            // 하단 여백
-            preview += '\n\n\n\n';
+            // 하단 여백 (설정값 사용)
+            preview += '\n'.repeat(bottomMargin);
             
             // 번호 정보 추가
             if (courses.length > 0) {
@@ -1196,7 +1218,9 @@
                 numberFontSize: document.getElementById('numberFontSize').value,
                 timeFontSize: document.getElementById('timeFontSize').value,
                 timeFormat: document.getElementById('timeFormat').value,
-                paperCut: document.getElementById('paperCut').value
+                paperCut: document.getElementById('paperCut').value,
+                topMargin: document.getElementById('topMargin').value,
+                bottomMargin: document.getElementById('bottomMargin').value
             };
             
             localStorage.setItem('kioskLocalSettings', JSON.stringify(localSettings));
@@ -1244,6 +1268,8 @@
                     document.getElementById('timeFontSize').value = settings.timeFontSize || 'normal';
                     document.getElementById('timeFormat').value = settings.timeFormat || 'time';
                     document.getElementById('paperCut').value = settings.paperCut || 'full';
+                    document.getElementById('topMargin').value = settings.topMargin || '4';
+                    document.getElementById('bottomMargin').value = settings.bottomMargin || '6';
                     
                     console.log('✅ 개인 설정 로드 완료');
                 }
