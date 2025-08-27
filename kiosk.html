@@ -734,9 +734,6 @@
                 <button class="setting-btn" onclick="enterKioskMode()">
                     📺 키오스크 모드 (전체화면)
                 </button>
-                <button class="setting-btn" onclick="testKoreanPrint()">
-                    🇰🇷 한글 출력 테스트 (KS5601)
-                </button>
                 
                 <div style="background: #e8f4fd; border: 1px solid #bee5eb; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.9rem;">
                     <strong>💡 화면 모드 안내:</strong><br>
@@ -2110,71 +2107,6 @@
                     }
                 }
             });
-        }
-
-        // 한글 출력 테스트 (KS5601)
-        async function testKoreanPrint() {
-            if (!isPrinterConnected) {
-                showMessage('screenModeMessage', '❌ 프린터를 먼저 연결하세요', 'error');
-                return;
-            }
-            
-            try {
-                showMessage('screenModeMessage', '🇰🇷 한글 출력 테스트 중...', 'success');
-                
-                // 프린터 초기화
-                await sendToPrinter(ESCPOS.INIT);
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                let testData = '';
-                
-                // 상단 여백
-                testData += ESCPOS.LINE_FEED.repeat(3);
-                
-                // 제목
-                testData += ESCPOS.ALIGN_CENTER;
-                testData += ESCPOS.FONT_NORMAL;
-                testData += '=== 한글 출력 테스트 ===\n\n';
-                
-                // KS5601 테스트
-                testData += 'KS5601 테스트:\n';
-                testData += '\x1B\x74\x10'; // ESC t 16 (KS X 1001)
-                testData += '중국어 과정\n';
-                testData += '영어 과정\n';
-                testData += 'HSK 시험반\n';
-                testData += 'TOEIC 집중반\n\n';
-                
-                // 기본 인코딩 테스트
-                testData += '\x1B\x74\x00'; // ESC t 0 (기본)
-                testData += '기본 인코딩:\n';
-                testData += '중국어 과정\n';
-                testData += '영어 과정\n';
-                testData += 'HSK 시험반\n';
-                testData += 'TOEIC 집중반\n\n';
-                
-                // UTF-8 직접 테스트
-                testData += 'UTF-8 직접:\n';
-                testData += '중국어 과정\n';
-                testData += '영어 과정\n';
-                testData += 'HSK 시험반\n';
-                testData += 'TOEIC 집중반\n\n';
-                
-                // 하단
-                testData += '='.repeat(30) + '\n';
-                testData += ESCPOS.LINE_FEED.repeat(3);
-                
-                // 컷팅
-                testData += ESCPOS.CUT_FULL;
-                
-                await sendToPrinter(testData);
-                
-                showMessage('screenModeMessage', '✅ 한글 테스트 완료! 출력된 용지를 확인하세요', 'success');
-                console.log('🇰🇷 한글 출력 테스트 완료 - BK3-3에서 출력 결과 확인');
-                
-            } catch (error) {
-                console.error('한글 테스트 실패:', error);
-                showMessage('screenModeMessage', `❌ 한글 테스트 실패: ${error.message}`, 'error');
-            }
         }
 
         // 터치 최적화 설정 (1080*1920 세로모드 전용)
