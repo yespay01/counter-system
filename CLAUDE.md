@@ -16,10 +16,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **트라이얼**: 실제 SMS 없이 전체 흐름을 시험하는 샌드박스 모드
 - **관련 문서**: `docs/` 폴더 참고 (`TODO.md` → 진행 순서, `1-research/0-summary.md` → 리서치 요약, `2-plan/` → 설계, `agent_meeting/completed/` → 회의 확정본)
 
-> 현재 단계: STEP 3 개발 완료.
-> 구현 상태: `Phase 1 ~ 7` 완료 — rate limit + audit log + 예외처리 + 운영 매뉴얼 (2026-03-25).
-> 현재 판정: `파일럿 투입 가능`, Phase 1~7 전체 완료.
-> 다음 단계: 실제 파일럿 고객 온보딩.
+> 현재 단계: 실서버 운영 중.
+> 구현 상태: `Phase 1 ~ 7` 완료 + 실서버 배포 완료 (2026-03-25).
+> 서버: insuk@192.168.0.5, API port 3200, PM2 + Docker (postgres:5435, redis:6379).
+> 다음 단계: Nginx/SSL 설정, 파일럿 고객 온보딩.
 
 ---
 

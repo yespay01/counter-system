@@ -1,8 +1,8 @@
 # Counter System SaaS — TODO
 
 > 모든 리서치와 플랜 확정이 완료된 뒤 개발 시작
-> 현재 단계: STEP 3 개발 완료
-> 현재 상태: Phase 7 완료 (2026-03-25) — rate limit + audit log + 예외처리 + 운영 매뉴얼, `파일럿 투입 가능`
+> 현재 단계: 실서버 운영 중
+> 현재 상태: Phase 7 완료 + 실서버 배포 완료 (2026-03-25) — insuk@192.168.0.5, API :3200, `파일럿 투입 가능`
 
 ---
 
@@ -82,6 +82,11 @@
 - Phase 4에서는 메시지 정산 기준을 `sent 성공 건만 billable + 발송 시점 단가 스냅샷 저장`으로 구현
 - Solo MVP 체크리스트 전 항목 완료 ✅ (2026-03-19)
 - `Phase 7 안정화 / 파일럿 준비` 완료 (2026-03-25) — rate limit + audit log + 예외처리 + 운영 매뉴얼 작성
+- 실서버 배포 완료 (2026-03-25) — insuk@192.168.0.5, `/home/insuk/projects/counter-system/server/`
+  - API: PM2 (counter-api, port 3200), 재부팅 자동기동 등록
+  - DB: Docker PostgreSQL (host port 5435), restart: unless-stopped
+  - Cache: Docker Redis (port 6379), restart: unless-stopped
+  - 남은 작업: Nginx 설정, 도메인/SSL, 파일럿 온보딩, Solapi 실발송
 - Phase 5 완료 (2026-03-25):
   - [완료] `/:slug/kiosk`, `/:slug/kiosk-sms`, `/:slug/counter`, `/:slug/display` 화면 구현
   - [완료] `sockets/index.js` — queueUpdated/sessionReset display room 확장

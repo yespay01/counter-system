@@ -51,8 +51,9 @@ Current planning decisions favor a `Solo` MVP first: a tablet-first queue flow f
 - Browser send: direct browser send is deprecated before MVP; use server API only
 - Solo MVP billing ops: `계좌이체 수동 처리`, PG 미정, `업소 50개 이상`에서 공식 재검토
 - Billing design: `BillingService` boundary + `ManualBillingService`, minimal `/superadmin` included in Solo MVP
-- Current implementation status: `Phase 1~7` complete — rate limit + audit log + 예외처리 + 운영 매뉴얼 (2026-03-25), `파일럿 투입 가능`
-- All phases complete. Next: 실제 파일럿 고객 온보딩
+- Current implementation status: `Phase 1~7` complete + 실서버 배포 완료 (2026-03-25)
+- Server: insuk@192.168.0.5, `/home/insuk/projects/counter-system/server/`, API port 3200, PM2 + Docker
+- Next: Nginx/SSL 설정, 파일럿 고객 온보딩
 
 Before editing planning docs, align with these decisions unless the user explicitly changes them.
 
