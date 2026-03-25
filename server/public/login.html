@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로그인 — 순번대기</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%; max-width: 400px;
+    color: white;
+}
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 32px; text-align: center; }
+.field { margin-bottom: 20px; }
+label { display: block; font-size: 13px; opacity: .8; margin-bottom: 6px; }
+input {
+    width: 100%; padding: 12px 16px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 10px; color: white; font-size: 15px;
+    font-family: inherit;
+    outline: none; transition: border .2s;
+}
+input:focus { border-color: #00FF88; }
+input::placeholder { opacity: .5; }
+.btn {
+    width: 100%; padding: 14px;
+    background: #00FF88; color: #1a1a2e;
+    border: none; border-radius: 10px;
+    font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-top: 8px;
+    transition: opacity .2s;
+}
+.btn:hover { opacity: .85; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.error-msg {
+    background: rgba(255,71,87,0.2);
+    border: 1px solid rgba(255,71,87,0.5);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; margin-bottom: 16px; display: none;
+}
+.link-row { text-align: center; margin-top: 20px; font-size: 13px; opacity: .7; }
+.link-row a { color: #00FF88; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="card">
+    <h1>로그인</h1>
+    <div id="errorMsg" class="error-msg"></div>
+
+    <div class="field">
+        <label>이메일</label>
+        <input type="email" id="email" placeholder="admin@example.com"
+               onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="password" placeholder="비밀번호"
+               onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+
+    <button class="btn" id="submitBtn" onclick="doLogin()">로그인</button>
+    <div class="link-row">처음이신가요? <a href="/signup">무료 체험 시작</a></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const nextUrl = params.get('next') || null;
+
+function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg; el.style.display = 'block';
+}
+
+async function doLogin() {
+    document.getElementById('errorMsg').style.display = 'none';
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if (!email || !password) return showError('이메일과 비밀번호를 입력해주세요.');
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = '로그인 중...';
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || '로그인 실패');
+
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('tenantSlug',  data.user.tenantSlug);
+        localStorage.setItem('tenantName',  data.user.tenantName || '');
+        localStorage.setItem('sandboxMode', data.user.sandboxMode ? '1' : '0');
+
+        window.location.href = nextUrl || `/${data.user.tenantSlug}/admin/dashboard`;
+    } catch (err) {
+        showError(err.message);
+        btn.disabled = false; btn.textContent = '로그인';
+    }
+}
+</script>
+</body>
+</html>

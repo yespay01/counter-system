@@ -1,0 +1,28 @@
+# 로컬 개발용: PostgreSQL만 띄움
+# Node.js 앱은 로컬에서 직접 실행 (npm run dev)
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: counter_system
+      POSTGRES_USER: counter_superuser
+      POSTGRES_PASSWORD: dev_superuser_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  pgdata:
+  redisdata:

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>메시지 — 관리자</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', sans-serif; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.nav { display: flex; align-items: center; gap: 0; padding: 0 24px; background: rgba(0,0,0,0.2); height: 50px; }
+.nav-brand { font-size: 16px; font-weight: 700; margin-right: 24px; }
+.nav a { padding: 0 14px; height: 50px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; border-bottom: 2px solid transparent; transition: all .15s; }
+.nav a:hover, .nav a.active { color: white; border-bottom-color: #00FF88; }
+.nav-spacer { flex: 1; }
+.nav-logout { padding: 6px 14px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: white; font-size: 13px; cursor: pointer; font-family: inherit; }
+.content { padding: 28px 24px; max-width: 960px; margin: 0 auto; }
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+.tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.15); margin-bottom: 24px; }
+.tab { padding: 10px 20px; cursor: pointer; font-size: 14px; opacity: .6; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all .15s; }
+.tab.active { opacity: 1; border-bottom-color: #00FF88; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+.field { margin-bottom: 18px; }
+label { display: block; font-size: 13px; opacity: .7; margin-bottom: 6px; }
+.hint { font-size: 11px; opacity: .5; margin-top: 4px; }
+input[type=text] {
+    width: 100%; padding: 10px 14px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25); border-radius: 8px;
+    color: white; font-size: 14px; font-family: inherit; outline: none; transition: border .2s;
+}
+input[type=text]:focus { border-color: #00FF88; }
+input[type=text]::placeholder { opacity: .4; }
+.channel-info {
+    background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.7; opacity: .85;
+}
+.save-btn { padding: 10px 24px; background: #00FF88; color: #1a1a2e; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.save-btn:hover { opacity: .85; }
+.save-btn:disabled { opacity: .4; cursor: not-allowed; }
+.toggle-row { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.toggle-label { font-size: 14px; flex: 1; }
+.toggle-sub { font-size: 11px; opacity: .5; }
+.toggle { width: 44px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 12px; cursor: pointer; position: relative; transition: background .2s; border: none; flex-shrink: 0; }
+.toggle.on { background: #00FF88; }
+.toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: white; transition: transform .2s; }
+.toggle.on::after { transform: translateX(20px); }
+/* 사용량 요약 카드 */
+.usage-row { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.usage-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 16px; min-width: 160px; flex: 1; }
+.usage-month { font-size: 12px; opacity: .5; margin-bottom: 8px; }
+.usage-stat-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.usage-stat-row .val { font-weight: 600; }
+.usage-stat-row .val.green { color: #00FF88; }
+.usage-stat-row .val.yellow { color: #FFD700; }
+/* Logs table */
+.log-table-wrap { overflow-x: auto; }
+.log-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+.log-table th { text-align: left; opacity: .6; padding: 8px 10px; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.1); white-space: nowrap; }
+.log-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; }
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.badge-sent     { background: rgba(0,255,136,0.2); color: #00FF88; }
+.badge-failed   { background: rgba(255,71,87,0.2);  color: #ff4757; }
+.badge-prev     { background: rgba(255,213,0,0.2);  color: #FFD700; }
+.badge-queued   { background: rgba(150,150,150,0.2);color: #aaa; }
+.badge-ata      { background: rgba(100,149,237,0.2);color: #6495ED; }
+.badge-sms      { background: rgba(255,165,0,0.2);  color: #FFA500; }
+.billable-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.dot-yes { background: #00FF88; }
+.dot-no  { background: rgba(255,255,255,0.2); }
+.load-more { width: 100%; padding: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: white; font-size: 13px; cursor: pointer; font-family: inherit; margin-top: 10px; }
+.toast { position: fixed; bottom: 24px; right: 24px; background: rgba(0,80,0,0.9); color: white; padding: 12px 20px; border-radius: 10px; font-size: 14px; display: none; z-index: 999; }
+.section-title { font-size: 14px; font-weight: 600; opacity: .8; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+    <span class="nav-brand" id="navBrand">관리자</span>
+    <a id="navDash" href="#">대시보드</a>
+    <a id="navSettings" href="#">설정</a>
+    <a id="navMessages" href="#" class="active">메시지</a>
+    <a id="navSubscription" href="#">구독</a>
+    <div class="nav-spacer"></div>
+    <button class="nav-logout" onclick="logout()">로그아웃</button>
+</nav>
+
+<div class="content">
+    <div class="page-title">메시지 설정</div>
+
+    <div class="tabs">
+        <div class="tab active" id="tabSettings">Solapi 연결</div>
+        <div class="tab" id="tabLogs">발송 로그</div>
+        <div class="tab" id="tabUsage">사용량</div>
+    </div>
+
+    <!-- 설정 탭 -->
+    <div class="tab-content active" id="tab-settings">
+        <div class="channel-info">
+            📡 <b>채널 구조</b>: 플랫폼 공유 채널(기본) → 아래 테넌트 개별 채널 입력 시 우선 적용<br>
+            📩 <b>발송 정책</b>: 알림톡(ATA) 우선 → 실패 시 SMS 자동 fallback<br>
+            🧪 <b>테스트 모드</b>: 샌드박스에서는 실제 발송 없이 로그만 기록됩니다
+        </div>
+
+        <div class="card">
+            <div class="field">
+                <label>플친 채널 ID (PFID)</label>
+                <input type="text" id="solapi_pfid" placeholder="PF_...">
+                <p class="hint">Solapi 콘솔의 카카오 채널 연결 ID</p>
+            </div>
+            <div class="field">
+                <label>발신번호</label>
+                <input type="text" id="solapi_sender" placeholder="010-0000-0000">
+                <p class="hint">SMS fallback용 사전 등록 발신번호</p>
+            </div>
+            <div class="field">
+                <label>번호발급 템플릿 ID</label>
+                <input type="text" id="solapi_template_issue" placeholder="TPL_...">
+                <p class="hint">번호 발급 시 발송할 알림톡 템플릿 (issue)</p>
+            </div>
+            <div class="field">
+                <label>준비됨 템플릿 ID <span style="opacity:.4">(선택)</span></label>
+                <input type="text" id="solapi_template_ready" placeholder="TPL_...">
+                <p class="hint">차례 임박 시 발송 (현재 자동 트리거 없음)</p>
+            </div>
+            <div class="field">
+                <label>호출 템플릿 ID <span style="opacity:.4">(선택)</span></label>
+                <input type="text" id="solapi_template_call" placeholder="TPL_...">
+                <p class="hint">창구 호출 시 발송 (call)</p>
+            </div>
+
+            <div class="toggle-row" style="margin-top:8px">
+                <div>
+                    <div class="toggle-label">SMS Fallback</div>
+                    <div class="toggle-sub">알림톡 실패 시 자동 SMS 재시도</div>
+                </div>
+                <button class="toggle on" id="toggleFallback"></button>
+            </div>
+
+            <button class="save-btn" id="saveMsgBtn">저장</button>
+        </div>
+    </div>
+
+    <!-- 로그 탭 -->
+    <div class="tab-content" id="tab-logs">
+        <div class="card" style="padding:0;overflow:hidden">
+            <div class="log-table-wrap">
+            <table class="log-table">
+                <thead><tr>
+                    <th>시각</th><th>번호표</th><th>전화번호</th>
+                    <th>타입</th><th>채널</th><th>상태</th>
+                    <th>과금</th><th>청구금액</th><th>오류</th>
+                </tr></thead>
+                <tbody id="logTableBody">
+                    <tr><td colspan="9" style="text-align:center;padding:24px;opacity:.5">로딩 중...</td></tr>
+                </tbody>
+            </table>
+            </div>
+        </div>
+        <button class="load-more" id="loadMoreBtn" style="display:none">더 보기</button>
+    </div>
+
+    <!-- 사용량 탭 -->
+    <div class="tab-content" id="tab-usage">
+        <div class="card">
+            <div class="section-title">월별 발송 요약</div>
+            <div id="usageList">
+                <div style="opacity:.4;text-align:center;padding:16px">로딩 중...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const slug = window.location.pathname.split('/')[1];
+let accessToken = localStorage.getItem('accessToken');
+if (!accessToken) { window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`; }
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+document.getElementById('navBrand').textContent   = localStorage.getItem('tenantName') || '관리자';
+document.getElementById('navDash').href           = `/${slug}/admin/dashboard`;
+document.getElementById('navSettings').href       = `/${slug}/admin/settings`;
+document.getElementById('navMessages').href       = `/${slug}/admin/messages`;
+document.getElementById('navSubscription').href   = `/${slug}/admin/subscription`;
+
+let logOffset = 0;
+const LOG_LIMIT = 30;
+
+// ── 탭 전환 ────────────────────────────────────────────────────
+const TABS = ['settings', 'logs', 'usage'];
+document.getElementById('tabSettings').addEventListener('click', () => switchTab('settings'));
+document.getElementById('tabLogs').addEventListener('click',     () => switchTab('logs'));
+document.getElementById('tabUsage').addEventListener('click',    () => switchTab('usage'));
+document.getElementById('toggleFallback').addEventListener('click', () => {
+    document.getElementById('toggleFallback').classList.toggle('on');
+});
+document.getElementById('saveMsgBtn').addEventListener('click', saveMessageSettings);
+document.getElementById('loadMoreBtn').addEventListener('click', () => loadLogs(true));
+
+function switchTab(name) {
+    TABS.forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('active', t === name);
+        const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (el) el.classList.toggle('active', t === name);
+    });
+    if (name === 'logs'  && logOffset === 0) loadLogs();
+    if (name === 'usage') loadUsage();
+}
+
+// ── API ─────────────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    let res = await fetch(url, { ...opts, headers, credentials: 'include' });
+    if (res.status === 401) {
+        const rr = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (rr.ok) {
+            const d = await rr.json();
+            accessToken = d.accessToken; localStorage.setItem('accessToken', accessToken);
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            res = await fetch(url, { ...opts, headers, credentials: 'include' });
+        } else { localStorage.clear(); window.location.href = '/login'; return null; }
+    }
+    return res;
+}
+
+function showToast(msg, ok = true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.style.background = ok ? 'rgba(0,80,0,0.9)' : 'rgba(120,0,0,0.9)';
+    t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2500);
+}
+
+// ── 설정 ─────────────────────────────────────────────────────────
+async function loadMessageSettings() {
+    const res = await apiFetch(`/api/${slug}/admin/messages/settings`);
+    if (!res?.ok) return;
+    const { settings } = await res.json();
+    if (!settings) return;
+    ['solapi_pfid','solapi_sender','solapi_template_issue','solapi_template_ready','solapi_template_call'].forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.value = settings[k] || '';
+    });
+    document.getElementById('toggleFallback').classList.toggle('on', !!settings.sms_fallback_enabled);
+}
+
+async function saveMessageSettings() {
+    const btn = document.getElementById('saveMsgBtn');
+    btn.disabled = true;
+    try {
+        const body = {
+            solapi_pfid:             document.getElementById('solapi_pfid').value.trim() || null,
+            solapi_sender:           document.getElementById('solapi_sender').value.trim() || null,
+            solapi_template_issue:   document.getElementById('solapi_template_issue').value.trim() || null,
+            solapi_template_ready:   document.getElementById('solapi_template_ready').value.trim() || null,
+            solapi_template_call:    document.getElementById('solapi_template_call').value.trim() || null,
+            sms_fallback_enabled:    document.getElementById('toggleFallback').classList.contains('on'),
+        };
+        Object.keys(body).forEach(k => { if (body[k] === null) delete body[k]; });
+        const res = await apiFetch(`/api/${slug}/admin/messages/settings`, { method: 'PUT', body: JSON.stringify(body) });
+        if (!res?.ok) throw new Error((await res.json()).error?.message || '저장 실패');
+        showToast('저장되었습니다.');
+    } catch (e) {
+        showToast(e.message, false);
+    } finally { btn.disabled = false; }
+}
+
+// ── 발송 로그 ─────────────────────────────────────────────────────
+async function loadLogs(append = false) {
+    const res = await apiFetch(`/api/${slug}/admin/messages/logs?limit=${LOG_LIMIT}&offset=${logOffset}`);
+    if (!res?.ok) return;
+    const { logs } = await res.json();
+
+    const tbody = document.getElementById('logTableBody');
+    if (!append) tbody.innerHTML = '';
+
+    if (!logs?.length && !append) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;opacity:.5">발송 내역 없음</td></tr>';
+        return;
+    }
+    const badgeClass = { sent:'badge-sent', failed:'badge-failed', previewed:'badge-prev', queued:'badge-queued' };
+    const badgeLabel = { sent:'발송', failed:'실패', previewed:'미리보기', queued:'대기' };
+    const typeLabel  = { issue:'발급', ready:'준비', call:'호출' };
+    const chLabel    = { ata:'ATA', sms:'SMS', lms:'LMS' };
+    const chClass    = { ata:'badge-ata', sms:'badge-sms', lms:'badge-sms' };
+
+    tbody.insertAdjacentHTML('beforeend', logs.map(l => `
+        <tr>
+            <td>${formatTime(l.requested_at)}</td>
+            <td>${esc(l.ticket_number) || '—'}</td>
+            <td>${maskPhone(l.phone)}</td>
+            <td style="opacity:.8">${esc(typeLabel[l.message_type] || l.message_type)}</td>
+            <td><span class="badge ${chClass[l.channel] || ''}">${esc(chLabel[l.channel] || l.channel)}</span></td>
+            <td><span class="badge ${badgeClass[l.status] || ''}">${badgeLabel[l.status] || esc(l.status)}</span></td>
+            <td style="text-align:center">
+                <span class="billable-dot ${l.billable ? 'dot-yes' : 'dot-no'}"></span>${l.billable ? '과금' : '—'}
+            </td>
+            <td style="font-size:12px">${l.billing_amount != null ? l.billing_amount + '원' : '—'}</td>
+            <td style="font-size:11px;opacity:.7;max-width:180px;overflow:hidden;text-overflow:ellipsis">${esc(l.error_message) || ''}</td>
+        </tr>`).join(''));
+
+    logOffset += logs.length;
+    document.getElementById('loadMoreBtn').style.display = logs.length === LOG_LIMIT ? 'block' : 'none';
+}
+
+// ── 사용량 요약 ────────────────────────────────────────────────────
+async function loadUsage() {
+    const res = await apiFetch(`/api/${slug}/admin/messages/usage?months=6`);
+    if (!res?.ok) return;
+    const { usage } = await res.json();
+    const el = document.getElementById('usageList');
+    if (!usage?.length) {
+        el.innerHTML = '<div style="opacity:.4;text-align:center;padding:16px">사용 내역 없음</div>';
+        return;
+    }
+    el.innerHTML = usage.map(u => `
+        <div class="usage-card" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:13px;font-weight:600">${esc(u.year_month)}</span>
+                <span style="font-size:11px;opacity:.5">${u.billable_count}건 과금</span>
+            </div>
+            <div style="display:flex;gap:16px;font-size:12px;margin-top:4px">
+                <span>알림톡 <b style="color:#6495ED">${u.ata_sent}</b></span>
+                <span>SMS <b style="color:#FFA500">${u.sms_sent}</b></span>
+                <span>발급 <b>${u.issue_sent}</b></span>
+                <span>호출 <b>${u.call_sent}</b></span>
+            </div>
+            <div style="display:flex;gap:16px;font-size:12px;margin-top:2px">
+                <span>청구 <b style="color:#00FF88">${u.billed_amount.toLocaleString()}원</b></span>
+                <span>원가 <b style="opacity:.6">${u.provider_cost_amount.toLocaleString()}원</b></span>
+                <span>마진 <b style="color:#FFD700">${u.margin_amount.toLocaleString()}원</b></span>
+            </div>
+        </div>`).join('');
+}
+
+function maskPhone(p) { return p ? p.slice(0,3) + '-****-' + p.slice(-4) : '—'; }
+function formatTime(t) {
+    if (!t) return '—';
+    const d = new Date(t);
+    return `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
+function logout() { fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); localStorage.clear(); window.location.href = '/login'; }
+
+loadMessageSettings();
+</script>
+</body>
+</html>

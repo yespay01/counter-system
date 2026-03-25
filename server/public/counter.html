@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>창구 화면</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white; overflow: hidden;
+}
+
+/* ── 창구 선택 화면 ── */
+.counter-select {
+    display: none; position: fixed; inset: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    z-index: 300;
+    align-items: center; justify-content: center; flex-direction: column; gap: 24px;
+}
+.counter-select.active { display: flex; }
+.counter-select h2 { font-size: 26px; font-weight: 700; }
+.counter-select p { font-size: 16px; opacity: .65; }
+.counter-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 500px; }
+.counter-btn {
+    width: 100px; height: 100px;
+    background: rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 16px; color: white;
+    font-size: 32px; font-weight: 900;
+    cursor: pointer; font-family: inherit;
+    transition: all .15s;
+}
+.counter-btn:hover { background: rgba(0,255,136,0.2); border-color: #00FF88; }
+
+/* ── 상단 바 ── */
+.topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.2);
+    height: 54px;
+}
+.shop-name { font-size: 18px; font-weight: 700; flex: 1; }
+.counter-badge {
+    background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.4);
+    border-radius: 8px; padding: 4px 12px; font-size: 13px; color: #00FF88;
+}
+.clock { font-size: 15px; opacity: .7; font-variant-numeric: tabular-nums; }
+.conn-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #888; transition: background .3s;
+}
+.conn-dot.ok { background: #00FF88; }
+.conn-dot.err { background: #ff4757; }
+.topbar-btn {
+    padding: 5px 12px; background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px; color: white; font-size: 12px;
+    cursor: pointer; font-family: inherit;
+}
+.topbar-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ── 메인 레이아웃 ── */
+.main-layout {
+    display: flex;
+    height: calc(100vh - 54px);
+}
+
+/* ── 현재 창구 패널 (좌측) ── */
+.my-panel {
+    flex: 0 0 42%;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    border-right: 1px solid rgba(255,255,255,0.15);
+}
+.panel-title { font-size: 12px; font-weight: 600; opacity: .5; text-transform: uppercase; letter-spacing: 1px; }
+
+.current-card {
+    background: rgba(0,0,0,0.25);
+    border: 2px solid rgba(0,255,136,0.35);
+    border-radius: 18px; padding: 20px;
+    text-align: center; flex-shrink: 0;
+}
+.current-label { font-size: 12px; opacity: .55; margin-bottom: 4px; }
+.current-number {
+    font-size: 64px; font-weight: 900; color: #00FF88; line-height: 1;
+    text-shadow: 0 0 40px rgba(0,255,136,0.4);
+}
+.current-number.empty { color: rgba(255,255,255,0.2); font-size: 36px; }
+.current-cat { font-size: 13px; opacity: .5; margin-top: 4px; }
+
+.action-btns { display: flex; gap: 8px; flex-shrink: 0; }
+.action-btn {
+    flex: 1; padding: 16px 8px;
+    border-radius: 12px; font-size: 16px; font-weight: 700;
+    font-family: inherit; cursor: pointer; border: none;
+    transition: all .15s;
+}
+.action-btn:hover { opacity: .85; transform: scale(1.02); }
+.action-btn:active { transform: scale(0.97); }
+.action-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+.btn-call { background: #00FF88; color: #1a1a2e; }
+.btn-recall { background: rgba(255,213,0,0.3); color: #FFD700; border: 1px solid #FFD700; }
+.btn-done { background: rgba(100,100,255,0.3); color: #aaa0ff; border: 1px solid #aaa0ff; }
+
+.direct-row { display: flex; gap: 8px; flex-shrink: 0; }
+.direct-input {
+    flex: 1; padding: 10px 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px; color: white; font-size: 15px;
+    font-family: inherit; outline: none;
+}
+.direct-input::placeholder { opacity: .4; }
+.direct-call-btn {
+    padding: 10px 16px;
+    background: rgba(255,213,0,0.2); border: 1px solid #FFD700;
+    border-radius: 8px; color: #FFD700; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+}
+
+/* ── 대기열 패널 (우측) ── */
+.queue-panel {
+    flex: 1; padding: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow: hidden;
+}
+.queue-header { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.queue-count { font-size: 12px; opacity: .5; }
+.queue-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.queue-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; font-size: 14px;
+}
+.queue-item .ticket { font-weight: 700; flex: 1; }
+.queue-item .cat { font-size: 12px; opacity: .55; }
+.queue-item .age { font-size: 11px; opacity: .4; }
+.queue-item .direct-btn {
+    padding: 4px 10px;
+    background: rgba(255,213,0,0.2); border: 1px solid rgba(255,213,0,0.4);
+    border-radius: 6px; color: #FFD700; font-size: 11px;
+    cursor: pointer; font-family: inherit;
+    flex-shrink: 0;
+}
+.queue-empty { text-align: center; opacity: .4; padding: 28px; font-size: 14px; }
+
+/* 다창구 현황 */
+.counters-section { flex-shrink: 0; }
+.counters-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.counter-item {
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px; font-size: 13px;
+    display: flex; gap: 6px; align-items: center;
+}
+.counter-item.active { border-color: #00FF88; background: rgba(0,255,136,0.1); }
+.counter-item .cno { opacity: .5; font-size: 11px; }
+.counter-item .cnum { font-weight: 700; color: #00FF88; }
+</style>
+</head>
+<body>
+
+<!-- 창구 선택 모달 -->
+<div class="counter-select" id="counterSelect">
+    <h2>창구 번호 선택</h2>
+    <p>이 화면에서 사용할 창구 번호를 선택하세요</p>
+    <div class="counter-grid" id="counterGrid"></div>
+</div>
+
+<!-- 상단 바 -->
+<div class="topbar">
+    <div class="shop-name" id="shopName">로딩 중...</div>
+    <div class="counter-badge" id="counterBadge">창구 —</div>
+    <div class="clock" id="clock"></div>
+    <div class="conn-dot" id="connDot"></div>
+    <button class="topbar-btn" onclick="changeCounter()">창구변경</button>
+    <button class="topbar-btn" onclick="logout()">로그아웃</button>
+</div>
+
+<div class="main-layout">
+
+    <!-- 현재 창구 -->
+    <div class="my-panel">
+        <div class="panel-title" id="myPanelTitle">내 창구</div>
+
+        <div class="current-card">
+            <div class="current-label">현재 호출 중</div>
+            <div class="current-number empty" id="currentNumber">—</div>
+            <div class="current-cat" id="currentCat"></div>
+        </div>
+
+        <div class="action-btns">
+            <button class="action-btn btn-call"   id="btnCall"   onclick="doCallNext()">다음 호출</button>
+            <button class="action-btn btn-recall" id="btnRecall" onclick="doRecall()" disabled>재호출</button>
+            <button class="action-btn btn-done"   id="btnDone"   onclick="doComplete()" disabled>완료</button>
+        </div>
+
+        <div class="direct-row">
+            <input type="text" class="direct-input" id="directInput" placeholder="번호 직접 입력 (예: A-003)">
+            <button class="direct-call-btn" onclick="doDirectCall()">직접 호출</button>
+        </div>
+    </div>
+
+    <!-- 대기열 + 창구 현황 -->
+    <div class="queue-panel">
+        <div class="panel-title">전체 대기 현황</div>
+
+        <div class="counters-section">
+            <div class="queue-header">
+                <span style="font-size:12px;opacity:.5">창구 현황</span>
+            </div>
+            <div class="counters-grid" id="countersGrid"></div>
+        </div>
+
+        <div class="queue-header">
+            <span class="panel-title">대기 목록</span>
+            <span class="queue-count" id="queueCount"></span>
+        </div>
+
+        <div class="queue-list" id="queueList">
+            <div class="queue-empty">대기 없음</div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const slug = window.location.pathname.split('/')[1];
+let accessToken = localStorage.getItem('accessToken');
+let counterNo = null;
+let config = { categories: [], settings: {} };
+let queueStatus = { waiting: [], currentCalls: [] };
+let socket = null;
+
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+// ── Auth guard ──────────────────────────────────────────────────
+if (!accessToken) {
+    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+}
+
+// ── API helper with token refresh ──────────────────────────────
+async function apiFetch(url, opts = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    let res = await fetch(url, { ...opts, headers, credentials: 'include' });
+    if (res.status === 401) {
+        const rr = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (rr.ok) {
+            const d = await rr.json();
+            accessToken = d.accessToken;
+            localStorage.setItem('accessToken', accessToken);
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            res = await fetch(url, { ...opts, headers, credentials: 'include' });
+        } else {
+            localStorage.clear();
+            window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+            return null;
+        }
+    }
+    return res;
+}
+
+// ── 초기화 ──────────────────────────────────────────────────────
+async function init() {
+    // tenantSlug 가드
+    const expectedSlug = localStorage.getItem('tenantSlug');
+    if (expectedSlug && slug !== expectedSlug) {
+        window.location.href = `/${expectedSlug}/counter`;
+        return;
+    }
+
+    try {
+        const [cfgRes, statusRes] = await Promise.all([
+            fetch(`/api/public/${slug}/join-config`),
+            fetch(`/api/public/${slug}/queue/status`),
+        ]);
+        if (cfgRes.ok) config = await cfgRes.json();
+        if (statusRes.ok) queueStatus = await statusRes.json();
+
+        document.getElementById('shopName').textContent = config.tenantName || slug;
+    } catch (e) {
+        console.error('init error', e);
+    }
+
+    // counterNo 결정
+    const saved = localStorage.getItem('counterNo');
+    if (saved) {
+        selectCounter(parseInt(saved, 10), false);
+    } else {
+        showCounterSelect();
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+}
+
+// ── 창구 선택 ────────────────────────────────────────────────────
+function showCounterSelect() {
+    const count = config.settings?.counter_count || 6;
+    const grid = document.getElementById('counterGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'counter-btn';
+        btn.textContent = i;
+        btn.addEventListener('click', () => selectCounter(i, true));
+        grid.appendChild(btn);
+    }
+    document.getElementById('counterSelect').classList.add('active');
+}
+
+function selectCounter(no, save) {
+    counterNo = no;
+    if (save) localStorage.setItem('counterNo', no);
+    document.getElementById('counterSelect').classList.remove('active');
+    document.getElementById('counterBadge').textContent = `${no}번 창구`;
+    document.getElementById('myPanelTitle').textContent = `${no}번 창구`;
+    renderQueueStatus();
+    connectSocket();
+}
+
+function changeCounter() {
+    if (socket) { socket.disconnect(); socket = null; }
+    localStorage.removeItem('counterNo');
+    showCounterSelect();
+}
+
+// ── 시계 ────────────────────────────────────────────────────────
+function updateClock() {
+    document.getElementById('clock').textContent =
+        new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ── Socket.IO ────────────────────────────────────────────────────
+function connectSocket() {
+    socket = io({ transports: ['websocket', 'polling'] });
+    socket.on('connect', () => {
+        document.getElementById('connDot').className = 'conn-dot ok';
+        // tenant room으로 join → queueUpdated, session:reset 수신
+        socket.emit('room:join', { token: accessToken, type: 'tenant' });
+    });
+    socket.on('disconnect', () => {
+        document.getElementById('connDot').className = 'conn-dot err';
+    });
+    socket.on('queue:updated', (data) => {
+        queueStatus = data;
+        renderQueueStatus();
+    });
+    socket.on('session:reset', () => {
+        queueStatus = { waiting: [], currentCalls: [] };
+        renderQueueStatus();
+    });
+}
+
+// ── 렌더링 ───────────────────────────────────────────────────────
+function renderQueueStatus() {
+    if (!counterNo) return;
+
+    // 내 창구 현재 호출
+    const calls = queueStatus.currentCalls || [];
+    const mine = calls.find(c => c.counter_no === counterNo);
+    const numEl = document.getElementById('currentNumber');
+    if (mine) {
+        numEl.textContent = mine.ticket_number;
+        numEl.className = 'current-number';
+        document.getElementById('currentCat').textContent = mine.category_code || '';
+        document.getElementById('btnRecall').disabled = false;
+        document.getElementById('btnDone').disabled   = false;
+    } else {
+        numEl.textContent = '—';
+        numEl.className = 'current-number empty';
+        document.getElementById('currentCat').textContent = '';
+        document.getElementById('btnRecall').disabled = true;
+        document.getElementById('btnDone').disabled   = true;
+    }
+
+    // 창구 현황
+    const counterCount = config.settings?.counter_count || 6;
+    const countersGrid = document.getElementById('countersGrid');
+    countersGrid.innerHTML = '';
+    for (let i = 1; i <= counterCount; i++) {
+        const c = calls.find(x => x.counter_no === i);
+        const el = document.createElement('div');
+        el.className = `counter-item${c ? ' active' : ''}`;
+        el.innerHTML = `<span class="cno">${i}번</span>${c ? `<span class="cnum">${esc(c.ticket_number)}</span>` : '<span style="opacity:.3;font-size:12px">대기중</span>'}`;
+        countersGrid.appendChild(el);
+    }
+
+    // 대기 목록
+    const waiting = queueStatus.waiting || [];
+    document.getElementById('queueCount').textContent = `${waiting.length}명 대기`;
+    const list = document.getElementById('queueList');
+    if (!waiting.length) {
+        list.innerHTML = '<div class="queue-empty">대기 없음</div>';
+        return;
+    }
+    list.innerHTML = waiting.map(w => {
+        const age = Math.floor((Date.now() - new Date(w.issued_at).getTime()) / 60000);
+        return `<div class="queue-item" data-ticket="${esc(w.ticket_number)}">
+            <span class="ticket">${esc(w.ticket_number)}</span>
+            <span class="cat">${esc(w.category_code)}</span>
+            <span class="age">${age}분</span>
+            <button class="direct-btn">호출</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.direct-btn').forEach(btn => {
+        btn.addEventListener('click', () => doDirectCallFor(btn.closest('.queue-item').dataset.ticket));
+    });
+}
+
+// ── 직원 액션 ─────────────────────────────────────────────────────
+async function doCallNext() {
+    const btn = document.getElementById('btnCall');
+    btn.disabled = true;
+    try {
+        const res = await apiFetch('/api/staff/queue/call-next', {
+            method: 'POST',
+            body: JSON.stringify({ counterNo }),
+        });
+        if (res && !res.ok) { const d = await res.json(); alert(d.error?.message || '호출 실패'); }
+    } finally { btn.disabled = false; }
+}
+
+async function doRecall() {
+    const btn = document.getElementById('btnRecall');
+    btn.disabled = true;
+    try {
+        const res = await apiFetch('/api/staff/queue/recall', {
+            method: 'POST',
+            body: JSON.stringify({ counterNo }),
+        });
+        if (res && !res.ok) { const d = await res.json(); alert(d.error?.message || '재호출 실패'); }
+    } finally { btn.disabled = false; }
+}
+
+async function doComplete() {
+    const btn = document.getElementById('btnDone');
+    btn.disabled = true;
+    try {
+        const res = await apiFetch('/api/staff/queue/complete', {
+            method: 'POST',
+            body: JSON.stringify({ counterNo }),
+        });
+        if (res && !res.ok) { const d = await res.json(); alert(d.error?.message || '완료 실패'); }
+    } finally { btn.disabled = false; }
+}
+
+async function doDirectCallFor(ticketNumber) {
+    try {
+        const res = await apiFetch('/api/staff/queue/call-direct', {
+            method: 'POST',
+            body: JSON.stringify({ ticketNumber, counterNo }),
+        });
+        if (res && !res.ok) { const d = await res.json(); alert(d.error?.message || '직접 호출 실패'); }
+    } catch (e) { alert(e.message); }
+}
+
+async function doDirectCall() {
+    const ticket = document.getElementById('directInput').value.trim().toUpperCase();
+    if (!ticket) return;
+    document.getElementById('directInput').value = '';
+    await doDirectCallFor(ticket);
+}
+
+// ── 로그아웃 ─────────────────────────────────────────────────────
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    localStorage.clear();
+    window.location.href = '/login';
+}
+
+init();
+</script>
+</body>
+</html>

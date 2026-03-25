@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>접수 — 순번대기</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 20px 16px 40px;
+}
+.wrap { width: 100%; max-width: 440px; color: white; }
+.shop-header { text-align: center; padding: 24px 0 20px; }
+.shop-name { font-size: 22px; font-weight: 700; }
+.shop-sub { font-size: 13px; opacity: .7; margin-top: 4px; }
+.sandbox-banner {
+    background: rgba(255,213,0,0.25);
+    border: 1px solid rgba(255,213,0,0.5);
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 12px; text-align: center; margin-bottom: 16px; display: none;
+}
+.card {
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 18px; padding: 24px; margin-bottom: 16px;
+}
+.section-title { font-size: 14px; font-weight: 600; opacity: .8; margin-bottom: 14px; }
+.phone-input {
+    width: 100%; padding: 14px 16px;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 12px; color: white; font-size: 22px;
+    font-family: inherit; outline: none; letter-spacing: 2px;
+    text-align: center; transition: border .2s;
+}
+.phone-input:focus { border-color: #00FF88; }
+.phone-input::placeholder { font-size: 15px; letter-spacing: 0; opacity: .5; }
+.phone-hint { font-size: 11px; opacity: .5; text-align: center; margin-top: 6px; }
+.category-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.category-btn {
+    padding: 20px 12px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 14px; color: white;
+    font-size: 16px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    transition: all .15s; text-align: center;
+}
+.category-btn:hover, .category-btn.selected {
+    background: rgba(0,255,136,0.25);
+    border-color: #00FF88;
+}
+.menu-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.menu-item {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; color: white;
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    transition: all .15s;
+}
+.menu-item:hover, .menu-item.selected {
+    background: rgba(0,255,136,0.2);
+    border-color: #00FF88;
+}
+.menu-item .check { font-size: 18px; }
+.submit-btn {
+    width: 100%; padding: 16px;
+    background: #00FF88; color: #1a1a2e;
+    border: none; border-radius: 14px;
+    font-size: 18px; font-weight: 700;
+    font-family: inherit; cursor: pointer;
+    transition: opacity .2s; margin-top: 8px;
+}
+.submit-btn:hover { opacity: .85; }
+.submit-btn:disabled { opacity: .4; cursor: not-allowed; }
+.error-msg {
+    background: rgba(255,71,87,0.2);
+    border: 1px solid rgba(255,71,87,0.5);
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; margin-bottom: 12px; display: none;
+}
+/* 결과 화면 */
+.result-screen { display: none; text-align: center; }
+.result-screen.active { display: block; }
+.ticket-badge {
+    font-size: 64px; font-weight: 900;
+    color: #00FF88; line-height: 1;
+    margin: 20px 0 12px;
+    text-shadow: 0 0 40px rgba(0,255,136,0.5);
+}
+.result-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.result-sub { font-size: 14px; opacity: .7; line-height: 1.6; }
+.waiting-info { font-size: 16px; margin: 16px 0; }
+.sms-status { font-size: 12px; opacity: .6; margin-top: 8px; }
+.done-btn {
+    margin-top: 24px; padding: 14px 40px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 12px; color: white;
+    font-size: 15px; cursor: pointer;
+    font-family: inherit;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <div class="shop-header">
+        <div class="shop-name" id="shopName">업체명</div>
+        <div class="shop-sub">순번 접수</div>
+    </div>
+
+    <div class="sandbox-banner" id="sandboxBanner">
+        ⚠ 테스트 모드 — 실제 문자는 발송되지 않습니다
+    </div>
+
+    <div id="formArea">
+        <div id="errorMsg" class="error-msg"></div>
+
+        <!-- 전화번호 (설정에 따라 표시) -->
+        <div class="card" id="phoneCard" style="display:none">
+            <div class="section-title">전화번호 입력</div>
+            <input type="tel" class="phone-input" id="phoneInput"
+                   placeholder="010-0000-0000" maxlength="13"
+                   oninput="formatPhone(this)">
+            <p class="phone-hint">알림톡/문자로 호출 번호를 알려드립니다</p>
+        </div>
+
+        <!-- 카테고리 선택 -->
+        <div class="card">
+            <div class="section-title">접수 유형 선택</div>
+            <div class="category-grid" id="categoryGrid">
+                <div style="opacity:.5;text-align:center;padding:20px">불러오는 중...</div>
+            </div>
+        </div>
+
+        <!-- 메뉴 선택 (설정에 따라 표시) -->
+        <div class="card" id="menuCard" style="display:none">
+            <div class="section-title">메뉴 선택 <span style="opacity:.5;font-weight:400">(선택사항)</span></div>
+            <div class="menu-grid" id="menuGrid"></div>
+        </div>
+
+        <button class="submit-btn" id="submitBtn" onclick="doIssue()" disabled>접수하기</button>
+    </div>
+
+    <!-- 결과 화면 -->
+    <div class="card result-screen" id="resultScreen">
+        <div class="result-title">접수 완료!</div>
+        <div class="ticket-badge" id="resultTicket">A-001</div>
+        <div class="waiting-info" id="waitingInfo"></div>
+        <div class="result-sub">
+            순서가 되면 안내해 드리겠습니다<br>잠시 기다려 주세요
+        </div>
+        <div class="sms-status" id="smsStatus"></div>
+        <button class="done-btn" onclick="resetForm()">처음으로</button>
+    </div>
+</div>
+
+<script>
+const slug = window.location.pathname.split('/')[1];
+let config = { categories: [], menuItems: [], settings: {} };
+let selectedCategory = null;
+let selectedMenu = null;
+
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+async function init() {
+    try {
+        const res = await fetch(`/api/public/${slug}/join-config`);
+        if (!res.ok) { document.getElementById('formArea').innerHTML = '<div style="color:white;text-align:center;padding:40px">업체 정보를 불러올 수 없습니다.</div>'; return; }
+        config = await res.json();
+
+        document.getElementById('shopName').textContent = config.tenantName || '순번 접수';
+        if (config.settings?.phone_input_enabled) {
+            document.getElementById('phoneCard').style.display = 'block';
+        }
+        if (config.settings?.menu_selection_enabled && config.menuItems?.length) {
+            document.getElementById('menuCard').style.display = 'block';
+            renderMenuItems();
+        }
+        renderCategories();
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function renderCategories() {
+    const grid = document.getElementById('categoryGrid');
+    if (!config.categories?.length) {
+        grid.innerHTML = '<div style="opacity:.5;text-align:center;padding:20px">카테고리가 없습니다</div>';
+        return;
+    }
+    grid.innerHTML = config.categories.map(c => `
+        <button class="category-btn" data-code="${esc(c.code)}">
+            ${esc(c.name)}
+        </button>`).join('');
+    grid.querySelectorAll('.category-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectCategory(btn.dataset.code));
+    });
+}
+
+function renderMenuItems() {
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = config.menuItems.map(m => `
+        <div class="menu-item" data-code="${esc(m.code)}" data-name="${esc(m.name)}">
+            <span class="check">○</span> ${esc(m.name)}
+        </div>`).join('');
+    grid.querySelectorAll('.menu-item').forEach(el => {
+        el.addEventListener('click', () => selectMenu(el.dataset.code, el.dataset.name));
+    });
+}
+
+function selectCategory(code) {
+    selectedCategory = code;
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.toggle('selected', b.dataset.code === code));
+    document.getElementById('submitBtn').disabled = false;
+}
+
+function selectMenu(code, name) {
+    if (selectedMenu === code) {
+        selectedMenu = null;
+        document.querySelectorAll('.menu-item').forEach(el => { el.classList.remove('selected'); el.querySelector('.check').textContent = '○'; });
+    } else {
+        selectedMenu = code;
+        document.querySelectorAll('.menu-item').forEach(el => {
+            const isSel = el.dataset.code === code;
+            el.classList.toggle('selected', isSel);
+            el.querySelector('.check').textContent = isSel ? '✓' : '○';
+        });
+    }
+}
+
+function formatPhone(el) {
+    let v = el.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length >= 7) el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+    else if (v.length >= 4) el.value = v.slice(0,3) + '-' + v.slice(3);
+    else el.value = v;
+}
+
+function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg; el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+}
+
+async function doIssue() {
+    if (!selectedCategory) return;
+    document.getElementById('errorMsg').style.display = 'none';
+
+    const phoneRaw = document.getElementById('phoneInput')?.value.replace(/\D/g, '') || '';
+    const phone = phoneRaw.length >= 10 ? phoneRaw : '';
+
+    if (config.settings?.phone_input_enabled && !phone) {
+        return showError('전화번호를 입력해주세요.');
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = '처리 중...';
+
+    try {
+        const body = {
+            categoryCode:  selectedCategory,
+            entryChannel:  'qr_self',
+            customerPhone: phone || undefined,
+            menuCode:      selectedMenu || undefined,
+        };
+        const res = await fetch(`/api/public/${slug}/queue/issue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || '접수 실패');
+
+        showResult(data);
+    } catch (err) {
+        showError(err.message);
+        btn.disabled = false; btn.textContent = '접수하기';
+    }
+}
+
+function showResult(data) {
+    document.getElementById('formArea').style.display = 'none';
+    const screen = document.getElementById('resultScreen');
+    screen.classList.add('active');
+    screen.style.display = 'block';
+
+    document.getElementById('resultTicket').textContent = data.ticket.ticket_number;
+
+    const waiting = (data.queueStatus?.waiting || []).length;
+    document.getElementById('waitingInfo').textContent = `현재 대기 ${waiting}명`;
+
+    if (data.sandboxMode) {
+        document.getElementById('smsStatus').textContent = '(테스트 모드: 실제 문자가 발송되지 않습니다)';
+        document.getElementById('sandboxBanner').style.display = 'block';
+    } else if (data.ticket.customer_phone) {
+        document.getElementById('smsStatus').textContent = '알림 문자가 발송됩니다';
+    }
+}
+
+function resetForm() {
+    selectedCategory = null; selectedMenu = null;
+    document.getElementById('formArea').style.display = 'block';
+    document.getElementById('resultScreen').style.display = 'none';
+    document.getElementById('resultScreen').classList.remove('active');
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = '접수하기';
+    if (document.getElementById('phoneInput')) document.getElementById('phoneInput').value = '';
+    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.menu-item').forEach(el => { el.classList.remove('selected'); el.querySelector('.check').textContent = '○'; });
+}
+
+init();
+</script>
+</body>
+</html>

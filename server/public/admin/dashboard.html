@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대시보드 — 관리자</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+.nav {
+    display: flex; align-items: center; gap: 0;
+    padding: 0 24px;
+    background: rgba(0,0,0,0.2);
+    height: 50px;
+}
+.nav-brand { font-size: 16px; font-weight: 700; margin-right: 24px; }
+.nav a {
+    padding: 0 14px; height: 50px; display: flex; align-items: center;
+    color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px;
+    border-bottom: 2px solid transparent; transition: all .15s;
+}
+.nav a:hover, .nav a.active {
+    color: white; border-bottom-color: #00FF88;
+}
+.nav-spacer { flex: 1; }
+.nav-logout {
+    padding: 6px 14px; background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px; color: white; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+}
+.sandbox-banner {
+    background: rgba(255,213,0,0.2); border-bottom: 1px solid rgba(255,213,0,0.4);
+    padding: 6px 24px; font-size: 12px; color: #FFD700; display: none;
+}
+.content { padding: 28px 24px; max-width: 1000px; margin: 0 auto; }
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+.kpi-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+}
+.kpi-card {
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 14px; padding: 20px;
+}
+.kpi-label { font-size: 12px; opacity: .6; margin-bottom: 8px; }
+.kpi-value { font-size: 36px; font-weight: 900; color: #00FF88; }
+.kpi-sub { font-size: 12px; opacity: .5; margin-top: 4px; }
+.section { margin-bottom: 28px; }
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; opacity: .8; }
+.card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px; padding: 20px;
+}
+.sub-card {
+    border-radius: 12px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 16px;
+}
+.sub-status-badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 700;
+}
+.badge-trial    { background: rgba(255,213,0,0.25); color: #FFD700; }
+.badge-active   { background: rgba(0,255,136,0.2);  color: #00FF88; }
+.badge-past-due { background: rgba(255,71,87,0.2);  color: #ff4757; }
+.badge-suspended{ background: rgba(100,100,100,0.3);color: #aaa; }
+.log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.log-table th { text-align: left; opacity: .6; padding: 6px 10px; font-weight: 500; }
+.log-table td { padding: 8px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+.status-failed { color: #ff4757; }
+.status-sent   { color: #00FF88; }
+.status-prev   { color: #FFD700; }
+.quick-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.quick-link {
+    padding: 10px 18px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; color: white; text-decoration: none;
+    font-size: 14px; transition: all .15s;
+}
+.quick-link:hover { background: rgba(255,255,255,0.2); }
+.go-solo {
+    padding: 10px 20px;
+    background: #00FF88; color: #1a1a2e;
+    border-radius: 10px; text-decoration: none;
+    font-size: 14px; font-weight: 700;
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+    <span class="nav-brand" id="navBrand">관리자</span>
+    <a id="navDash" href="#" class="active">대시보드</a>
+    <a id="navSettings" href="#">설정</a>
+    <a id="navMessages" href="#">메시지</a>
+    <a id="navSubscription" href="#">구독</a>
+    <div class="nav-spacer"></div>
+    <a id="navSolo" class="go-solo" href="#" style="margin-right:10px">Solo 화면 →</a>
+    <button class="nav-logout" onclick="logout()">로그아웃</button>
+</nav>
+<div class="sandbox-banner" id="sandboxBanner">
+    ⚠ 테스트(샌드박스) 모드 — 실제 문자는 발송되지 않습니다. 구독 활성화 시 해제됩니다.
+</div>
+
+<div class="content">
+    <div class="page-title">대시보드</div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-label">오늘 발급</div>
+            <div class="kpi-value" id="kpiIssued">—</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">현재 대기</div>
+            <div class="kpi-value" id="kpiWaiting">—</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">오늘 완료</div>
+            <div class="kpi-value" id="kpiDone">—</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">발송 (오늘)</div>
+            <div class="kpi-value" id="kpiSent">—</div>
+            <div class="kpi-sub" id="kpiFailed"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">구독 상태</div>
+        <div class="card sub-card">
+            <span class="sub-status-badge" id="subBadge">—</span>
+            <span id="subInfo" style="font-size:14px;opacity:.8"></span>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">최근 발송 실패</div>
+        <div class="card">
+            <table class="log-table">
+                <thead><tr>
+                    <th>번호표</th><th>전화번호</th><th>채널</th>
+                    <th>오류</th><th>시각</th>
+                </tr></thead>
+                <tbody id="failedLogs"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">바로가기</div>
+        <div class="quick-links">
+            <a class="quick-link" id="qlSettings" href="#">카테고리 / 설정</a>
+            <a class="quick-link" id="qlMessages" href="#">메시지 설정</a>
+            <a class="quick-link" id="qlSubscription" href="#">구독 / 결제</a>
+        </div>
+    </div>
+</div>
+
+<script>
+const slug = window.location.pathname.split('/')[1];
+let accessToken = localStorage.getItem('accessToken');
+if (!accessToken) { window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`; }
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+// Nav links
+document.getElementById('navBrand').textContent        = localStorage.getItem('tenantName') || '관리자';
+document.getElementById('navDash').href                = `/${slug}/admin/dashboard`;
+document.getElementById('navSettings').href            = `/${slug}/admin/settings`;
+document.getElementById('navMessages').href            = `/${slug}/admin/messages`;
+document.getElementById('navSubscription').href        = `/${slug}/admin/subscription`;
+document.getElementById('navSolo').href                = `/${slug}/solo`;
+document.getElementById('qlSettings').href             = `/${slug}/admin/settings`;
+document.getElementById('qlMessages').href             = `/${slug}/admin/messages`;
+document.getElementById('qlSubscription').href         = `/${slug}/admin/subscription`;
+
+if (localStorage.getItem('sandboxMode') === '1') {
+    document.getElementById('sandboxBanner').style.display = 'block';
+}
+
+async function apiFetch(url, opts = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    let res = await fetch(url, { ...opts, headers, credentials: 'include' });
+    if (res.status === 401) {
+        const rr = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (rr.ok) {
+            const d = await rr.json();
+            accessToken = d.accessToken; localStorage.setItem('accessToken', accessToken);
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            res = await fetch(url, { ...opts, headers, credentials: 'include' });
+        } else { localStorage.clear(); window.location.href = '/login'; return null; }
+    }
+    return res;
+}
+
+async function loadDashboard() {
+    const res = await apiFetch(`/api/${slug}/admin/dashboard`);
+    if (!res?.ok) return;
+    const d = await res.json();
+
+    document.getElementById('kpiIssued').textContent  = d.items?.total_issued  ?? '0';
+    document.getElementById('kpiWaiting').textContent = d.items?.waiting_count ?? '0';
+    document.getElementById('kpiDone').textContent    = d.items?.done_count    ?? '0';
+    document.getElementById('kpiSent').textContent    = d.messages?.sent_count ?? '0';
+    const failed = parseInt(d.messages?.failed_count || '0');
+    if (failed > 0) {
+        document.getElementById('kpiFailed').textContent = `실패 ${failed}건`;
+        document.getElementById('kpiFailed').style.color = '#ff4757';
+    }
+
+    // Subscription badge
+    const sub = d.subscription;
+    if (sub) {
+        const badge = document.getElementById('subBadge');
+        const labels = { trial: '트라이얼', active: '활성', past_due: '결제 필요', suspended: '정지', cancelled: '취소' };
+        const classes = { trial: 'badge-trial', active: 'badge-active', past_due: 'badge-past-due', suspended: 'badge-suspended' };
+        badge.textContent = labels[sub.status] || sub.status;
+        badge.className = 'sub-status-badge ' + (classes[sub.status] || 'badge-trial');
+
+        let info = sub.plan_code;
+        if (sub.trial_ends_at) {
+            const days = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - Date.now()) / 86400000));
+            info += ` — 트라이얼 ${days}일 남음`;
+        } else if (sub.current_period_end) {
+            info += ` — ${new Date(sub.current_period_end).toLocaleDateString('ko-KR')} 까지`;
+        }
+        document.getElementById('subInfo').textContent = info;
+    }
+
+}
+// 실패 로그는 loadRecentFailed()에서 별도 API로 렌더링
+
+async function loadRecentFailed() {
+    const res = await apiFetch(`/api/${slug}/admin/messages/logs?limit=10&status=failed`);
+    if (!res?.ok) return;
+    const d = await res.json();
+    const failed = d.logs || [];
+    const tbody = document.getElementById('failedLogs');
+    if (!failed.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="opacity:.4;text-align:center;padding:16px">실패 내역 없음</td></tr>';
+        return;
+    }
+    tbody.innerHTML = failed.map(l => `
+        <tr>
+            <td>${esc(l.ticket_number) || '—'}</td>
+            <td>${maskPhone(l.phone)}</td>
+            <td>${esc(l.channel)}</td>
+            <td class="status-failed">${esc(l.error_message) || '알 수 없음'}</td>
+            <td>${formatTime(l.requested_at)}</td>
+        </tr>`).join('');
+}
+
+function maskPhone(p) { return p ? p.slice(0,3) + '-****-' + p.slice(-4) : '—'; }
+function formatTime(t) {
+    if (!t) return '—';
+    return new Date(t).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function logout() {
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    localStorage.clear(); window.location.href = '/login';
+}
+
+loadDashboard();
+loadRecentFailed();
+</script>
+</body>
+</html>

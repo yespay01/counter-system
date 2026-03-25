@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>구독 — 관리자</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', sans-serif; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.nav { display: flex; align-items: center; gap: 0; padding: 0 24px; background: rgba(0,0,0,0.2); height: 50px; }
+.nav-brand { font-size: 16px; font-weight: 700; margin-right: 24px; }
+.nav a { padding: 0 14px; height: 50px; display: flex; align-items: center; color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; border-bottom: 2px solid transparent; transition: all .15s; }
+.nav a:hover, .nav a.active { color: white; border-bottom-color: #00FF88; }
+.nav-spacer { flex: 1; }
+.nav-logout { padding: 6px 14px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: white; font-size: 13px; cursor: pointer; font-family: inherit; }
+.content { padding: 28px 24px; max-width: 760px; margin: 0 auto; }
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+.card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+.status-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.sub-status-badge { padding: 5px 14px; border-radius: 20px; font-size: 15px; font-weight: 700; }
+.badge-trial    { background: rgba(255,213,0,0.25); color: #FFD700; }
+.badge-active   { background: rgba(0,255,136,0.2);  color: #00FF88; }
+.badge-past-due { background: rgba(255,71,87,0.2);  color: #ff4757; }
+.badge-suspended{ background: rgba(100,100,100,0.3);color: #aaa; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 14px; }
+.detail-row:last-child { border-bottom: none; }
+.detail-label { opacity: .7; }
+.detail-value { font-weight: 600; }
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; opacity: .8; }
+.trial-notice {
+    background: rgba(255,213,0,0.1); border: 1px solid rgba(255,213,0,0.3);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 20px;
+    font-size: 14px; line-height: 1.7;
+}
+.trial-notice strong { color: #FFD700; }
+.bank-info { background: rgba(255,255,255,0.07); border-radius: 10px; padding: 16px; font-size: 14px; line-height: 2; }
+.bank-info .account { font-size: 18px; font-weight: 700; color: #00FF88; margin-top: 6px; }
+.past-due-notice {
+    background: rgba(255,71,87,0.1); border: 1px solid rgba(255,71,87,0.3);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; font-size: 14px; line-height: 1.7;
+}
+.past-due-notice strong { color: #ff4757; }
+.suspended-notice {
+    background: rgba(100,100,100,0.15); border: 1px solid rgba(150,150,150,0.3);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; font-size: 14px; line-height: 1.7;
+}
+.suspended-notice strong { color: #aaa; }
+/* 사용량 */
+.usage-month-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.usage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.usage-ym { font-size: 14px; font-weight: 600; }
+.usage-billed { font-size: 15px; font-weight: 700; color: #00FF88; }
+.usage-detail-row { display: flex; gap: 20px; font-size: 12px; opacity: .75; flex-wrap: wrap; }
+/* 정산 이력 */
+.billing-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.billing-table th { text-align: left; opacity: .6; padding: 8px 10px; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.billing-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.badge-confirmed { background: rgba(0,255,136,0.2); color: #00FF88; }
+.badge-pending   { background: rgba(255,213,0,0.2); color: #FFD700; }
+.badge-cancelled { background: rgba(150,150,150,0.2); color: #aaa; }
+.badge-small { padding: 2px 7px; border-radius: 8px; font-size: 11px; }
+</style>
+</head>
+<body>
+<nav class="nav">
+    <span class="nav-brand" id="navBrand">관리자</span>
+    <a id="navDash" href="#">대시보드</a>
+    <a id="navSettings" href="#">설정</a>
+    <a id="navMessages" href="#">메시지</a>
+    <a id="navSubscription" href="#" class="active">구독</a>
+    <div class="nav-spacer"></div>
+    <button class="nav-logout" onclick="logout()">로그아웃</button>
+</nav>
+
+<div class="content">
+    <div class="page-title">구독 / 결제</div>
+
+    <!-- 구독 상태 카드 -->
+    <div class="card">
+        <div class="status-row">
+            <span class="sub-status-badge" id="subBadge">—</span>
+            <span id="subPlan" style="font-size:14px;opacity:.8"></span>
+        </div>
+        <div id="subDetails"></div>
+    </div>
+
+    <!-- 상태별 안내 -->
+    <div id="trialNotice" style="display:none">
+        <div class="trial-notice">
+            <strong>트라이얼 기간 중</strong>입니다.<br>
+            샌드박스 모드에서 전체 기능을 체험하실 수 있습니다.<br>
+            실제 운영을 시작하려면 아래 계좌로 이체 후 이메일로 알려주세요.
+        </div>
+    </div>
+    <div id="pastDueNotice" style="display:none">
+        <div class="past-due-notice">
+            <strong>결제가 필요합니다.</strong><br>
+            미결제 상태가 지속되면 서비스가 일시 정지될 수 있습니다.<br>
+            아래 계좌로 이체 후 이메일로 알려주세요.
+        </div>
+    </div>
+    <div id="suspendedNotice" style="display:none">
+        <div class="suspended-notice">
+            <strong>서비스가 일시 정지됐습니다.</strong><br>
+            결제 확인 후 영업일 기준 1일 이내 재활성화됩니다.<br>
+            문의: <b>support@example.com</b>
+        </div>
+    </div>
+
+    <!-- 계좌이체 안내 (trial / past_due) -->
+    <div class="card" id="bankCard" style="display:none">
+        <div class="section-title">계좌이체 안내</div>
+        <div class="bank-info">
+            <div>플랜: Solo 기본 (월 9,900원 + 메시지 건당 과금)</div>
+            <div>입금 계좌</div>
+            <div class="account">카카오뱅크 000-000-0000000 (홍길동)</div>
+            <div style="font-size:12px;opacity:.6;margin-top:8px">
+                입금 후 <b>support@example.com</b> 으로 업체명과 입금액을 보내주시면<br>
+                영업일 기준 1일 이내 처리됩니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 월별 사용량 + 예상 청구 -->
+    <div class="card">
+        <div class="section-title">월별 사용량 & 예상 청구</div>
+        <div id="usageSection">
+            <div style="opacity:.4;text-align:center;padding:16px">로딩 중...</div>
+        </div>
+    </div>
+
+    <!-- 정산 이력 -->
+    <div class="card" id="billingLogCard" style="display:none">
+        <div class="section-title">정산 이력</div>
+        <table class="billing-table">
+            <thead><tr>
+                <th>기간</th><th>구독료</th><th>메시지</th><th>합계</th><th>방법</th><th>상태</th><th>메모</th>
+            </tr></thead>
+            <tbody id="billingLogBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+const slug = window.location.pathname.split('/')[1];
+let accessToken = localStorage.getItem('accessToken');
+if (!accessToken) { window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`; }
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+document.getElementById('navBrand').textContent   = localStorage.getItem('tenantName') || '관리자';
+document.getElementById('navDash').href           = `/${slug}/admin/dashboard`;
+document.getElementById('navSettings').href       = `/${slug}/admin/settings`;
+document.getElementById('navMessages').href       = `/${slug}/admin/messages`;
+document.getElementById('navSubscription').href   = `/${slug}/admin/subscription`;
+
+async function apiFetch(url, opts = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    let res = await fetch(url, { ...opts, headers, credentials: 'include' });
+    if (res.status === 401) {
+        const rr = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (rr.ok) {
+            const d = await rr.json();
+            accessToken = d.accessToken; localStorage.setItem('accessToken', accessToken);
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            res = await fetch(url, { ...opts, headers, credentials: 'include' });
+        } else { localStorage.clear(); window.location.href = '/login'; return null; }
+    }
+    return res;
+}
+
+async function loadSubscription() {
+    const res = await apiFetch(`/api/${slug}/admin/subscription`);
+    if (!res?.ok) return;
+    const { subscription: sub, usageMonthly, billingLogs } = await res.json();
+
+    if (sub) {
+        const labels  = { trial: '트라이얼', active: '활성', past_due: '결제 필요', suspended: '정지', cancelled: '취소' };
+        const classes = { trial: 'badge-trial', active: 'badge-active', past_due: 'badge-past-due', suspended: 'badge-suspended' };
+
+        document.getElementById('subBadge').textContent = labels[sub.status] || sub.status;
+        document.getElementById('subBadge').className   = 'sub-status-badge ' + (classes[sub.status] || 'badge-trial');
+        document.getElementById('subPlan').textContent  = sub.plan_code || '';
+
+        const rows = [];
+        if (sub.trial_ends_at) {
+            const days = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - Date.now()) / 86400000));
+            rows.push(['트라이얼 종료', `${new Date(sub.trial_ends_at).toLocaleDateString('ko-KR')} (${days}일 남음)`]);
+        }
+        if (sub.current_period_end) rows.push(['결제 기간 종료', new Date(sub.current_period_end).toLocaleDateString('ko-KR')]);
+        if (sub.last_paid_at)       rows.push(['최근 결제', new Date(sub.last_paid_at).toLocaleDateString('ko-KR')]);
+        if (sub.billing_method)     rows.push(['결제 방식', sub.billing_method]);
+        if (sub.activated_at)       rows.push(['활성화일', new Date(sub.activated_at).toLocaleDateString('ko-KR')]);
+
+        document.getElementById('subDetails').innerHTML = rows.map(([l,v]) => `
+            <div class="detail-row"><span class="detail-label">${esc(l)}</span><span class="detail-value">${esc(v)}</span></div>
+        `).join('');
+
+        if      (sub.status === 'trial')    { document.getElementById('trialNotice').style.display    = 'block'; document.getElementById('bankCard').style.display    = 'block'; }
+        else if (sub.status === 'past_due') { document.getElementById('pastDueNotice').style.display  = 'block'; document.getElementById('bankCard').style.display    = 'block'; }
+        else if (sub.status === 'suspended'){ document.getElementById('suspendedNotice').style.display= 'block'; }
+    }
+
+    // 사용량
+    const sec = document.getElementById('usageSection');
+    if (!usageMonthly?.length) {
+        sec.innerHTML = '<div style="opacity:.4;text-align:center;padding:16px">사용 내역 없음</div>';
+    } else {
+        sec.innerHTML = usageMonthly.map(u => `
+            <div class="usage-month-card">
+                <div class="usage-header">
+                    <span class="usage-ym">${esc(u.year_month)}</span>
+                    <span class="usage-billed">${u.billed_amount.toLocaleString()}원 예상</span>
+                </div>
+                <div class="usage-detail-row">
+                    <span>알림톡 <b>${u.ata_sent}</b></span>
+                    <span>SMS <b>${u.sms_sent}</b></span>
+                    <span>발급 <b>${u.issue_sent}</b></span>
+                    <span>호출 <b>${u.call_sent}</b></span>
+                    <span>과금 <b>${u.billable_count}</b>건</span>
+                    <span>원가 <b>${u.provider_cost_amount.toLocaleString()}원</b></span>
+                    <span>마진 <b>${u.margin_amount.toLocaleString()}원</b></span>
+                </div>
+            </div>`).join('');
+    }
+
+    // 정산 이력
+    if (billingLogs?.length) {
+        document.getElementById('billingLogCard').style.display = 'block';
+        const statusLabel = { confirmed: '확인', pending: '대기', cancelled: '취소' };
+        const statusClass = { confirmed: 'badge-confirmed', pending: 'badge-pending', cancelled: 'badge-cancelled' };
+        document.getElementById('billingLogBody').innerHTML = billingLogs.map(b => `
+            <tr>
+                <td>${esc(b.year_month)}</td>
+                <td>${b.plan_amount.toLocaleString()}원</td>
+                <td>${b.message_amount.toLocaleString()}원</td>
+                <td style="font-weight:600">${b.total_amount.toLocaleString()}원</td>
+                <td style="opacity:.7">계좌이체</td>
+                <td><span class="badge-small ${statusClass[b.status] || ''}">${statusLabel[b.status] || esc(b.status)}</span></td>
+                <td style="font-size:11px;opacity:.7">${esc(b.memo || '')}</td>
+            </tr>`).join('');
+    }
+}
+
+function logout() { fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); localStorage.clear(); window.location.href = '/login'; }
+
+loadSubscription();
+</script>
+</body>
+</html>

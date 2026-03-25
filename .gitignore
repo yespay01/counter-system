@@ -1,0 +1,11 @@
+# Claude Code 내부 디렉터리
+.claude/
+.playwright-mcp/
+
+# Windows 바탕화면 파일
+*.lnk
+테스트.txt
+
+# OS
+.DS_Store
+Thumbs.db

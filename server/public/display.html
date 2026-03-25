@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대기 현황</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── 상단 바 ── */
+.topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 28px;
+    background: rgba(0,0,0,0.3);
+    flex-shrink: 0;
+}
+.shop-name { font-size: 22px; font-weight: 700; flex: 1; }
+.clock { font-size: 22px; font-variant-numeric: tabular-nums; opacity: .8; }
+.conn-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #888; transition: background .3s;
+}
+.conn-dot.ok { background: #00FF88; }
+.conn-dot.err { background: #ff4757; }
+.audio-btn {
+    padding: 4px 12px;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 6px; color: white; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+}
+.audio-btn.on { background: rgba(0,255,136,0.15); border-color: rgba(0,255,136,0.4); color: #00FF88; }
+
+/* ── 메인 레이아웃 ── */
+.main-layout {
+    flex: 1; display: flex;
+    height: calc(100vh - 58px);
+}
+
+/* ── 호출 패널 (좌) ── */
+.call-panel {
+    flex: 0 0 48%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    gap: 12px;
+}
+.call-label {
+    font-size: 20px; opacity: .55; letter-spacing: 2px; text-transform: uppercase;
+}
+.call-number {
+    font-size: 160px; font-weight: 900; color: #00FF88; line-height: 1;
+    text-shadow: 0 0 80px rgba(0,255,136,0.5);
+    transition: all .3s;
+}
+.call-number.empty { color: rgba(255,255,255,0.15); font-size: 80px; }
+.call-number.flash {
+    animation: callFlash .6s ease-out;
+}
+@keyframes callFlash {
+    0%   { transform: scale(1.15); text-shadow: 0 0 120px rgba(0,255,136,1); }
+    100% { transform: scale(1);    text-shadow: 0 0 80px rgba(0,255,136,0.5); }
+}
+.call-number.recall-flash {
+    animation: recallFlash .6s ease-out;
+}
+@keyframes recallFlash {
+    0%   { transform: scale(1.1); text-shadow: 0 0 120px rgba(255,213,0,1); color: #FFD700; }
+    100% { transform: scale(1);   text-shadow: 0 0 80px rgba(0,255,136,0.5); color: #00FF88; }
+}
+.call-counter { font-size: 22px; opacity: .6; }
+.call-cat { font-size: 18px; opacity: .5; margin-top: 4px; }
+.recall-badge {
+    display: none; padding: 4px 16px;
+    background: rgba(255,213,0,0.2); border: 1px solid #FFD700;
+    border-radius: 20px; color: #FFD700; font-size: 14px;
+}
+.recall-badge.visible { display: inline-block; }
+
+/* ── 우측 패널 ── */
+.right-panel {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+    overflow: hidden;
+}
+
+/* 창구 현황 */
+.section-title { font-size: 13px; font-weight: 600; opacity: .5; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0; }
+.counters-grid { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }
+.counter-chip {
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    min-width: 80px;
+    transition: all .3s;
+}
+.counter-chip.active {
+    border-color: #00FF88; background: rgba(0,255,136,0.12);
+}
+.counter-chip .cno { font-size: 12px; opacity: .5; }
+.counter-chip .cnum { font-size: 20px; font-weight: 900; color: #00FF88; }
+.counter-chip .cnum.empty { font-size: 16px; color: rgba(255,255,255,0.25); font-weight: 400; }
+
+/* 대기 목록 */
+.waiting-list { flex: 1; overflow-y: hidden; display: flex; flex-direction: column; gap: 6px; }
+.wait-header { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.wait-count { font-size: 13px; opacity: .5; }
+.wait-grid {
+    flex: 1; overflow: hidden;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px; align-content: start;
+}
+.wait-chip {
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; text-align: center;
+}
+.wait-chip .wnum { font-size: 20px; font-weight: 700; }
+.wait-chip .wcat { font-size: 11px; opacity: .45; margin-top: 2px; }
+.wait-empty { text-align: center; opacity: .3; padding: 28px; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<!-- 상단 바 -->
+<div class="topbar">
+    <div class="shop-name" id="shopName">로딩 중...</div>
+    <div class="clock" id="clock"></div>
+    <div class="conn-dot" id="connDot"></div>
+    <button class="audio-btn" id="audioBtn" onclick="toggleAudio()">🔇 음소거</button>
+</div>
+
+<div class="main-layout">
+
+    <!-- 호출 패널 -->
+    <div class="call-panel">
+        <div class="call-label">현재 호출</div>
+        <div class="call-number empty" id="callNumber">대기 중</div>
+        <div class="call-counter" id="callCounter"></div>
+        <div class="call-cat" id="callCat"></div>
+        <div class="recall-badge" id="recallBadge">재호출</div>
+    </div>
+
+    <!-- 우측 -->
+    <div class="right-panel">
+        <div class="section-title">창구 현황</div>
+        <div class="counters-grid" id="countersGrid"></div>
+
+        <div class="waiting-list">
+            <div class="wait-header">
+                <span class="section-title">대기 목록</span>
+                <span class="wait-count" id="waitCount"></span>
+            </div>
+            <div class="wait-grid" id="waitGrid">
+                <div class="wait-empty">대기 없음</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const slug = window.location.pathname.split('/')[1];
+let queueStatus = { waiting: [], currentCalls: [] };
+let config = { settings: {} };
+let socket = null;
+let audioEnabled = false;
+let audioCtx = null;
+let lastCallKey = null;
+
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+// ── Audio ─────────────────────────────────────────────────────────
+function ensureAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playBeep(type = 'call') {
+    if (!audioEnabled) return;
+    ensureAudioCtx();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    if (type === 'recall') {
+        osc.frequency.value = 660;
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        setTimeout(() => {
+            const o2 = audioCtx.createOscillator(); const g2 = audioCtx.createGain();
+            o2.connect(g2); g2.connect(audioCtx.destination);
+            o2.frequency.value = 660;
+            g2.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            g2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            o2.start(); o2.stop(audioCtx.currentTime + 0.4);
+        }, 500);
+    } else {
+        const freqs = [523, 659, 784];
+        freqs.forEach((f, i) => {
+            setTimeout(() => {
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination);
+                o.frequency.value = f;
+                g.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                o.start(); o.stop(audioCtx.currentTime + 0.3);
+            }, i * 180);
+        });
+    }
+}
+
+function toggleAudio() {
+    if (!audioEnabled) {
+        ensureAudioCtx();
+        audioCtx.resume();
+    }
+    audioEnabled = !audioEnabled;
+    const btn = document.getElementById('audioBtn');
+    btn.textContent = audioEnabled ? '🔊 음향 켜짐' : '🔇 음소거';
+    btn.className = `audio-btn${audioEnabled ? ' on' : ''}`;
+    if (audioEnabled) playBeep('call');
+}
+
+// ── 초기화 ──────────────────────────────────────────────────────
+async function init() {
+    try {
+        const [cfgRes, statusRes] = await Promise.all([
+            fetch(`/api/public/${slug}/join-config`),
+            fetch(`/api/public/${slug}/queue/status`),
+        ]);
+        if (cfgRes.ok) config = await cfgRes.json();
+        if (statusRes.ok) queueStatus = await statusRes.json();
+        document.getElementById('shopName').textContent = config.tenantName || slug;
+    } catch (e) {
+        console.error('init error', e);
+    }
+    renderAll();
+    connectSocket();
+    updateClock();
+    setInterval(updateClock, 1000);
+}
+
+function updateClock() {
+    document.getElementById('clock').textContent =
+        new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ── Socket.IO ────────────────────────────────────────────────────
+function connectSocket() {
+    socket = io({ transports: ['websocket', 'polling'] });
+    socket.on('connect', () => {
+        document.getElementById('connDot').className = 'conn-dot ok';
+        socket.emit('room:join', { slug, type: 'display' });
+    });
+    socket.on('disconnect', () => {
+        document.getElementById('connDot').className = 'conn-dot err';
+    });
+
+    socket.on('call:new', (data) => {
+        const key = `${data.ticket_number}-${data.counterNo}`;
+        if (key === lastCallKey) return; // 중복 방지
+        lastCallKey = key;
+        showCall(data.ticket_number, data.counterNo, data.category_code, false);
+        playBeep('call');
+    });
+
+    socket.on('call:recall', (data) => {
+        showCall(data.ticket_number, data.counterNo, data.category_code, true);
+        playBeep('recall');
+    });
+
+    socket.on('queue:updated', (data) => {
+        queueStatus = data;
+        renderCounters();
+        renderWaiting();
+        // call:new/recall이 없을 때만 갱신 (초기 진입 후 호출 없는 상태 동기화)
+        if (!lastCallKey) renderCurrentCall();
+    });
+
+    socket.on('session:reset', () => {
+        queueStatus = { waiting: [], currentCalls: [] };
+        lastCallKey = null;
+        renderAll();
+        const numEl = document.getElementById('callNumber');
+        numEl.textContent = '대기 중'; numEl.className = 'call-number empty';
+        document.getElementById('callCounter').textContent = '';
+        document.getElementById('callCat').textContent = '';
+        document.getElementById('recallBadge').className = 'recall-badge';
+    });
+}
+
+// ── 호출 표시 ────────────────────────────────────────────────────
+function showCall(ticketNumber, counterNo, categoryCode, isRecall) {
+    const numEl = document.getElementById('callNumber');
+    numEl.textContent = ticketNumber;
+    numEl.className = `call-number ${isRecall ? 'recall-flash' : 'flash'}`;
+    document.getElementById('callCounter').textContent = `${counterNo}번 창구`;
+    document.getElementById('callCat').textContent = categoryCode || '';
+    const badge = document.getElementById('recallBadge');
+    badge.className = `recall-badge${isRecall ? ' visible' : ''}`;
+}
+
+// ── 렌더링 ───────────────────────────────────────────────────────
+function renderAll() {
+    renderCurrentCall();
+    renderCounters();
+    renderWaiting();
+}
+
+function renderCurrentCall() {
+    const calls = queueStatus.currentCalls || [];
+    if (!calls.length) return;
+    const latest = calls.slice().sort((a, b) => new Date(b.called_at) - new Date(a.called_at))[0];
+    const numEl = document.getElementById('callNumber');
+    numEl.textContent = latest.ticket_number;
+    numEl.className = 'call-number'; // 초기 로드 — 애니메이션 없음
+    document.getElementById('callCounter').textContent = `${latest.counter_no}번 창구`;
+    document.getElementById('callCat').textContent = latest.category_code || '';
+    document.getElementById('recallBadge').className = 'recall-badge';
+    lastCallKey = `${latest.ticket_number}-${latest.counter_no}`;
+}
+
+function renderCounters() {
+    const count = config.settings?.counter_count || 6;
+    const calls = queueStatus.currentCalls || [];
+    const grid = document.getElementById('countersGrid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+        const c = calls.find(x => x.counter_no === i);
+        const chip = document.createElement('div');
+        chip.className = `counter-chip${c ? ' active' : ''}`;
+        chip.innerHTML = `<span class="cno">${i}번 창구</span>
+            ${c
+                ? `<span class="cnum">${esc(c.ticket_number)}</span>`
+                : `<span class="cnum empty">—</span>`}`;
+        grid.appendChild(chip);
+    }
+}
+
+function renderWaiting() {
+    const waiting = queueStatus.waiting || [];
+    const MAX = 20;
+    document.getElementById('waitCount').textContent = `${waiting.length}명 대기`;
+    const grid = document.getElementById('waitGrid');
+    if (!waiting.length) {
+        grid.innerHTML = '<div class="wait-empty" style="grid-column:1/-1">대기 없음</div>';
+        return;
+    }
+    grid.innerHTML = waiting.slice(0, MAX).map(w => `
+        <div class="wait-chip">
+            <div class="wnum">${esc(w.ticket_number)}</div>
+            <div class="wcat">${esc(w.category_code)}</div>
+        </div>`).join('');
+    if (waiting.length > MAX) {
+        grid.innerHTML += `<div class="wait-chip" style="opacity:.4;display:flex;align-items:center;justify-content:center">+${waiting.length - MAX}명</div>`;
+    }
+}
+
+// ── 키보드 단축키 ─────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'F11') { e.preventDefault(); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+    if (e.key === 's' || e.key === 'S') toggleAudio();
+});
+
+init();
+</script>
+</body>
+</html>

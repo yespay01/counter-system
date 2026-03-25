@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solo 운영 화면</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white; overflow: hidden;
+}
+
+/* ── 상단 바 ── */
+.topbar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.2);
+    height: 54px;
+}
+.shop-name { font-size: 18px; font-weight: 700; flex: 1; }
+.sandbox-badge {
+    background: rgba(255,213,0,0.3); border: 1px solid #FFD700;
+    border-radius: 6px; padding: 3px 10px; font-size: 11px;
+    color: #FFD700; display: none;
+}
+.clock { font-size: 16px; opacity: .8; font-variant-numeric: tabular-nums; }
+.conn-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #888; transition: background .3s;
+}
+.conn-dot.ok { background: #00FF88; }
+.conn-dot.err { background: #ff4757; }
+.topbar-btn {
+    padding: 5px 12px; background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px; color: white; font-size: 12px;
+    cursor: pointer; font-family: inherit;
+}
+.topbar-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* ── 메인 레이아웃 ── */
+.main-layout {
+    display: flex;
+    height: calc(100vh - 54px);
+}
+
+/* ── 고객 영역 (좌측) ── */
+.customer-panel {
+    flex: 0 0 58%;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    overflow-y: auto;
+}
+.panel-title {
+    font-size: 13px; font-weight: 600; opacity: .6;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* 전화번호 입력 */
+.phone-row { display: flex; gap: 8px; align-items: center; }
+.phone-toggle {
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px; color: white; font-size: 13px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.phone-toggle.active { background: rgba(0,255,136,0.2); border-color: #00FF88; }
+.phone-input-wrap { flex: 1; display: none; }
+.phone-input-wrap.visible { display: block; }
+.phone-input {
+    width: 100%; padding: 8px 14px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 8px; color: white; font-size: 18px;
+    font-family: inherit; outline: none; letter-spacing: 1px;
+    transition: border .2s;
+}
+.phone-input:focus { border-color: #00FF88; }
+.phone-input::placeholder { font-size: 14px; letter-spacing: 0; opacity: .5; }
+
+/* 카테고리 그리드 */
+.category-grid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    flex: 1;
+}
+.cat-btn {
+    padding: 0;
+    background: rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 16px; color: white;
+    font-size: 18px; font-weight: 700;
+    font-family: inherit; cursor: pointer;
+    transition: all .15s;
+    min-height: 100px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px;
+}
+.cat-btn:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); transform: scale(1.02); }
+.cat-btn:active { transform: scale(0.98); }
+.cat-btn .cat-code { font-size: 11px; opacity: .5; font-weight: 400; }
+
+/* 메뉴 선택 모달 */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 100;
+    align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px; padding: 28px;
+    width: 100%; max-width: 420px; color: white;
+}
+.modal h3 { font-size: 18px; margin-bottom: 16px; }
+.menu-grid { display: grid; gap: 8px; margin-bottom: 20px; }
+.menu-item {
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px; cursor: pointer;
+    font-size: 15px; transition: all .15s;
+    display: flex; gap: 10px; align-items: center;
+}
+.menu-item:hover, .menu-item.selected {
+    background: rgba(0,255,136,0.2); border-color: #00FF88;
+}
+.modal-btns { display: flex; gap: 10px; }
+.modal-btn {
+    flex: 1; padding: 12px;
+    border-radius: 10px; font-size: 15px; font-weight: 600;
+    font-family: inherit; cursor: pointer; border: none;
+}
+.modal-btn.confirm { background: #00FF88; color: #1a1a2e; }
+.modal-btn.cancel { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); }
+
+/* 성공 모달 */
+.success-modal .modal { text-align: center; }
+.success-ticket { font-size: 56px; font-weight: 900; color: #00FF88; line-height: 1; margin: 12px 0; }
+.success-sub { opacity: .7; margin-bottom: 8px; }
+.success-wait { font-size: 15px; margin-bottom: 20px; }
+.close-success {
+    padding: 12px 32px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 10px; color: white; font-size: 15px;
+    cursor: pointer; font-family: inherit;
+}
+.sandbox-msg { font-size: 11px; color: #FFD700; margin-top: 8px; }
+
+/* ── 사장 영역 (우측) ── */
+.owner-panel {
+    flex: 1;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+    overflow-y: auto;
+}
+
+/* 현재 호출 카드 */
+.current-call-card {
+    background: rgba(0,0,0,0.25);
+    border: 2px solid rgba(0,255,136,0.4);
+    border-radius: 16px; padding: 16px;
+    text-align: center;
+}
+.current-call-label { font-size: 11px; opacity: .6; margin-bottom: 4px; }
+.current-call-number {
+    font-size: 48px; font-weight: 900; color: #00FF88; line-height: 1;
+    text-shadow: 0 0 30px rgba(0,255,136,0.4);
+}
+.current-call-number.empty { color: rgba(255,255,255,0.2); font-size: 28px; }
+
+/* 액션 버튼들 */
+.action-btns { display: flex; gap: 8px; }
+.action-btn {
+    flex: 1; padding: 14px 8px;
+    border-radius: 12px; font-size: 15px; font-weight: 700;
+    font-family: inherit; cursor: pointer; border: none;
+    transition: all .15s;
+}
+.action-btn:hover { opacity: .85; transform: scale(1.02); }
+.action-btn:active { transform: scale(0.97); }
+.action-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+.btn-call { background: #00FF88; color: #1a1a2e; }
+.btn-recall { background: rgba(255,213,0,0.3); color: #FFD700; border: 1px solid #FFD700; }
+.btn-done { background: rgba(100,100,255,0.3); color: #aaa0ff; border: 1px solid #aaa0ff; }
+
+/* 대기열 */
+.queue-title { font-size: 13px; opacity: .6; font-weight: 600; }
+.queue-count { font-size: 12px; opacity: .5; }
+.queue-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.queue-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; font-size: 14px;
+    cursor: pointer; transition: all .15s;
+}
+.queue-item:hover { background: rgba(255,255,255,0.15); }
+.queue-item .ticket { font-weight: 700; }
+.queue-item .age { font-size: 11px; opacity: .5; }
+.queue-item .direct-btn {
+    padding: 4px 10px;
+    background: rgba(255,213,0,0.2); border: 1px solid rgba(255,213,0,0.4);
+    border-radius: 6px; color: #FFD700; font-size: 11px;
+    cursor: pointer; font-family: inherit;
+}
+.queue-empty { text-align: center; opacity: .4; padding: 24px; font-size: 14px; }
+
+/* 직접 호출 입력 */
+.direct-row { display: flex; gap: 8px; }
+.direct-input {
+    flex: 1; padding: 8px 12px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 8px; color: white; font-size: 14px;
+    font-family: inherit; outline: none;
+}
+.direct-input::placeholder { opacity: .4; }
+.direct-call-btn {
+    padding: 8px 14px;
+    background: rgba(255,213,0,0.2); border: 1px solid #FFD700;
+    border-radius: 8px; color: #FFD700; font-size: 13px;
+    cursor: pointer; font-family: inherit;
+}
+</style>
+</head>
+<body>
+
+<!-- 상단 바 -->
+<div class="topbar">
+    <div class="shop-name" id="shopName">로딩 중...</div>
+    <div class="sandbox-badge" id="sandboxBadge">테스트 모드</div>
+    <div class="clock" id="clock"></div>
+    <div class="conn-dot" id="connDot" title="연결 상태"></div>
+    <button class="topbar-btn" onclick="logout()">로그아웃</button>
+</div>
+
+<!-- 메인 레이아웃 -->
+<div class="main-layout">
+
+    <!-- 고객 영역 -->
+    <div class="customer-panel">
+        <div class="panel-title">고객 접수</div>
+
+        <div class="phone-row">
+            <button class="phone-toggle" id="phoneToggle" onclick="togglePhone()">📱 전화번호 입력</button>
+            <div class="phone-input-wrap" id="phoneInputWrap">
+                <input type="tel" class="phone-input" id="phoneInput"
+                       placeholder="010-0000-0000" maxlength="13"
+                       oninput="formatPhone(this)">
+            </div>
+        </div>
+
+        <div class="category-grid" id="categoryGrid">
+            <div style="opacity:.4;text-align:center;padding:24px">로딩 중...</div>
+        </div>
+    </div>
+
+    <!-- 사장 영역 -->
+    <div class="owner-panel">
+        <div class="panel-title">대기 현황</div>
+
+        <div class="current-call-card">
+            <div class="current-call-label">현재 호출 중</div>
+            <div class="current-call-number empty" id="currentCallNumber">—</div>
+        </div>
+
+        <div class="action-btns">
+            <button class="action-btn btn-call"   id="btnCall"   onclick="doCallNext()">다음 호출</button>
+            <button class="action-btn btn-recall" id="btnRecall" onclick="doRecall()" disabled>재호출</button>
+            <button class="action-btn btn-done"   id="btnDone"   onclick="doComplete()" disabled>완료</button>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px">
+            <span class="queue-title">대기 목록</span>
+            <span class="queue-count" id="queueCount"></span>
+        </div>
+
+        <div class="queue-list" id="queueList">
+            <div class="queue-empty">대기 없음</div>
+        </div>
+
+        <div class="direct-row">
+            <input type="text" class="direct-input" id="directInput" placeholder="번호 직접 입력 (예: A-003)">
+            <button class="direct-call-btn" onclick="doDirectCall()">직접 호출</button>
+        </div>
+    </div>
+</div>
+
+<!-- 메뉴 선택 모달 -->
+<div class="modal-overlay" id="menuModal">
+    <div class="modal">
+        <h3 id="menuModalTitle">메뉴 선택</h3>
+        <div class="menu-grid" id="menuGrid"></div>
+        <div class="modal-btns">
+            <button class="modal-btn cancel" onclick="closeMenuModal()">취소</button>
+            <button class="modal-btn confirm" onclick="confirmMenu()">확인</button>
+        </div>
+    </div>
+</div>
+
+<!-- 성공 모달 -->
+<div class="modal-overlay success-modal" id="successModal">
+    <div class="modal">
+        <div style="font-size:14px;opacity:.7">접수 완료</div>
+        <div class="success-ticket" id="successTicket"></div>
+        <div class="success-sub" id="successCategory"></div>
+        <div class="success-wait" id="successWait"></div>
+        <div class="sandbox-msg" id="successSandbox"></div>
+        <button class="close-success" onclick="closeSuccess()">닫기</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const slug = window.location.pathname.split('/')[1];
+let accessToken = localStorage.getItem('accessToken');
+let config = { categories: [], menuItems: [], settings: {} };
+let queueStatus = { waiting: [], currentCalls: [] };
+let pendingCategory = null;
+let selectedMenu = null;
+let socket = null;
+const COUNTER_NO = 1;
+
+// ── HTML escape helper ───────────────────────────────────────────
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+// ── Auth guard ──────────────────────────────────────────────────
+if (!accessToken) {
+    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+}
+
+// ── API helper with token refresh ──────────────────────────────
+async function apiFetch(url, opts = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    let res = await fetch(url, { ...opts, headers, credentials: 'include' });
+
+    if (res.status === 401) {
+        const rr = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+        if (rr.ok) {
+            const d = await rr.json();
+            accessToken = d.accessToken;
+            localStorage.setItem('accessToken', accessToken);
+            headers['Authorization'] = `Bearer ${accessToken}`;
+            res = await fetch(url, { ...opts, headers, credentials: 'include' });
+        } else {
+            localStorage.clear();
+            window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+            return null;
+        }
+    }
+    return res;
+}
+
+// ── 초기화 ──────────────────────────────────────────────────────
+async function init() {
+    const expectedSlug = localStorage.getItem('tenantSlug');
+    if (expectedSlug && slug !== expectedSlug) {
+        window.location.href = `/${expectedSlug}/solo`;
+        return;
+    }
+    try {
+        const [cfgRes, statusRes] = await Promise.all([
+            fetch(`/api/public/${slug}/join-config`),
+            fetch(`/api/public/${slug}/queue/status`),
+        ]);
+
+        if (cfgRes.ok) config = await cfgRes.json();
+        if (statusRes.ok) queueStatus = await statusRes.json();
+
+        document.getElementById('shopName').textContent = config.tenantName || slug;
+
+        const sandboxMode = localStorage.getItem('sandboxMode') === '1';
+        if (sandboxMode) document.getElementById('sandboxBadge').style.display = 'block';
+
+        if (!config.settings?.phone_input_enabled) {
+            document.getElementById('phoneToggle').style.display = 'none';
+        }
+
+        renderCategories();
+        renderQueueStatus();
+        connectSocket();
+        updateClock();
+        setInterval(updateClock, 1000);
+    } catch (e) {
+        console.error('init error', e);
+    }
+}
+
+// ── 시계 ────────────────────────────────────────────────────────
+function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+        now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+// ── Socket.IO ────────────────────────────────────────────────────
+function connectSocket() {
+    socket = io({ transports: ['websocket', 'polling'] });
+
+    socket.on('connect', () => {
+        document.getElementById('connDot').className = 'conn-dot ok';
+        socket.emit('room:join', { slug, type: 'tenant' });
+    });
+    socket.on('disconnect', () => {
+        document.getElementById('connDot').className = 'conn-dot err';
+    });
+    socket.on('queue:updated', (data) => {
+        queueStatus = data;
+        renderQueueStatus();
+    });
+}
+
+// ── 카테고리 렌더링 ───────────────────────────────────────────────
+function renderCategories() {
+    const grid = document.getElementById('categoryGrid');
+    if (!config.categories?.length) {
+        grid.innerHTML = '<div style="opacity:.4;text-align:center;padding:40px">카테고리 없음<br><a href="/' + slug + '/admin/settings" style="color:#00FF88;font-size:13px">설정에서 추가하기</a></div>';
+        return;
+    }
+    grid.innerHTML = config.categories.map(c => `
+        <button class="cat-btn" data-code="${esc(c.code)}" data-name="${esc(c.name)}">
+            ${esc(c.name)}
+            <span class="cat-code">${esc(c.code)}</span>
+        </button>`).join('');
+    grid.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => onCategoryClick(btn.dataset.code, btn.dataset.name));
+    });
+}
+
+// ── 카테고리 클릭 ────────────────────────────────────────────────
+function onCategoryClick(code, name) {
+    pendingCategory = code;
+    if (config.settings?.menu_selection_enabled && config.menuItems?.length) {
+        openMenuModal(name);
+    } else {
+        issueTicket(code, null, null);
+    }
+}
+
+// ── 메뉴 모달 ────────────────────────────────────────────────────
+function openMenuModal(catName) {
+    selectedMenu = null;
+    document.getElementById('menuModalTitle').textContent = catName + ' — 메뉴 선택';
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = config.menuItems.map(m => `
+        <div class="menu-item" data-code="${esc(m.code)}" data-name="${esc(m.name)}">
+            <span>○</span> ${esc(m.name)}
+        </div>`).join('');
+    grid.querySelectorAll('.menu-item').forEach(el => {
+        el.addEventListener('click', () => toggleMenuItem(el, el.dataset.code));
+    });
+    document.getElementById('menuModal').classList.add('active');
+}
+
+function toggleMenuItem(el, code) {
+    selectedMenu = selectedMenu === code ? null : code;
+    document.querySelectorAll('.menu-item').forEach(i => {
+        const sel = i.dataset.code === selectedMenu;
+        i.classList.toggle('selected', sel);
+        i.querySelector('span').textContent = sel ? '✓' : '○';
+    });
+}
+
+function closeMenuModal() {
+    document.getElementById('menuModal').classList.remove('active');
+    pendingCategory = null; selectedMenu = null;
+}
+
+function confirmMenu() {
+    const code = pendingCategory;
+    const menuCode = selectedMenu;
+    const menuName = menuCode
+        ? config.menuItems.find(m => m.code === menuCode)?.name || null
+        : null;
+    document.getElementById('menuModal').classList.remove('active');
+    issueTicket(code, menuCode, menuName);
+}
+
+// ── 번호 발급 ─────────────────────────────────────────────────────
+async function issueTicket(categoryCode, menuCode, menuLabel) {
+    const phoneRaw = document.getElementById('phoneInput').value.replace(/\D/g, '');
+    const phone = phoneRaw.length >= 10 ? phoneRaw : null;
+
+    try {
+        const res = await fetch(`/api/public/${slug}/queue/issue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                categoryCode,
+                entryChannel: 'solo_tablet',
+                customerPhone: phone || undefined,
+                menuCode: menuCode || undefined,
+                menuLabel: menuLabel || undefined,
+            }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || '발급 실패');
+
+        showSuccess(data);
+        // 전화번호 초기화
+        document.getElementById('phoneInput').value = '';
+    } catch (err) {
+        alert('발급 실패: ' + err.message);
+    }
+}
+
+// ── 성공 모달 ─────────────────────────────────────────────────────
+function showSuccess(data) {
+    document.getElementById('successTicket').textContent = data.ticket.ticket_number;
+    document.getElementById('successCategory').textContent = data.ticket.category_code;
+    const waiting = (data.queueStatus?.waiting || []).length;
+    document.getElementById('successWait').textContent = `대기 ${waiting}명`;
+    const sandbox = data.sandboxMode;
+    document.getElementById('successSandbox').textContent = sandbox ? '테스트 모드: 실제 문자 미발송' : '';
+    document.getElementById('successModal').classList.add('active');
+    setTimeout(() => closeSuccess(), 4000);
+}
+
+function closeSuccess() {
+    document.getElementById('successModal').classList.remove('active');
+}
+
+// ── 대기열 렌더링 ─────────────────────────────────────────────────
+function renderQueueStatus() {
+    const calls = queueStatus.currentCalls || [];
+    const mine  = calls.find(c => c.counter_no === COUNTER_NO);
+    const numEl = document.getElementById('currentCallNumber');
+
+    if (mine) {
+        numEl.textContent = mine.ticket_number;
+        numEl.classList.remove('empty');
+        document.getElementById('btnRecall').disabled = false;
+        document.getElementById('btnDone').disabled   = false;
+    } else {
+        numEl.textContent = '—';
+        numEl.classList.add('empty');
+        document.getElementById('btnRecall').disabled = true;
+        document.getElementById('btnDone').disabled   = true;
+    }
+
+    const waiting = queueStatus.waiting || [];
+    document.getElementById('queueCount').textContent = `${waiting.length}명 대기`;
+
+    const list = document.getElementById('queueList');
+    if (!waiting.length) {
+        list.innerHTML = '<div class="queue-empty">대기 없음</div>';
+        return;
+    }
+    list.innerHTML = waiting.map(w => {
+        const age = Math.floor((Date.now() - new Date(w.issued_at).getTime()) / 60000);
+        return `<div class="queue-item" data-ticket="${esc(w.ticket_number)}">
+            <span class="ticket">${esc(w.ticket_number)}</span>
+            <span style="font-size:12px;opacity:.6">${esc(w.category_code)}</span>
+            <span class="age">${age}분</span>
+            <button class="direct-btn">호출</button>
+        </div>`;
+    }).join('');
+    list.querySelectorAll('.direct-btn').forEach(btn => {
+        btn.addEventListener('click', () => doDirectCallFor(btn.closest('.queue-item').dataset.ticket));
+    });
+}
+
+// ── 직원 액션 ─────────────────────────────────────────────────────
+async function doCallNext() {
+    const btn = document.getElementById('btnCall');
+    btn.disabled = true;
+    try {
+        const res = await apiFetch('/api/staff/queue/call-next', {
+            method: 'POST',
+            body: JSON.stringify({ counterNo: COUNTER_NO }),
+        });
+        if (!res) return;
+        if (!res.ok) {
+            const d = await res.json();
+            alert(d.error?.message || '호출 실패');
+        }
+    } finally { btn.disabled = false; }
+}
+
+async function doRecall() {
+    const btn = document.getElementById('btnRecall');
+    btn.disabled = true;
+    try {
+        const res = await apiFetch('/api/staff/queue/recall', {
+            method: 'POST',
+            body: JSON.stringify({ counterNo: COUNTER_NO }),
+        });
+        if (!res) return;
+        if (!res.ok) {
+            const d = await res.json();
+            alert(d.error?.message || '재호출 실패');
+        }
+    } finally { btn.disabled = false; }
+}
+
+async function doComplete() {
+    const btn = document.getElementById('btnDone');
+    btn.disabled = true;
+    try {
+        const res = await apiFetch('/api/staff/queue/complete', {
+            method: 'POST',
+            body: JSON.stringify({ counterNo: COUNTER_NO }),
+        });
+        if (!res) return;
+        if (!res.ok) {
+            const d = await res.json();
+            alert(d.error?.message || '완료 실패');
+        }
+    } finally { btn.disabled = false; }
+}
+
+async function doDirectCallFor(ticketNumber) {
+    try {
+        const res = await apiFetch('/api/staff/queue/call-direct', {
+            method: 'POST',
+            body: JSON.stringify({ ticketNumber, counterNo: COUNTER_NO }),
+        });
+        if (res && !res.ok) {
+            const d = await res.json();
+            alert(d.error?.message || '직접 호출 실패');
+        }
+    } catch (e) { alert(e.message); }
+}
+
+async function doDirectCall() {
+    const ticket = document.getElementById('directInput').value.trim().toUpperCase();
+    if (!ticket) return;
+    document.getElementById('directInput').value = '';
+    await doDirectCallFor(ticket);
+}
+
+// ── 전화번호 ──────────────────────────────────────────────────────
+function togglePhone() {
+    const wrap = document.getElementById('phoneInputWrap');
+    const btn  = document.getElementById('phoneToggle');
+    const visible = wrap.classList.toggle('visible');
+    btn.classList.toggle('active', visible);
+    if (visible) document.getElementById('phoneInput').focus();
+}
+
+function formatPhone(el) {
+    let v = el.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length >= 7)      el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+    else if (v.length >= 4) el.value = v.slice(0,3) + '-' + v.slice(3);
+    else                    el.value = v;
+}
+
+// ── 로그아웃 ─────────────────────────────────────────────────────
+async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    localStorage.clear();
+    window.location.href = '/login';
+}
+
+init();
+</script>
+</body>
+</html>

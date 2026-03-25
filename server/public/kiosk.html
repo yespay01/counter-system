@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>대기표 발급</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex; flex-direction: column;
+    user-select: none;
+}
+.topbar {
+    display: flex; align-items: center;
+    padding: 16px 28px;
+    background: rgba(0,0,0,0.25);
+    flex-shrink: 0;
+}
+.shop-name { font-size: 22px; font-weight: 700; flex: 1; }
+.wait-badge {
+    background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.4);
+    border-radius: 20px; padding: 6px 16px; font-size: 15px; color: #00FF88;
+}
+.main {
+    flex: 1; padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 20px;
+}
+.guide { font-size: 20px; text-align: center; opacity: .7; }
+.category-grid {
+    display: grid; gap: 18px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    flex: 1; align-content: start;
+}
+.cat-btn {
+    background: rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 20px; color: white;
+    font-size: 26px; font-weight: 700;
+    font-family: inherit; cursor: pointer;
+    transition: all .15s;
+    min-height: 160px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+.cat-btn:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
+.cat-btn:active { transform: scale(0.96); background: rgba(0,255,136,0.2); border-color: #00FF88; }
+.cat-btn > * { pointer-events: none; }
+.cat-code { font-size: 14px; opacity: .45; font-weight: 400; }
+
+/* 성공 오버레이 */
+.success-overlay {
+    display: none; position: fixed; inset: 0;
+    background: #0d0d1a;
+    z-index: 200;
+    flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 40px;
+}
+.success-overlay.active { display: flex; }
+.success-label { font-size: 24px; opacity: .6; margin-bottom: 8px; }
+.success-number {
+    font-size: 140px; font-weight: 900; color: #00FF88; line-height: 1;
+    text-shadow: 0 0 80px rgba(0,255,136,0.6);
+    animation: pulse 1.5s ease-in-out 1;
+}
+@keyframes pulse {
+    0%   { transform: scale(.7); opacity: 0; }
+    60%  { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.success-cat { font-size: 24px; margin-top: 12px; opacity: .65; }
+.success-wait { font-size: 20px; margin-top: 10px; opacity: .5; }
+.success-close {
+    margin-top: 48px; padding: 18px 60px;
+    background: rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 16px; color: white; font-size: 22px;
+    cursor: pointer; font-family: inherit;
+    touch-action: manipulation;
+    transition: background .15s;
+}
+.success-close:active { background: rgba(255,255,255,0.25); }
+.countdown { font-size: 14px; opacity: .4; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="shop-name" id="shopName">로딩 중...</div>
+    <div class="wait-badge" id="waitBadge" style="display:none"></div>
+</div>
+
+<div class="main">
+    <div class="guide">서비스를 선택하세요</div>
+    <div class="category-grid" id="categoryGrid">
+        <div style="opacity:.4;text-align:center;grid-column:1/-1;padding:60px">로딩 중...</div>
+    </div>
+</div>
+
+<!-- 성공 오버레이 -->
+<div class="success-overlay" id="successOverlay">
+    <div class="success-label">대기번호</div>
+    <div class="success-number" id="successNumber"></div>
+    <div class="success-cat" id="successCat"></div>
+    <div class="success-wait" id="successWait"></div>
+    <button class="success-close" onclick="closeSuccess()">닫기</button>
+    <div class="countdown" id="countdown"></div>
+</div>
+
+<script>
+const slug = window.location.pathname.split('/')[1];
+let config = { categories: [], settings: {} };
+let waitingCount = 0;
+let closeTimer = null;
+let countdownTimer = null;
+let issuing = false;
+
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+
+async function init() {
+    try {
+        const [cfgRes, statusRes] = await Promise.all([
+            fetch(`/api/public/${slug}/join-config`),
+            fetch(`/api/public/${slug}/queue/status`),
+        ]);
+        if (cfgRes.ok) config = await cfgRes.json();
+        if (statusRes.ok) { const s = await statusRes.json(); waitingCount = (s.waiting || []).length; }
+        document.getElementById('shopName').textContent = config.tenantName || slug;
+        updateWaitBadge();
+        renderCategories();
+    } catch (e) {
+        console.error('init error', e);
+        document.getElementById('shopName').textContent = '연결 오류';
+    }
+}
+
+function updateWaitBadge() {
+    const el = document.getElementById('waitBadge');
+    if (waitingCount > 0) {
+        el.textContent = `대기 ${waitingCount}명`;
+        el.style.display = '';
+    } else {
+        el.style.display = 'none';
+    }
+}
+
+function renderCategories() {
+    const grid = document.getElementById('categoryGrid');
+    if (!config.categories?.length) {
+        grid.innerHTML = '<div style="opacity:.4;text-align:center;grid-column:1/-1;padding:60px">카테고리가 없습니다</div>';
+        return;
+    }
+    grid.innerHTML = config.categories.map(c => `
+        <button class="cat-btn" data-code="${esc(c.code)}" data-name="${esc(c.name)}">
+            <span>${esc(c.name)}</span>
+            <span class="cat-code">${esc(c.code)}</span>
+        </button>`).join('');
+    grid.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!issuing) issueTicket(btn.dataset.code, btn.dataset.name);
+        });
+    });
+}
+
+async function issueTicket(categoryCode, categoryName) {
+    issuing = true;
+    try {
+        const res = await fetch(`/api/public/${slug}/queue/issue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryCode, entryChannel: 'kiosk' }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || '발급 실패');
+        // 발급 후 대기 현황 갱신
+        const statusRes = await fetch(`/api/public/${slug}/queue/status`);
+        if (statusRes.ok) { const s = await statusRes.json(); waitingCount = (s.waiting || []).length; }
+        updateWaitBadge();
+        showSuccess(data.ticket.ticket_number, categoryName, waitingCount);
+    } catch (err) {
+        alert('발급 실패: ' + err.message);
+        issuing = false;
+    }
+}
+
+function showSuccess(number, catName, waiting) {
+    document.getElementById('successNumber').textContent = number;
+    document.getElementById('successCat').textContent = catName;
+    document.getElementById('successWait').textContent = `내 앞 대기 ${Math.max(0, waiting - 1)}명`;
+    document.getElementById('successOverlay').classList.add('active');
+    let secs = 5;
+    document.getElementById('countdown').textContent = `${secs}초 후 자동으로 닫힙니다`;
+    clearTimeout(closeTimer); clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+        secs--;
+        document.getElementById('countdown').textContent = secs > 0 ? `${secs}초 후 자동으로 닫힙니다` : '';
+    }, 1000);
+    closeTimer = setTimeout(closeSuccess, 5000);
+}
+
+function closeSuccess() {
+    clearTimeout(closeTimer); clearInterval(countdownTimer);
+    document.getElementById('successOverlay').classList.remove('active');
+    issuing = false;
+}
+
+init();
+</script>
+</body>
+</html>

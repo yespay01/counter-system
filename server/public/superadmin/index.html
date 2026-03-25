@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superadmin — 순번대기</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', sans-serif; min-height: 100vh; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; }
+.nav { display: flex; align-items: center; padding: 0 24px; background: rgba(0,0,0,0.3); height: 50px; gap: 16px; }
+.nav-brand { font-size: 16px; font-weight: 700; color: #ff4757; }
+.nav-spacer { flex: 1; }
+.logout-btn { padding: 6px 14px; background: rgba(255,71,87,0.2); border: 1px solid #ff4757; border-radius: 6px; color: #ff4757; font-size: 13px; cursor: pointer; font-family: inherit; }
+
+/* Auth overlay */
+.auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.auth-card { background: #1a1a2e; border: 1px solid rgba(255,71,87,0.3); border-radius: 16px; padding: 32px; width: 340px; }
+.auth-card h2 { margin-bottom: 16px; color: #ff4757; }
+.auth-input { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: white; font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px; }
+.auth-btn { width: 100%; padding: 12px; background: #ff4757; border: none; border-radius: 8px; color: white; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.auth-error { color: #ff4757; font-size: 13px; margin-bottom: 8px; display: none; }
+
+.content { padding: 28px 24px; max-width: 1100px; margin: 0 auto; }
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.page-sub { font-size: 13px; opacity: .5; margin-bottom: 24px; }
+.stats-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-pill { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px 18px; font-size: 13px; }
+.stat-num { font-size: 22px; font-weight: 700; margin-right: 6px; }
+.table-wrap { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 14px; opacity: .5; font-weight: 500; background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.08); }
+td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+tr:hover td { background: rgba(255,255,255,0.03); }
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-trial     { background: rgba(255,213,0,0.2);  color: #FFD700; }
+.badge-active    { background: rgba(0,255,136,0.2);  color: #00FF88; }
+.badge-past-due  { background: rgba(255,71,87,0.25); color: #ff4757; }
+.badge-suspended { background: rgba(150,150,150,0.2);color: #aaa; }
+.badge-cancelled { background: rgba(100,100,100,0.2);color: #666; }
+.sandbox-dot { width: 8px; height: 8px; border-radius: 50%; background: #FFD700; display: inline-block; margin-right: 6px; }
+.action-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;
+    border: 1px solid; margin-right: 4px;
+}
+.btn-activate { background: rgba(0,255,136,0.15); border-color: #00FF88; color: #00FF88; }
+.btn-pastdue  { background: rgba(255,213,0,0.15);  border-color: #FFD700; color: #FFD700; }
+.btn-suspend  { background: rgba(255,71,87,0.15);  border-color: #ff4757; color: #ff4757; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 50; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 28px; width: 360px; }
+.modal h3 { margin-bottom: 16px; }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { display: block; font-size: 12px; opacity: .6; margin-bottom: 6px; }
+.modal-select, .modal-textarea {
+    width: 100%; padding: 10px 12px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px; color: white; font-size: 14px; font-family: inherit; outline: none;
+}
+.modal-select option { background: #1a1a2e; }
+.modal-textarea { resize: vertical; height: 80px; }
+.modal-btns { display: flex; gap: 10px; margin-top: 16px; }
+.modal-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; border: none; }
+.modal-confirm { background: #ff4757; color: white; }
+.modal-cancel  { background: rgba(255,255,255,0.1); color: white; }
+</style>
+</head>
+<body>
+
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+        <h2>Superadmin 접근</h2>
+        <div class="auth-error" id="authError">인증 실패</div>
+        <input type="password" class="auth-input" id="secretInput" placeholder="시크릿 키"
+               onkeydown="if(event.key==='Enter') doAuth()">
+        <button class="auth-btn" onclick="doAuth()">접속</button>
+    </div>
+</div>
+
+<nav class="nav">
+    <span class="nav-brand">⚙ Superadmin</span>
+    <div class="nav-spacer"></div>
+    <button class="logout-btn" onclick="superLogout()">나가기</button>
+</nav>
+
+<div class="content">
+    <div class="page-title">업체 관리</div>
+    <div class="page-sub">전체 테넌트 현황 및 수동 결제 상태 관리</div>
+
+    <div class="stats-row" id="statsRow">
+        <div class="stat-pill"><span class="stat-num" id="statTotal">—</span>전체</div>
+        <div class="stat-pill"><span class="stat-num" id="statTrial" style="color:#FFD700">—</span>트라이얼</div>
+        <div class="stat-pill"><span class="stat-num" id="statActive" style="color:#00FF88">—</span>활성</div>
+        <div class="stat-pill"><span class="stat-num" id="statPastDue" style="color:#ff4757">—</span>결제필요</div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead><tr>
+                <th>업체명</th><th>Slug</th><th>업종</th>
+                <th>구독 상태</th><th>샌드박스</th>
+                <th>트라이얼 종료</th><th>최근 결제</th>
+                <th>메모</th><th>액션</th>
+            </tr></thead>
+            <tbody id="tenantBody">
+                <tr><td colspan="9" style="text-align:center;padding:24px;opacity:.4">로딩 중...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 상태 변경 모달 -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h3 id="editModalTitle">구독 상태 변경</h3>
+        <div class="modal-field">
+            <label>상태</label>
+            <select class="modal-select" id="editStatus">
+                <option value="trial">trial — 트라이얼</option>
+                <option value="active">active — 활성</option>
+                <option value="past_due">past_due — 결제 필요</option>
+                <option value="suspended">suspended — 정지</option>
+                <option value="cancelled">cancelled — 취소</option>
+            </select>
+        </div>
+        <div class="modal-field">
+            <label>메모 (선택)</label>
+            <textarea class="modal-textarea" id="editMemo" placeholder="예: 2026-03-17 계좌이체 확인"></textarea>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:14px 0">
+        <div style="font-size:11px;opacity:.4;margin-bottom:10px">정산 기록 추가 (선택 — 아래 입력 시 billing_logs에 저장)</div>
+
+        <div class="modal-field" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+                <label>정산 기간 (YYYY-MM)</label>
+                <input type="text" class="modal-select" id="billingYearMonth" placeholder="2026-03" style="font-family:inherit;font-size:13px">
+            </div>
+            <div>
+                <label>구독료 (원)</label>
+                <input type="text" class="modal-select" id="billingPlanAmount" placeholder="9900" style="font-family:inherit;font-size:13px">
+            </div>
+        </div>
+        <div class="modal-field">
+            <label>메시지 청구액 (원)</label>
+            <input type="text" class="modal-select" id="billingMsgAmount" placeholder="0" style="font-family:inherit;font-size:13px">
+        </div>
+
+        <div class="modal-btns">
+            <button class="modal-btn modal-cancel" id="modalCancelBtn">취소</button>
+            <button class="modal-btn modal-confirm" id="modalConfirmBtn">변경</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let superSecret = sessionStorage.getItem('superSecret') || '';
+let editingTenantId = null;
+let tenants = [];
+
+// Auth check on load
+if (superSecret) {
+    document.getElementById('authOverlay').style.display = 'none';
+    loadTenants();
+}
+
+async function doAuth() {
+    const secret = document.getElementById('secretInput').value;
+    const res = await fetch('/api/superadmin/tenants', {
+        headers: { 'Authorization': `Bearer ${secret}` }
+    });
+    if (res.ok) {
+        superSecret = secret;
+        sessionStorage.setItem('superSecret', secret);
+        document.getElementById('authOverlay').style.display = 'none';
+        loadTenants();
+    } else {
+        document.getElementById('authError').style.display = 'block';
+        document.getElementById('secretInput').value = '';
+    }
+}
+
+function superLogout() {
+    sessionStorage.removeItem('superSecret');
+    window.location.reload();
+}
+
+async function apiFetch(url, opts = {}) {
+    return fetch(url, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${superSecret}`, ...(opts.headers || {}) }
+    });
+}
+
+async function loadTenants() {
+    const res = await apiFetch('/api/superadmin/tenants');
+    if (!res.ok) { superLogout(); return; }
+    const d = await res.json();
+    tenants = d.tenants || [];
+    renderStats();
+    renderTenants();
+}
+
+function renderStats() {
+    document.getElementById('statTotal').textContent   = tenants.length;
+    document.getElementById('statTrial').textContent   = tenants.filter(t => t.subscription_status === 'trial').length;
+    document.getElementById('statActive').textContent  = tenants.filter(t => t.subscription_status === 'active').length;
+    document.getElementById('statPastDue').textContent = tenants.filter(t => t.subscription_status === 'past_due').length;
+}
+
+function renderTenants() {
+    const labels  = { trial:'트라이얼', active:'활성', past_due:'결제필요', suspended:'정지', cancelled:'취소' };
+    const classes = { trial:'badge-trial', active:'badge-active', past_due:'badge-past-due', suspended:'badge-suspended', cancelled:'badge-cancelled' };
+    const tbody = document.getElementById('tenantBody');
+    if (!tenants.length) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;opacity:.4">업체 없음</td></tr>';
+        return;
+    }
+    tbody.innerHTML = tenants.map(t => `
+        <tr data-id="${esc(t.id)}" data-name="${esc(t.name)}" data-status="${esc(t.subscription_status || '')}">
+            <td><b>${esc(t.name)}</b></td>
+            <td><a href="/${esc(t.slug)}/admin/dashboard" target="_blank" style="color:#aaa0ff">${esc(t.slug)}</a></td>
+            <td>${esc(t.industry_type || '—')}</td>
+            <td><span class="badge ${classes[t.subscription_status] || ''}">${labels[t.subscription_status] || esc(t.subscription_status) || '—'}</span></td>
+            <td>${t.sandbox_mode ? '<span class="sandbox-dot"></span>테스트' : '<span style="opacity:.4">—</span>'}</td>
+            <td style="font-size:12px">${t.trial_ends_at ? fmtDate(t.trial_ends_at) : '—'}</td>
+            <td style="font-size:12px">${t.last_paid_at  ? fmtDate(t.last_paid_at)  : '—'}</td>
+            <td style="font-size:11px;opacity:.6;max-width:120px;overflow:hidden;text-overflow:ellipsis">${esc(t.memo || '')}</td>
+            <td>
+                <button class="action-btn btn-activate">변경</button>
+            </td>
+        </tr>`).join('');
+    tbody.querySelectorAll('.btn-activate').forEach(btn => {
+        const row = btn.closest('tr');
+        btn.addEventListener('click', () => openEdit(row.dataset.id, row.dataset.name, row.dataset.status, ''));
+    });
+}
+
+document.getElementById('modalCancelBtn').addEventListener('click', closeEditModal);
+document.getElementById('modalConfirmBtn').addEventListener('click', submitEdit);
+
+function openEdit(tenantId, name, currentStatus) {
+    editingTenantId = tenantId;
+    document.getElementById('editModalTitle').textContent = `상태 변경 — ${name}`;
+    document.getElementById('editStatus').value       = currentStatus || 'trial';
+    document.getElementById('editMemo').value         = '';
+    document.getElementById('billingYearMonth').value = '';
+    document.getElementById('billingPlanAmount').value= '';
+    document.getElementById('billingMsgAmount').value = '';
+    document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').classList.remove('open');
+    editingTenantId = null;
+}
+
+async function submitEdit() {
+    const status = document.getElementById('editStatus').value;
+    const memo   = document.getElementById('editMemo').value.trim();
+
+    // 1. 구독 상태 변경
+    const res = await apiFetch(`/api/superadmin/tenants/${editingTenantId}/subscription`, {
+        method: 'PUT',
+        body: JSON.stringify({ status, memo: memo || undefined }),
+    });
+    if (!res.ok) {
+        const d = await res.json();
+        alert(d.error?.message || '변경 실패');
+        return;
+    }
+
+    // 2. 정산 기록 생성 (year_month가 입력된 경우에만)
+    const ym = document.getElementById('billingYearMonth').value.trim();
+    if (ym) {
+        const planAmount = parseInt(document.getElementById('billingPlanAmount').value || '0', 10) || 0;
+        const msgAmount  = parseInt(document.getElementById('billingMsgAmount').value  || '0', 10) || 0;
+        const logRes = await apiFetch(`/api/superadmin/tenants/${editingTenantId}/billing-logs`, {
+            method: 'POST',
+            body: JSON.stringify({ yearMonth: ym, planAmount, messageAmount: msgAmount, memo: memo || undefined }),
+        });
+        if (!logRes.ok) {
+            const d = await logRes.json();
+            alert('정산 기록 저장 실패: ' + (d.error?.message || '오류'));
+            return;
+        }
+    }
+
+    closeEditModal();
+    loadTenants();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+function fmtDate(t) { return new Date(t).toLocaleDateString('ko-KR', { year:'2-digit', month:'2-digit', day:'2-digit' }); }
+</script>
+</body>
+</html>
