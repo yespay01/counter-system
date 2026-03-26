@@ -18,14 +18,22 @@ const PUBLIC_DIR = path.join(__dirname, '../public');
 
 function createApp() {
     const app = express();
+    const isProd = process.env.NODE_ENV === 'production';
 
     // ── 보안 / 공통 미들웨어 ──────────────────────────────────────
     app.set('trust proxy', 1);
     app.use(helmet({
-        contentSecurityPolicy: process.env.NODE_ENV === 'production',
+        contentSecurityPolicy: isProd ? {
+            useDefaults: true,
+            directives: {
+                "connect-src": ["'self'", 'ws:', 'wss:'],
+                "script-src": ["'self'", "'unsafe-inline'"],
+                "script-src-attr": ["'unsafe-inline'"],
+            },
+        } : false,
     }));
     app.use(cors({
-        origin: process.env.NODE_ENV === 'production'
+        origin: isProd
             ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
             : true,
         credentials: true,
