@@ -154,7 +154,18 @@ body {
     </div>
 
     <div class="section">
-        <div class="section-title">바로가기</div>
+        <div class="section-title">운영 화면</div>
+        <div class="quick-links">
+            <a class="quick-link" id="qlKioskSms" href="#" target="_blank">📱 키오스크 (알림톡)</a>
+            <a class="quick-link" id="qlKiosk" href="#" target="_blank">🎫 키오스크 (번호표)</a>
+            <a class="quick-link" id="qlJoin" href="#" target="_blank">🔗 QR 셀프 접수</a>
+            <a class="quick-link" id="qlDisplay" href="#" target="_blank">📺 대기 디스플레이</a>
+            <a class="quick-link" id="qlCounter" href="#" target="_blank">🖥 직원 호출 화면</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">관리</div>
         <div class="quick-links">
             <a class="quick-link" id="qlSettings" href="#">카테고리 / 설정</a>
             <a class="quick-link" id="qlMessages" href="#">메시지 설정</a>
@@ -176,6 +187,11 @@ document.getElementById('navSettings').href            = `/${slug}/admin/setting
 document.getElementById('navMessages').href            = `/${slug}/admin/messages`;
 document.getElementById('navSubscription').href        = `/${slug}/admin/subscription`;
 document.getElementById('navSolo').href                = `/${slug}/solo`;
+document.getElementById('qlKioskSms').href             = `/${slug}/kiosk-sms`;
+document.getElementById('qlKiosk').href                = `/${slug}/kiosk`;
+document.getElementById('qlJoin').href                 = `/${slug}/join`;
+document.getElementById('qlDisplay').href              = `/${slug}/display`;
+document.getElementById('qlCounter').href              = `/${slug}/counter`;
 document.getElementById('qlSettings').href             = `/${slug}/admin/settings`;
 document.getElementById('qlMessages').href             = `/${slug}/admin/messages`;
 document.getElementById('qlSubscription').href         = `/${slug}/admin/subscription`;
