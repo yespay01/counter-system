@@ -92,6 +92,30 @@ body {
     border-radius: 10px; text-decoration: none;
     font-size: 14px; font-weight: 700;
 }
+.qr-card {
+    display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+}
+.qr-box {
+    background: white; border-radius: 12px; padding: 12px;
+    display: inline-block;
+}
+.qr-info { flex: 1; min-width: 200px; }
+.qr-url {
+    font-size: 13px; opacity: .6; word-break: break-all;
+    margin-bottom: 12px;
+}
+.qr-btn {
+    padding: 9px 18px;
+    background: #00FF88; color: #1a1a2e;
+    border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+}
+@media print {
+    nav, .sandbox-banner, .kpi-grid, .section:not(.qr-section) { display: none !important; }
+    body { background: white !important; }
+    .qr-box { box-shadow: none; }
+}
 </style>
 </head>
 <body>
@@ -153,6 +177,17 @@ body {
         </div>
     </div>
 
+    <div class="section qr-section">
+        <div class="section-title">QR 셀프 접수</div>
+        <div class="card qr-card">
+            <div class="qr-box" id="qrCanvas"></div>
+            <div class="qr-info">
+                <div class="qr-url" id="qrUrl"></div>
+                <button class="qr-btn" onclick="printQr()">🖨 QR 인쇄</button>
+            </div>
+        </div>
+    </div>
+
     <div class="section">
         <div class="section-title">운영 화면</div>
         <div class="quick-links">
@@ -174,6 +209,7 @@ body {
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 const slug = window.location.pathname.split('/')[1];
 let accessToken = localStorage.getItem('accessToken');
@@ -284,8 +320,19 @@ function logout() {
     localStorage.clear(); window.location.href = '/login';
 }
 
+function initQr() {
+    const url = `${location.origin}/${slug}/join`;
+    document.getElementById('qrUrl').textContent = url;
+    QRCode.toCanvas(document.createElement('canvas'), url, { width: 180, margin: 1 }, (err, canvas) => {
+        if (!err) document.getElementById('qrCanvas').appendChild(canvas);
+    });
+}
+
+function printQr() { window.print(); }
+
 loadDashboard();
 loadRecentFailed();
+initQr();
 </script>
 </body>
 </html>
