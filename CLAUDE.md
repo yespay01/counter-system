@@ -19,7 +19,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 > 현재 단계: 실서버 운영 중.
 > 구현 상태: `Phase 1 ~ 7` 완료 + 실서버 배포 완료 (2026-03-25).
 > 서버: insuk@192.168.0.5, API port 3200, PM2 + Docker (postgres:5435, redis:6379).
-> 다음 단계: Nginx/SSL 설정, 파일럿 고객 온보딩.
+> Nginx/SSL 완료 (2026-03-26): `https://waiting.semolink.store`, Let's Encrypt.
+> 파일럿 실운영 중 (2026-03-26): ezen 테넌트, sandbox_mode=false, Solapi 실발송 활성화, Solo 흐름 확인.
+> 다음 단계: 파일럿 운영 모니터링, 알림톡 발송 로그 확인, 추가 테넌트 온보딩.
 
 ---
 

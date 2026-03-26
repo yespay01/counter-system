@@ -9,33 +9,35 @@ Default collaboration mode for this repository:
 - For review requests, findings, regressions, missing updates, and verification gaps come before solution proposals.
 
 ## Project Structure & Module Organization
-This repository is a static browser-based queue system. The main operator view is [`counter.html`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/counter.html), the waiting-room display is [`display.html`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/display.html), and kiosk variants live in [`kiosk-normal/index.html`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/kiosk-normal/index.html) and [`kiosk-sms/index.html`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/kiosk-sms/index.html). Planning and research notes are under [`docs/`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/docs), and [`CLAUDE.md`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/CLAUDE.md) documents runtime behavior and Firebase data shape.
+This repository contains two layers: (1) legacy static Firebase HTML screens (`counter.html`, `display.html`, `kiosk-normal/`, `kiosk-sms/`) kept for reference, and (2) the active SaaS server under [`server/`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/server/) — Node.js + Express + PostgreSQL + Socket.IO + Redis. Planning and research notes are under [`docs/`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/docs), and [`CLAUDE.md`](/mnt/c/Users/sakai/OneDrive/바탕 화면/counter-system/CLAUDE.md) is the primary runtime and architecture reference.
 
 ## Build, Test, and Development Commands
-There is no build step, package manager, or bundler in this repo.
+The legacy HTML screens have no build step. The active SaaS server uses Node.js with npm.
 
-- `python3 -m http.server 3000 --bind 127.0.0.1`
-  Serve the repository locally for browser testing.
-- Open `http://127.0.0.1:3000/counter.html`
-  Test the staff counter screen.
-- Open `http://127.0.0.1:3000/display.html`
-  Test the public display screen.
-- Open `http://127.0.0.1:3000/kiosk-normal/` or `http://127.0.0.1:3000/kiosk-sms/`
-  Test kiosk flows.
+```bash
+# Start local dev dependencies (PostgreSQL + Redis)
+cd server && docker compose up -d
 
-Direct file opening also works for basic checks, but use a local server when validating browser APIs and cross-screen behavior.
+# Run the server locally
+cd server && npm run dev   # nodemon, port 3200
+
+# Health check
+curl http://localhost:3200/api/health
+```
+
+For the legacy static screens, `python3 -m http.server 3000 --bind 127.0.0.1` still works for basic HTML checks.
 
 ## Coding Style & Naming Conventions
-Use 4-space indentation in HTML, CSS, and JavaScript blocks. Keep each screen self-contained: markup, styles, and scripts stay in the same file unless the repo is intentionally restructured. Prefer `camelCase` for JavaScript variables and functions, `kebab-case` for CSS classes, and preserve the existing Korean UI copy unless a change explicitly requires new wording. Keep queue numbers in the existing `COURSE-001` format, and update duplicated `firebaseConfig` values consistently across all four runtime files.
+Server-side: 4-space indentation, `camelCase` for JS variables and functions, `kebab-case` for CSS classes. Each Express module lives under `server/src/modules/<name>/` with `<name>.routes.js`, `<name>.service.js`, `<name>.controller.js`. Legacy HTML screens keep existing Korean UI copy and `COURSE-001` number format unchanged.
 
 ## Testing Guidelines
-There is no automated test suite yet; use manual smoke tests. After changes, verify ticket issuance on the relevant kiosk, counter call/recall behavior in `counter.html`, and live updates plus audio/status behavior in `display.html`. When touching kiosk settings or course data, confirm Firebase sync across every screen.
+No automated test suite yet; use manual smoke tests. For server changes: restart the server, hit `GET /api/health`, exercise the affected route with curl or a browser, confirm Socket.IO events if queues are involved. For legacy HTML changes: verify ticket issuance, counter call/recall, and live display updates.
 
 ## Commit & Pull Request Guidelines
-Recent history uses short imperative subjects such as `Reorganize file structure: move kiosks to subfolders, remove legacy files` and `Add currentCall to kiosk state initialization`. Follow that style, but avoid vague messages like `Update kiosk.html`; include the affected screen and behavior instead. PRs should describe the user-visible change, list manual test steps, mention any Firebase schema/config updates, and include screenshots for UI changes.
+Use short imperative subjects. Include the affected module or screen and the behavior change — avoid vague messages like `Update kiosk.html`. PRs should describe the user-visible change, list manual test steps, and note any DB migration or schema changes required.
 
 ## Configuration Notes
-Firebase is loaded from CDN modules in every runtime HTML file. Any config or data-shape change must be mirrored across the operator, display, and kiosk screens to avoid drift.
+Server config lives in `server/.env` (not committed). Key variables: `DATABASE_URL`, `REDIS_URL`, `JWT_SECRET`, `PORT`. The legacy HTML files still contain a Firebase config block — do not remove it; it is still used by those screens.
 
 ## Current Direction
 Current planning decisions favor a `Solo` MVP first: a tablet-first queue flow for small walk-up sellers such as snack stalls, takeout counters, pop-ups, and small bakeries. Keep `Standard` multi-screen operations as the follow-up expansion path. Technical decisions already settled in research/meeting notes are:
@@ -53,7 +55,10 @@ Current planning decisions favor a `Solo` MVP first: a tablet-first queue flow f
 - Billing design: `BillingService` boundary + `ManualBillingService`, minimal `/superadmin` included in Solo MVP
 - Current implementation status: `Phase 1~7` complete + 실서버 배포 완료 (2026-03-25)
 - Server: insuk@192.168.0.5, `/home/insuk/projects/counter-system/server/`, API port 3200, PM2 + Docker
-- Next: Nginx/SSL 설정, 파일럿 고객 온보딩
+- Nginx/SSL: 완료 (2026-03-26) — `https://waiting.semolink.store`, Let's Encrypt
+- Solapi 실발송: 완료 (2026-03-26) — 실서버 env 반영, sandbox_mode=false, ezen 테넌트 Solo 흐름 확인
+- CSP: 완료 (2026-03-26) — 인라인 스크립트 + ws:/wss: 허용 (helmet useDefaults + directives)
+- Next: 파일럿 운영 모니터링, 알림톡 발송 로그 확인, 추가 테넌트 온보딩
 
 Before editing planning docs, align with these decisions unless the user explicitly changes them.
 

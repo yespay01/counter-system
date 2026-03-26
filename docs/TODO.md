@@ -1,8 +1,8 @@
 # Counter System SaaS — TODO
 
 > 모든 리서치와 플랜 확정이 완료된 뒤 개발 시작
-> 현재 단계: 실서버 운영 중
-> 현재 상태: Phase 7 완료 + 실서버 배포 완료 (2026-03-25) — insuk@192.168.0.5, API :3200, `파일럿 투입 가능`
+> 현재 단계: 실서버 운영 중 + 파일럿 진행 중
+> 현재 상태: Phase 7 완료 + 실서버 배포 + Nginx/SSL + 실발송 활성화 완료 (2026-03-26) — insuk@192.168.0.5, `https://waiting.semolink.store`, `파일럿 실운영 중`
 
 ---
 
@@ -75,7 +75,13 @@
 
 ## 다음 작업 메모
 
-- STEP 3 개발 진행 중 → `Solo MVP` 완료, `Solo 파일럿 가능`
+- Phase 1~7 완료, 실서버 배포 완료, Nginx/SSL 완료, 파일럿 실운영 중 (2026-03-26)
+- 파일럿 완료 (2026-03-26):
+  - Nginx + Let's Encrypt SSL (`https://waiting.semolink.store`)
+  - 실서버 Solapi 환경변수 반영, 실발송 활성화
+  - Helmet CSP 수정 — 인라인 스크립트 + ws:/wss: 허용
+  - ezen 테넌트 생성, sandbox_mode=false, Solo 실발송 흐름 확인
+- 다음: 파일럿 운영 모니터링, 알림톡 발송 로그 확인, 추가 테넌트 온보딩
 - `1-3 Solapi 운영 조사` 회의 결과를 Phase 2~4 상세 설계에 유지 반영
 - `1-4 결제 서비스 조사` 회의 결과를 서비스/아키텍처/로드맵에 유지 반영
 - 번호 발급 UX는 `태블릿 전화번호 입력 + QR 셀프 접수 + 음식점형 메뉴 선택` 기준으로 유지
@@ -86,7 +92,8 @@
   - API: PM2 (counter-api, port 3200), 재부팅 자동기동 등록
   - DB: Docker PostgreSQL (host port 5435), restart: unless-stopped
   - Cache: Docker Redis (port 6379), restart: unless-stopped
-  - 남은 작업: Nginx 설정, 도메인/SSL, 파일럿 온보딩, Solapi 실발송
+  - ✅ Nginx/SSL 완료 (2026-03-26): `https://waiting.semolink.store`
+  - ✅ Solapi 실발송 활성화 완료 (2026-03-26)
 - Phase 5 완료 (2026-03-25):
   - [완료] `/:slug/kiosk`, `/:slug/kiosk-sms`, `/:slug/counter`, `/:slug/display` 화면 구현
   - [완료] `sockets/index.js` — queueUpdated/sessionReset display room 확장

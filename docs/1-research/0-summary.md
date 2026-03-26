@@ -59,7 +59,8 @@
 3. `Solo MVP`는 `/:slug/solo` + 기본 관리자 화면 + 메시지/정산 구조까지 구현 및 검증 완료 상태다.
 4. `Solo MVP` 체크리스트 전 항목이 완료됐다.
 5. 현재 상태는 `Solo 파일럿 가능`이다.
-6. `Phase 7` 완료 + 실서버 배포 완료 (2026-03-25). insuk@192.168.0.5, API port 3200, PM2 + Docker 운영 중. 다음: Nginx/SSL + 파일럿 온보딩.
+6. `Phase 7` 완료 + 실서버 배포 완료 (2026-03-25). insuk@192.168.0.5, API port 3200, PM2 + Docker 운영 중.
+7. Nginx/SSL + Solapi 실발송 + 파일럿 가동 완료 (2026-03-26): `https://waiting.semolink.store`, ezen 테넌트 Solo 실발송 흐름 확인. 다음: 운영 모니터링, 추가 테넌트 온보딩.
 
 ## 7. 관련 문서
 
