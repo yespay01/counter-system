@@ -184,7 +184,7 @@ async function loadSubscription() {
 
         const rows = [];
         if (sub.trial_ends_at) {
-            const days = Math.max(0, Math.ceil((new Date(sub.trial_ends_at) - Date.now()) / 86400000));
+            const days = trialDaysLeft(sub.trial_ends_at);
             rows.push(['트라이얼 종료', `${new Date(sub.trial_ends_at).toLocaleDateString('ko-KR')} (${days}일 남음)`]);
         }
         if (sub.current_period_end) rows.push(['결제 기간 종료', new Date(sub.current_period_end).toLocaleDateString('ko-KR')]);
@@ -218,8 +218,6 @@ async function loadSubscription() {
                     <span>발급 <b>${u.issue_sent}</b></span>
                     <span>호출 <b>${u.call_sent}</b></span>
                     <span>과금 <b>${u.billable_count}</b>건</span>
-                    <span>원가 <b>${u.provider_cost_amount.toLocaleString()}원</b></span>
-                    <span>마진 <b>${u.margin_amount.toLocaleString()}원</b></span>
                 </div>
             </div>`).join('');
     }
@@ -242,6 +240,13 @@ async function loadSubscription() {
     }
 }
 
+function trialDaysLeft(isoDate) {
+    const end    = new Date(isoDate);
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const now    = new Date();
+    const today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.max(0, Math.round((endDay - today) / 86400000));
+}
 function logout() { fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); localStorage.clear(); window.location.href = '/login'; }
 
 loadSubscription();

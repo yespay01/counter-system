@@ -202,7 +202,7 @@ async function getSubscription(tenantId) {
             `SELECT year_month,
                     ata_sent, sms_sent, lms_sent,
                     issue_sent, ready_sent, call_sent,
-                    billable_count, provider_cost_amount, billed_amount, margin_amount
+                    billable_count, billed_amount
              FROM usage_monthly WHERE tenant_id = $1
              ORDER BY year_month DESC LIMIT 6`,
             [tenantId]
@@ -304,7 +304,7 @@ async function getMonthlyUsage(tenantId, { months = 6 } = {}) {
             `SELECT year_month,
                     ata_sent, sms_sent, lms_sent,
                     issue_sent, ready_sent, call_sent,
-                    billable_count, provider_cost_amount, billed_amount, margin_amount
+                    billable_count, billed_amount
              FROM usage_monthly WHERE tenant_id = $1
              ORDER BY year_month DESC LIMIT $2`,
             [tenantId, months]

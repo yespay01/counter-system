@@ -328,8 +328,6 @@ async function loadUsage() {
             </div>
             <div style="display:flex;gap:16px;font-size:12px;margin-top:2px">
                 <span>청구 <b style="color:#00FF88">${u.billed_amount.toLocaleString()}원</b></span>
-                <span>원가 <b style="opacity:.6">${u.provider_cost_amount.toLocaleString()}원</b></span>
-                <span>마진 <b style="color:#FFD700">${u.margin_amount.toLocaleString()}원</b></span>
             </div>
         </div>`).join('');
 }
