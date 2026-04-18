@@ -52,7 +52,7 @@ async function signup({ email, password, slug, name, industryType }) {
         const tenantRes = await client.query(
             `INSERT INTO tenants (slug, name, industry_type)
              VALUES ($1, $2, $3)
-             RETURNING id, slug, name, sandbox_mode`,
+             RETURNING id, slug, name, sandbox_mode, created_at`,
             [slug, name, industryType || null]
         );
         const tenant = tenantRes.rows[0];
@@ -63,8 +63,8 @@ async function signup({ email, password, slug, name, industryType }) {
             [tenant.id]
         );
 
-        // subscription trial (30일)
-        const trialEndsAt = new Date();
+        // subscription trial (30일) — 가입 시점(created_at) 기준
+        const trialEndsAt = new Date(tenant.created_at);
         trialEndsAt.setDate(trialEndsAt.getDate() + 30);
         await client.query(
             `INSERT INTO subscriptions (tenant_id, plan_code, status, trial_ends_at)
