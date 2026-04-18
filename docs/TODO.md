@@ -75,6 +75,15 @@
 
 ## 다음 작업 메모
 
+- 2026-04-18 파일럿 수정 TODO
+  - [x] P0. `admin/subscription` trial 잔여기간 계산 수정 — 밀리초 방식 → 캘린더 날짜 기준 `trialDaysLeft()` 함수, dashboard/subscription 양쪽 동기화
+  - [x] P0. `admin/dashboard` QR 인쇄 복구 — CDN URL 오류(404) 수정, qrcode.min.js 로컬 서빙, iframe 인쇄로 전환
+  - [x] P1. `/:slug/kiosk-sms` 접수유형 선택 → 메뉴선택 → 접수하기 흐름 구현 (기존: 카테고리 클릭 즉시 발급)
+  - [x] P1. `/:slug/kiosk` 동일 흐름 구현 — kiosk-sms와 공통 원인, 함께 수정
+  - [x] P0. 마진 정보 노출 차단 — API(`getSubscription`, `getMonthlyUsage`)에서 `provider_cost_amount`, `margin_amount` 제거, `subscription.html` / `messages.html` 렌더링 제거
+  - [x] 작업 계획서 작성: `docs/4-screens/2026-04-18_pilot-fix-plan.md`
+  - 검증 필요: Codex 검증 대기 중 — `docs/4-screens/2026-04-18_pilot-fix-plan.md` 참고
+
 - Phase 1~7 완료, 실서버 배포 완료, Nginx/SSL 완료, 파일럿 실운영 중 (2026-03-26)
 - 파일럿 완료 (2026-03-26):
   - Nginx + Let's Encrypt SSL (`https://waiting.semolink.store`)
