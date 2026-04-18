@@ -192,10 +192,13 @@ async function getDashboardStats(tenantId) {
 async function getSubscription(tenantId) {
     return withTenant(tenantId, async (client) => {
         const subRes = await client.query(
-            `SELECT id, plan_code, status, trial_ends_at,
-                    current_period_start, current_period_end,
-                    billing_method, activated_at, last_paid_at, memo
-             FROM subscriptions WHERE tenant_id = $1`,
+            `SELECT s.id, s.plan_code, s.status, s.trial_ends_at,
+                    s.current_period_start, s.current_period_end,
+                    s.billing_method, s.activated_at, s.last_paid_at, s.memo,
+                    t.created_at AS joined_at
+             FROM subscriptions s
+             JOIN tenants t ON t.id = s.tenant_id
+             WHERE s.tenant_id = $1`,
             [tenantId]
         );
         const usageRes = await client.query(

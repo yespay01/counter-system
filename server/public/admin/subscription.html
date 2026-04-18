@@ -183,6 +183,7 @@ async function loadSubscription() {
         document.getElementById('subPlan').textContent  = sub.plan_code || '';
 
         const rows = [];
+        if (sub.joined_at)          rows.push(['가입일', new Date(sub.joined_at).toLocaleDateString('ko-KR')]);
         if (sub.trial_ends_at) {
             const days = trialDaysLeft(sub.trial_ends_at);
             rows.push(['트라이얼 종료', `${new Date(sub.trial_ends_at).toLocaleDateString('ko-KR')} (${days}일 남음)`]);
