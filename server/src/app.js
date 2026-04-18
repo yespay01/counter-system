@@ -90,6 +90,9 @@ function createApp() {
     // ── Superadmin API (/api/superadmin) ──────────────────────────
     app.use('/api/superadmin', superadminRoutes);
 
+    // ── 정적 자산 (/js, /images 등) ────────────────────────────────
+    app.use(express.static(PUBLIC_DIR));
+
     // ── HTML 화면 정적 제공 ────────────────────────────────────────
     const sendHtml = (file) => (_req, res) =>
         res.sendFile(path.join(PUBLIC_DIR, file));
