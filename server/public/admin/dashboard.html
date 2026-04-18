@@ -111,7 +111,7 @@ body {
     font-size: 14px; font-weight: 700;
     cursor: pointer; font-family: inherit;
 }
-@page { margin: 0; size: A4; }
+@page { margin: 0; size: A4 portrait; }
 @media print {
     * { visibility: hidden; }
     .qr-box, .qr-box * { visibility: visible; }
@@ -123,6 +123,11 @@ body {
         box-shadow: none;
         background: white;
         padding: 0;
+    }
+    .qr-box canvas,
+    .qr-box img {
+        width: 160mm !important;
+        height: 160mm !important;
     }
 }
 </style>
@@ -341,7 +346,7 @@ function initQr() {
     const url = `${location.origin}/${slug}/join`;
     document.getElementById('qrUrl').textContent = url;
     new QRCode(document.getElementById('qrCanvas'), {
-        text: url, width: 300, height: 300,
+        text: url, width: 180, height: 180,
         colorDark: '#000000', colorLight: '#ffffff',
     });
 }
