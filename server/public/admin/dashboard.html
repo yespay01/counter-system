@@ -98,7 +98,6 @@ body {
 .qr-box {
     background: white; border-radius: 12px; padding: 8px;
     display: inline-block; flex-shrink: 0;
-    width: 156px; height: 156px; overflow: hidden;
 }
 .qr-box canvas { width: 140px !important; height: 140px !important; display: block; }
 .qr-box img    { display: none !important; }
@@ -339,18 +338,27 @@ function printQr() {
     const canvas = document.querySelector('#qrCanvas canvas');
     if (!canvas) { alert('QR 코드가 아직 생성되지 않았습니다.'); return; }
     const dataUrl = canvas.toDataURL('image/png');
-    const win = window.open('', '_blank');
-    win.document.write(`<!DOCTYPE html><html><head><style>
+
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open();
+    doc.write(`<!DOCTYPE html><html><head><style>
         @page { margin: 0; size: A4 portrait; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { width: 210mm; height: 297mm; display: flex;
                justify-content: center; align-items: center; background: white; }
-        img { width: 160mm; height: 160mm; display: block; image-rendering: pixelated; }
-    </style></head><body>
-    <img src="${dataUrl}">
-    </body></html>`);
-    win.document.close();
-    win.onload = () => { win.focus(); win.print(); win.close(); };
+        img { width: 160mm; height: 160mm; display: block; }
+    </style></head><body><img src="${dataUrl}"></body></html>`);
+    doc.close();
+
+    iframe.contentWindow.onload = function () {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    };
 }
 
 loadDashboard();
