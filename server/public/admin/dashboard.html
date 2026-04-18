@@ -99,6 +99,8 @@ body {
     background: white; border-radius: 12px; padding: 12px;
     display: inline-block;
 }
+.qr-box canvas { width: 180px; height: 180px; display: block; }
+.qr-box img    { display: none; }
 .qr-info { flex: 1; min-width: 200px; }
 .qr-url {
     font-size: 13px; opacity: .6; word-break: break-all;
@@ -111,23 +113,28 @@ body {
     font-size: 14px; font-weight: 700;
     cursor: pointer; font-family: inherit;
 }
-@page { margin: 0; size: A4 portrait; }
+@page { margin: 15mm; size: A4 portrait; }
 @media print {
-    * { visibility: hidden; }
-    .qr-box, .qr-box * { visibility: visible; }
-    body { background: white !important; margin: 0; }
+    body > * { display: none !important; }
+    body { background: white !important; }
+
+    .content { display: flex !important; justify-content: center; align-items: center; min-height: 267mm; }
+    .qr-section { display: block !important; }
+    .section-title { display: none !important; }
+    .qr-card { display: flex !important; justify-content: center; }
+    .qr-info { display: none !important; }
+
     .qr-box {
-        position: fixed;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        box-shadow: none;
+        display: inline-block !important;
         background: white;
+        border-radius: 0;
         padding: 0;
+        box-shadow: none;
     }
-    .qr-box canvas,
-    .qr-box img {
+    .qr-box canvas {
         width: 160mm !important;
         height: 160mm !important;
+        display: block !important;
     }
 }
 </style>
@@ -346,7 +353,7 @@ function initQr() {
     const url = `${location.origin}/${slug}/join`;
     document.getElementById('qrUrl').textContent = url;
     new QRCode(document.getElementById('qrCanvas'), {
-        text: url, width: 180, height: 180,
+        text: url, width: 600, height: 600,
         colorDark: '#000000', colorLight: '#ffffff',
     });
 }
