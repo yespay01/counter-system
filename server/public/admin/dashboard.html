@@ -111,6 +111,7 @@ body {
     font-size: 14px; font-weight: 700;
     cursor: pointer; font-family: inherit;
 }
+@page { margin: 0; size: A4; }
 @media print {
     * { visibility: hidden; }
     .qr-box, .qr-box * { visibility: visible; }
@@ -340,7 +341,7 @@ function initQr() {
     const url = `${location.origin}/${slug}/join`;
     document.getElementById('qrUrl').textContent = url;
     new QRCode(document.getElementById('qrCanvas'), {
-        text: url, width: 180, height: 180,
+        text: url, width: 300, height: 300,
         colorDark: '#000000', colorLight: '#ffffff',
     });
 }
