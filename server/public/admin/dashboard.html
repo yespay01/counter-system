@@ -96,10 +96,10 @@ body {
     display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
 }
 .qr-box {
-    background: white; border-radius: 12px; padding: 12px;
-    display: inline-block;
+    background: white; border-radius: 12px; padding: 8px;
+    display: inline-block; overflow: hidden; flex-shrink: 0;
 }
-.qr-box canvas { width: 180px; height: 180px; display: block; }
+.qr-box canvas { width: 140px; height: 140px; display: block; }
 .qr-box img    { display: none; }
 .qr-info { flex: 1; min-width: 200px; }
 .qr-url {
@@ -115,25 +115,27 @@ body {
 }
 @page { margin: 15mm; size: A4 portrait; }
 @media print {
-    body > * { display: none !important; }
-    body { background: white !important; }
+    /* QR 섹션 외 모두 숨김 */
+    nav, .sandbox-banner, .page-title, .kpi-grid,
+    .section:not(.qr-section) { display: none !important; }
+    .section-title, .qr-info { display: none !important; }
 
-    .content { display: flex !important; justify-content: center; align-items: center; min-height: 267mm; }
+    body { background: white !important; }
+    .content {
+        display: flex !important;
+        justify-content: center; align-items: center;
+        min-height: 267mm; padding: 0;
+    }
     .qr-section { display: block !important; }
-    .section-title { display: none !important; }
-    .qr-card { display: flex !important; justify-content: center; }
-    .qr-info { display: none !important; }
+    .qr-card    { display: flex !important; justify-content: center; }
 
     .qr-box {
         display: inline-block !important;
-        background: white;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
+        background: white !important;
+        border-radius: 0; padding: 0; box-shadow: none;
     }
     .qr-box canvas {
-        width: 160mm !important;
-        height: 160mm !important;
+        width: 160mm !important; height: 160mm !important;
         display: block !important;
     }
 }
