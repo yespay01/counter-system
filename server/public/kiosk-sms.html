@@ -53,7 +53,7 @@ body {
 .category-grid {
     display: grid; gap: 18px;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    flex: 1; align-content: start;
+    align-content: start;
 }
 .cat-btn {
     background: rgba(255,255,255,0.12);
@@ -69,9 +69,49 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 .cat-btn:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.5); }
-.cat-btn:active { transform: scale(0.96); background: rgba(0,255,136,0.2); border-color: #00FF88; }
+.cat-btn:active { transform: scale(0.96); }
+.cat-btn.selected { background: rgba(0,255,136,0.2); border-color: #00FF88; }
 .cat-btn > * { pointer-events: none; }
 .cat-code { font-size: 14px; opacity: .45; font-weight: 400; }
+
+/* 메뉴 선택 */
+.menu-section { display: flex; flex-direction: column; gap: 12px; }
+.menu-guide { font-size: 18px; opacity: .7; }
+.menu-guide span { font-size: 14px; opacity: .6; }
+.menu-grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.menu-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 16px; color: white;
+    font-size: 20px; font-weight: 600;
+    font-family: inherit; cursor: pointer;
+    min-height: 80px;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all .15s;
+}
+.menu-btn:hover { background: rgba(255,255,255,0.2); }
+.menu-btn:active { transform: scale(0.97); }
+.menu-btn.selected { background: rgba(0,255,136,0.2); border-color: #00FF88; }
+.menu-btn > * { pointer-events: none; }
+
+/* 접수하기 버튼 */
+.submit-wrap { padding: 0 0 4px; }
+.submit-btn {
+    width: 100%; padding: 20px;
+    background: #00FF88; color: #1a1a2e;
+    border: none; border-radius: 18px;
+    font-size: 22px; font-weight: 700;
+    font-family: inherit; cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .15s;
+}
+.submit-btn:active { opacity: .8; }
 
 /* 성공 오버레이 */
 .success-overlay {
@@ -131,6 +171,17 @@ body {
     <div class="category-grid" id="categoryGrid">
         <div style="opacity:.4;text-align:center;grid-column:1/-1;padding:60px">로딩 중...</div>
     </div>
+
+    <!-- 메뉴 선택 (설정에 따라 표시) -->
+    <div class="menu-section" id="menuSection" style="display:none">
+        <div class="menu-guide">메뉴를 선택하세요 <span>(선택사항)</span></div>
+        <div class="menu-grid" id="menuGrid"></div>
+    </div>
+
+    <!-- 접수하기 버튼 (카테고리 선택 후 표시) -->
+    <div class="submit-wrap" id="submitWrap" style="display:none">
+        <button class="submit-btn" onclick="doIssue()">접수하기</button>
+    </div>
 </div>
 
 <!-- 성공 오버레이 -->
@@ -146,11 +197,14 @@ body {
 
 <script>
 const slug = window.location.pathname.split('/')[1];
-let config = { categories: [], settings: {} };
+let config = { categories: [], menuItems: [], settings: {} };
 let waitingCount = 0;
 let closeTimer = null;
 let countdownTimer = null;
 let issuing = false;
+let selectedCategory = null;
+let selectedCategoryName = null;
+let selectedMenu = null;
 
 function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
 
@@ -193,13 +247,51 @@ function renderCategories() {
             <span class="cat-code">${esc(c.code)}</span>
         </button>`).join('');
     grid.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => selectCategory(btn.dataset.code, btn.dataset.name));
+    });
+}
+
+function selectCategory(code, name) {
+    selectedCategory = code;
+    selectedCategoryName = name;
+    selectedMenu = null;
+
+    document.querySelectorAll('.cat-btn').forEach(b =>
+        b.classList.toggle('selected', b.dataset.code === code));
+
+    const hasMenu = config.settings?.menu_selection_enabled && config.menuItems?.length;
+    if (hasMenu) {
+        renderMenuItems();
+        document.getElementById('menuSection').style.display = '';
+    } else {
+        document.getElementById('menuSection').style.display = 'none';
+    }
+    document.getElementById('submitWrap').style.display = '';
+}
+
+function renderMenuItems() {
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = config.menuItems.map(m => `
+        <button class="menu-btn" data-code="${esc(m.code)}" data-name="${esc(m.name)}">
+            <span>${esc(m.name)}</span>
+        </button>`).join('');
+    grid.querySelectorAll('.menu-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (!issuing) issueTicket(btn.dataset.code, btn.dataset.name);
+            if (selectedMenu === btn.dataset.code) {
+                selectedMenu = null;
+                document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('selected'));
+            } else {
+                selectedMenu = btn.dataset.code;
+                document.querySelectorAll('.menu-btn').forEach(b =>
+                    b.classList.toggle('selected', b.dataset.code === btn.dataset.code));
+            }
         });
     });
 }
 
-async function issueTicket(categoryCode, categoryName) {
+async function doIssue() {
+    if (!selectedCategory || issuing) return;
+
     const phoneRaw = document.getElementById('phoneInput').value.replace(/\D/g, '');
     if (phoneRaw.length < 10) {
         document.getElementById('phoneInput').focus();
@@ -207,25 +299,26 @@ async function issueTicket(categoryCode, categoryName) {
         setTimeout(() => { document.getElementById('phoneInput').style.borderColor = ''; }, 1500);
         return;
     }
+
     issuing = true;
     try {
         const res = await fetch(`/api/public/${slug}/queue/issue`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                categoryCode,
-                entryChannel: 'kiosk_sms',
+                categoryCode:  selectedCategory,
+                entryChannel:  'kiosk_sms',
                 customerPhone: phoneRaw,
+                menuCode:      selectedMenu || undefined,
             }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message || '발급 실패');
-        // 발급 후 대기 현황 갱신
         const statusRes = await fetch(`/api/public/${slug}/queue/status`);
         if (statusRes.ok) { const s = await statusRes.json(); waitingCount = (s.waiting || []).length; }
         updateWaitBadge();
         const displayPhone = document.getElementById('phoneInput').value;
-        showSuccess(data.ticket.ticket_number, categoryName, waitingCount, displayPhone, data.sandboxMode);
+        showSuccess(data.ticket.ticket_number, selectedCategoryName, waitingCount, displayPhone, data.sandboxMode);
     } catch (err) {
         alert('발급 실패: ' + err.message);
         issuing = false;
@@ -254,6 +347,13 @@ function closeSuccess() {
     clearTimeout(closeTimer); clearInterval(countdownTimer);
     document.getElementById('successOverlay').classList.remove('active');
     document.getElementById('phoneInput').value = '';
+    selectedCategory = null;
+    selectedCategoryName = null;
+    selectedMenu = null;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('menuSection').style.display = 'none';
+    document.getElementById('menuGrid').innerHTML = '';
+    document.getElementById('submitWrap').style.display = 'none';
     issuing = false;
 }
 
